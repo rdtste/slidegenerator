@@ -1,0 +1,25 @@
+<div class="app">
+  <header class="header">
+    <h1>K8Marp</h1>
+    <span class="subtitle">Prompt → Markdown → PowerPoint</span>
+    <div class="header-spacer"></div>
+    <app-settings />
+  </header>
+
+  <main class="main">
+    <div class="col col-chat">
+      <app-chat />
+    </div>
+    <div class="col col-center">
+      <div class="center-top">
+        <app-editor />
+      </div>
+      <div class="center-bottom">
+        <app-preview />
+      </div>
+    </div>
+    <div class="col col-export">
+      <app-export-panel />
+    </div>
+  </main>
+</div>

@@ -1,0 +1,58 @@
+# Container registry prefix (e.g. your-registry.azurecr.io/)
+imagePrefix: ""
+imagePullPolicy: IfNotPresent
+
+frontend:
+  replicaCount: 2
+  image: k8marp-frontend:latest
+  port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+backend:
+  replicaCount: 2
+  image: k8marp-backend:latest
+  port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    OPENAI_API_KEY: ""
+    OPENAI_BASE_URL: "https://api.openai.com/v1"
+    OPENAI_MODEL: "gpt-4o"
+    PPTX_SERVICE_URL: "http://k8marp-pptx-service:8000"
+    TEMPLATES_DIR: "/data/templates"
+
+pptxService:
+  replicaCount: 2
+  image: k8marp-pptx-service:latest
+  port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    TEMPLATES_DIR: "/data/templates"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: k8marp.local
+  tls: false
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi

@@ -1,0 +1,42 @@
+<div class="chat-panel">
+  <h2>1. Präsentation beschreiben</h2>
+
+  <div class="chat-messages">
+    @for (msg of state.messages(); track $index) {
+      <div class="message" [class]="msg.role">
+        {{ msg.content }}
+      </div>
+    }
+    @if (state.loading()) {
+      <div class="message assistant loading">Generiere Folien...</div>
+    }
+  </div>
+
+  <div class="chat-input">
+    @if (attachedFiles().length) {
+      <div class="attached-files">
+        @for (file of attachedFiles(); track $index) {
+          <span class="file-chip">
+            📎 {{ file.name }}
+            <button class="file-remove" (click)="removeFile($index)">&times;</button>
+          </span>
+        }
+      </div>
+    }
+    <div class="input-row">
+      <label class="attach-btn" for="chatFileUpload" title="Dokument anhängen (PDF, DOCX, TXT)">
+        📎
+      </label>
+      <input type="file" id="chatFileUpload" accept=".pdf,.docx,.txt,.md" multiple hidden (change)="onFileSelect($event)" />
+      <textarea
+        [(ngModel)]="prompt"
+        placeholder="Beschreibe deine Präsentation..."
+        rows="3"
+        (keydown)="onKeydown($event)"
+      ></textarea>
+      <button (click)="send()" [disabled]="state.loading() || !prompt().trim()">
+        {{ state.loading() ? 'Generiere...' : 'Generieren' }}
+      </button>
+    </div>
+  </div>
+</div>

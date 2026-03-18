@@ -1,0 +1,42 @@
+<div class="settings-toggle">
+  <button class="gear-btn" (click)="toggle()" [class.active]="open()" title="Einstellungen">
+    &#9881;
+  </button>
+</div>
+
+@if (open()) {
+  <div class="settings-panel">
+    <h3>GCP Vertex AI Konfiguration</h3>
+
+    <div class="field">
+      <label for="gcpProject">Projekt-ID</label>
+      <input id="gcpProject" type="text" [(ngModel)]="gcpProjectId" placeholder="my-gcp-project" />
+    </div>
+
+    <div class="field">
+      <label for="gcpRegion">Region</label>
+      <select id="gcpRegion" [(ngModel)]="gcpRegion">
+        @for (r of availableRegions(); track r.id) {
+          <option [value]="r.id">{{ r.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="gcpModel">Modell</label>
+      <select id="gcpModel" [(ngModel)]="model">
+        @for (m of availableModels(); track m.id) {
+          <option [value]="m.id">{{ m.name }}</option>
+        }
+      </select>
+    </div>
+
+    <button class="btn-save" (click)="save()" [disabled]="saving()">
+      {{ saving() ? 'Speichern...' : 'Speichern' }}
+    </button>
+
+    @if (status()) {
+      <span class="status-msg">{{ status() }}</span>
+    }
+  </div>
+}
