@@ -489,44 +489,28 @@ REGELN:
   }
 
   private parseTwoColumns(text: string): [string, string] {
-    const lower = text.toLowerCase();
-    const leftMarkers = ['## links', '## left'];
-    const rightMarkers = ['## rechts', '## right'];
-
-    let leftStart = -1;
-    let rightStart = -1;
-
-    for (const m of leftMarkers) {
-      const idx = lower.indexOf(m);
-      if (idx >= 0) { leftStart = idx + m.length; break; }
-    }
-    for (const m of rightMarkers) {
-      const idx = lower.indexOf(m);
-      if (idx >= 0) { rightStart = idx + m.length; break; }
+    // Find all ## headings and their positions
+    const headingPattern = /^##\s+.+$/gm;
+    const headings: Array<{ index: number; length: number }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = headingPattern.exec(text)) !== null) {
+      headings.push({ index: match.index, length: match[0].length });
     }
 
-    if (leftStart < 0 && rightStart < 0) return ['', ''];
+    // Need exactly 2 ## headings for left/right columns
+    if (headings.length < 2) return ['', ''];
 
     const extractBullets = (t: string): string =>
       [...t.matchAll(/^[-*]\s+(.+)$/gm)]
         .map((m) => `- ${m[1]}`)
         .join('\n');
 
-    if (leftStart >= 0 && rightStart >= 0) {
-      if (leftStart < rightStart) {
-        return [
-          extractBullets(text.slice(leftStart, lower.indexOf('## r', leftStart))),
-          extractBullets(text.slice(rightStart)),
-        ];
-      }
-      return [
-        extractBullets(text.slice(leftStart)),
-        extractBullets(text.slice(rightStart, lower.indexOf('## l', rightStart))),
-      ];
-    }
+    const leftContent = text.slice(
+      headings[0].index + headings[0].length,
+      headings[1].index,
+    );
+    const rightContent = text.slice(headings[1].index + headings[1].length);
 
-    return leftStart >= 0
-      ? [extractBullets(text.slice(leftStart)), '']
-      : ['', extractBullets(text.slice(rightStart))];
+    return [extractBullets(leftContent), extractBullets(rightContent)];
   }
 }

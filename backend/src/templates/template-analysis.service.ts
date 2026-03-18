@@ -24,7 +24,7 @@ export interface TemplateAnalysis {
   analyzed_at: string;
 }
 
-const ANALYSIS_PROMPT = `Du bist ein PowerPoint-Template-Experte. Analysiere die Struktur eines Folienmasters.
+const ANALYSIS_PROMPT = `Du bist ein PowerPoint-Template-Experte. Klassifiziere die Layouts eines Folienmasters.
 
 Eingabe: Pro Layout: idx (Index), name, phs (Platzhalter: type, w=Breite cm, h=Höhe cm, fonts=pt).
 Typen: TITLE=Titel, BODY=Text, OBJECT=Inhalt, PICTURE=Bild.
@@ -37,12 +37,10 @@ Wähle GENAU EIN bestes Layout pro Typ:
 - image: Bild + Text (PICTURE-Platzhalter + Textbereich)
 - closing: Abschluss (Kontakt, Danke)
 
-Kapazität: Zeilen ≈ h / (font × 0.053), Zeichen/Zeile ≈ w / (font × 0.019). Default: TITLE=28pt, OBJECT=18pt.
-
 Antworte NUR mit kompaktem JSON, KEINE Codeblöcke, KEINE Erklärungen:
-{"description":"Template-Beschreibung","layout_mappings":[{"layout_index":1,"layout_name":"Name","mapped_type":"title","description":"Kurz","recommended_usage":"Kurz","max_bullets":0,"max_chars_per_bullet":0,"title_max_chars":50}],"guidelines":"Texthinweise"}
+{"description":"Template-Beschreibung","layout_mappings":[{"layout_index":1,"layout_name":"Name","mapped_type":"title","description":"Kurz","recommended_usage":"Kurz"}],"guidelines":"Texthinweise"}
 
-WICHTIG: Gib NUR die 6 besten Layouts zurück (eins pro Typ). Kein "unused". Halte Beschreibungen sehr kurz (max 15 Wörter).`;
+WICHTIG: Gib NUR die 6 besten Layouts zurück (eins pro Typ). Kein "unused". Halte Beschreibungen sehr kurz (max 15 Wörter). KEINE Kapazitätsangaben — die werden automatisch berechnet.`;
 
 @Injectable()
 export class TemplateAnalysisService {
@@ -235,14 +233,28 @@ export class TemplateAnalysisService {
 
       const parsed = JSON.parse(jsonStr) as {
         description: string;
-        layout_mappings: LayoutMapping[];
+        layout_mappings: Array<{
+          layout_index: number;
+          layout_name: string;
+          mapped_type: string;
+          description: string;
+          recommended_usage: string;
+          max_bullets?: number;
+          max_chars_per_bullet?: number;
+          title_max_chars?: number;
+        }>;
         guidelines: string;
       };
+
+      // Compute constraints deterministically from actual placeholder dimensions
+      const enrichedMappings = parsed.layout_mappings.map((m) =>
+        this.computeConstraints(m, structureData),
+      );
 
       return {
         template_id: templateId,
         description: parsed.description,
-        layout_mappings: parsed.layout_mappings,
+        layout_mappings: enrichedMappings,
         guidelines: parsed.guidelines,
         analyzed_at: new Date().toISOString(),
       };
@@ -300,5 +312,138 @@ export class TemplateAnalysisService {
     }
 
     return trimmed;
+  }
+
+  // Placeholder type IDs from OOXML spec
+  private static readonly PH_TITLE = 1;
+  private static readonly PH_BODY = 2;
+  private static readonly PH_OBJECT = 7;
+  private static readonly PH_PICTURE = 18;
+  private static readonly META_PH_TYPES = new Set([13, 14, 15, 16]);
+
+  /**
+   * Compute max_bullets, max_chars_per_bullet, title_max_chars from actual
+   * placeholder dimensions — not from AI estimation.
+   *
+   * Uses conservative factors:
+   *  - Line height = font_pt × 0.065 cm (accounts for 1.2× line spacing)
+   *  - Char width  = font_pt × 0.022 cm (accounts for bullet indent + padding)
+   *  - Safety margin: 80% of theoretical max
+   */
+  private computeConstraints(
+    mapping: {
+      layout_index: number;
+      layout_name: string;
+      mapped_type: string;
+      description: string;
+      recommended_usage: string;
+      max_bullets?: number;
+      max_chars_per_bullet?: number;
+      title_max_chars?: number;
+    },
+    structureData: {
+      layouts: Array<{
+        index: number;
+        placeholders: Array<{
+          type_id: number;
+          width_cm: number;
+          height_cm: number;
+          font_sizes_pt: number[];
+        }>;
+      }>;
+    },
+  ): LayoutMapping {
+    const layout = structureData.layouts.find(
+      (l) => l.index === mapping.layout_index,
+    );
+
+    let maxBullets = 0;
+    let maxCharsPerBullet = 0;
+    let titleMaxChars = 0;
+
+    if (layout) {
+      const contentPhs = layout.placeholders.filter(
+        (ph) => !TemplateAnalysisService.META_PH_TYPES.has(ph.type_id),
+      );
+
+      // Find the title placeholder (TITLE type, or largest-font BODY for title layouts)
+      const titlePh =
+        contentPhs.find(
+          (ph) => ph.type_id === TemplateAnalysisService.PH_TITLE,
+        ) ??
+        (mapping.mapped_type === 'title' || mapping.mapped_type === 'section'
+          ? contentPhs.reduce(
+              (best, ph) => {
+                const font = ph.font_sizes_pt[0] ?? 18;
+                const bestFont = best?.font_sizes_pt[0] ?? 0;
+                return font > bestFont ? ph : best;
+              },
+              undefined as (typeof contentPhs)[0] | undefined,
+            )
+          : undefined);
+
+      if (titlePh) {
+        const font = titlePh.font_sizes_pt[0] ?? 18;
+        // Conservative: char width with padding
+        titleMaxChars = Math.floor(
+          (titlePh.width_cm / (font * 0.022)) * 0.8,
+        );
+      }
+
+      // Find the content placeholder (OBJECT preferred, then large BODY)
+      const contentPh =
+        contentPhs.find(
+          (ph) => ph.type_id === TemplateAnalysisService.PH_OBJECT,
+        ) ??
+        contentPhs.find(
+          (ph) =>
+            ph.type_id === TemplateAnalysisService.PH_BODY &&
+            ph !== titlePh &&
+            ph.height_cm > 3,
+        );
+
+      if (contentPh) {
+        const font = contentPh.font_sizes_pt[0] ?? 18;
+        // Conservative: line height with spacing, safety margin
+        const rawLines = contentPh.height_cm / (font * 0.065);
+        maxBullets = Math.floor(rawLines * 0.8);
+
+        // For two_column, check if there are 2 OBJECT placeholders
+        if (mapping.mapped_type === 'two_column') {
+          const objectPhs = contentPhs.filter(
+            (ph) => ph.type_id === TemplateAnalysisService.PH_OBJECT,
+          );
+          if (objectPhs.length >= 2) {
+            // Use the narrower of the two columns
+            const narrowest = objectPhs.reduce((a, b) =>
+              a.width_cm < b.width_cm ? a : b,
+            );
+            const colFont = narrowest.font_sizes_pt[0] ?? 18;
+            const colLines = narrowest.height_cm / (colFont * 0.065);
+            maxBullets = Math.floor(colLines * 0.8);
+            maxCharsPerBullet = Math.floor(
+              (narrowest.width_cm / (colFont * 0.022)) * 0.8,
+            );
+          }
+        }
+
+        if (maxCharsPerBullet === 0) {
+          maxCharsPerBullet = Math.floor(
+            (contentPh.width_cm / (font * 0.022)) * 0.8,
+          );
+        }
+      }
+    }
+
+    return {
+      layout_index: mapping.layout_index,
+      layout_name: mapping.layout_name,
+      mapped_type: mapping.mapped_type,
+      description: mapping.description,
+      recommended_usage: mapping.recommended_usage,
+      max_bullets: maxBullets,
+      max_chars_per_bullet: maxCharsPerBullet,
+      title_max_chars: titleMaxChars,
+    };
   }
 }

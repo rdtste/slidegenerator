@@ -10,7 +10,7 @@ from pathlib import Path
 from lxml import etree
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from app.models.schemas import PresentationData, SlideContent
@@ -428,6 +428,8 @@ def _fill_bullet_list(placeholder, items: list[str]) -> None:
     """Fill a placeholder with a list of bullet strings."""
     tf = placeholder.text_frame
     tf.clear()
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
     for i, item in enumerate(items):
         if i == 0:
             tf.paragraphs[0].text = item
