@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as mammoth from 'mammoth';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{ text: string }>;
+import { PDFParse } from 'pdf-parse';
 
 const MAX_TEXT_LENGTH = 80_000;
 
@@ -44,8 +42,9 @@ export class DocumentService {
   }
 
   private async extractPdf(buffer: Buffer): Promise<string> {
-    const data = await pdfParse(buffer);
-    return data.text;
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const result = await parser.getText();
+    return result.text;
   }
 
   private async extractDocx(buffer: Buffer): Promise<string> {
