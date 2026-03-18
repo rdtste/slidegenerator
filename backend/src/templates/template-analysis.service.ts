@@ -192,6 +192,9 @@ export class TemplateAnalysisService {
         `Sending ${compactLayouts.length}/${structureData.layouts.length} layouts to AI for ${templateId}`,
       );
 
+      // Gemini 2.5 Flash is a "thinking" model — internal reasoning tokens
+      // count toward max_tokens. Use a high limit to accommodate both
+      // thinking budget and actual JSON output.
       const response = await client.chat.completions.create({
         model: this.settings.getModel(),
         messages: [
@@ -202,10 +205,11 @@ export class TemplateAnalysisService {
           },
         ],
         temperature: 0.2,
-        max_tokens: 16384,
+        max_tokens: 65536,
       });
 
-      this.logger.log(`AI response received for ${templateId}, finish_reason=${response.choices[0]?.finish_reason}`);
+      const finishReason = response.choices[0]?.finish_reason;
+      this.logger.log(`AI response received for ${templateId}, finish_reason=${finishReason}`);
 
       const raw = response.choices[0]?.message?.content?.trim() ?? '';
       if (!raw) {
@@ -218,10 +222,16 @@ export class TemplateAnalysisService {
         return null;
       }
 
-      this.logger.debug(`AI raw response (first 200 chars): ${raw.slice(0, 200)}`);
+      this.logger.debug(`AI raw response (first 500 chars): ${raw.slice(0, 500)}`);
 
       // Strip potential markdown code block wrappers
-      const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+      let jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+
+      // If truncated, try to repair JSON by closing open structures
+      if (finishReason === 'length') {
+        this.logger.warn(`Response truncated for ${templateId}, attempting JSON repair`);
+        jsonStr = this.repairTruncatedJson(jsonStr);
+      }
 
       const parsed = JSON.parse(jsonStr) as {
         description: string;
@@ -243,5 +253,52 @@ export class TemplateAnalysisService {
       if (stack) this.logger.debug(stack);
       return null;
     }
+  }
+
+  /**
+   * Attempt to repair truncated JSON by closing open brackets/braces.
+   * Trims back to the last complete array element if possible.
+   */
+  private repairTruncatedJson(json: string): string {
+    // Find the layout_mappings array and trim to last complete object
+    const arrayStart = json.indexOf('"layout_mappings"');
+    if (arrayStart === -1) return json;
+
+    // Try to find the last complete object in the array (ending with })
+    const lastCompleteObj = json.lastIndexOf('}');
+    if (lastCompleteObj === -1) return json;
+
+    // Check if we're inside the layout_mappings array
+    let trimmed = json.slice(0, lastCompleteObj + 1);
+
+    // Count open/close brackets to determine what needs closing
+    let braces = 0;
+    let brackets = 0;
+    for (const ch of trimmed) {
+      if (ch === '{') braces++;
+      if (ch === '}') braces--;
+      if (ch === '[') brackets++;
+      if (ch === ']') brackets--;
+    }
+
+    // Close open structures
+    while (brackets > 0) {
+      trimmed += ']';
+      brackets--;
+    }
+    while (braces > 0) {
+      trimmed += '}';
+      braces--;
+    }
+
+    // If guidelines field is missing, inject a default before final }
+    if (!trimmed.includes('"guidelines"')) {
+      const lastBrace = trimmed.lastIndexOf('}');
+      trimmed =
+        trimmed.slice(0, lastBrace) +
+        ',"guidelines":"Texte kurz und prägnant halten."}';
+    }
+
+    return trimmed;
   }
 }
