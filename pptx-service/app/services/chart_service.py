@@ -102,15 +102,15 @@ def generate_chart(
         colors = ["#0969da", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
 
     # DPI for high-quality output
-    dpi = 150
+    dpi = 200
     fig_w = width_px / dpi
     fig_h = height_px / dpi
 
-    # Style setup
+    # Style setup — larger fonts for readability in presentations
     plt.rcParams.update({
         "font.family": "sans-serif",
         "font.sans-serif": [font_family, "DejaVu Sans", "Arial", "Helvetica"],
-        "font.size": 11,
+        "font.size": 14,
         "axes.labelcolor": text_color,
         "text.color": text_color,
         "xtick.color": text_color,
@@ -139,20 +139,20 @@ def generate_chart(
             _draw_bar(ax, labels, datasets, colors, show_values, grid_color)
 
         if title:
-            ax.set_title(title, fontsize=14, fontweight="bold", color=text_color, pad=15)
+            ax.set_title(title, fontsize=18, fontweight="bold", color=text_color, pad=20)
 
         if chart_type not in ("pie", "donut"):
             if x_label:
-                ax.set_xlabel(x_label, fontsize=11)
+                ax.set_xlabel(x_label, fontsize=14)
             if y_label:
-                ax.set_ylabel(y_label, fontsize=11)
+                ax.set_ylabel(y_label, fontsize=14)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
             ax.spines["left"].set_color(grid_color)
             ax.spines["bottom"].set_color(grid_color)
 
         if show_legend and len(datasets) > 1 and chart_type not in ("pie", "donut"):
-            ax.legend(frameon=False, fontsize=10)
+            ax.legend(frameon=False, fontsize=13)
 
         fig.tight_layout(pad=1.5)
 
@@ -190,11 +190,12 @@ def _draw_bar(ax, labels, datasets, colors, show_values, grid_color) -> None:
             for bar in bars:
                 h = bar.get_height()
                 ax.text(bar.get_x() + bar.get_width() / 2, h,
-                        _format_value(h), ha="center", va="bottom", fontsize=9)
+                        _format_value(h), ha="center", va="bottom", fontsize=12, fontweight="bold")
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=13)
     ax.yaxis.grid(True, color=grid_color, linewidth=0.5, zorder=0)
+    ax.tick_params(axis="y", labelsize=12)
     ax.set_axisbelow(True)
 
 
@@ -210,11 +211,12 @@ def _draw_horizontal_bar(ax, labels, datasets, colors, show_values, grid_color) 
         for bar in bars:
             w = bar.get_width()
             ax.text(w, bar.get_y() + bar.get_height() / 2,
-                    f" {_format_value(w)}", ha="left", va="center", fontsize=9)
+                    f" {_format_value(w)}", ha="left", va="center", fontsize=12, fontweight="bold")
 
     ax.set_yticks(y)
-    ax.set_yticklabels(labels, fontsize=10)
+    ax.set_yticklabels(labels, fontsize=13)
     ax.xaxis.grid(True, color=grid_color, linewidth=0.5, zorder=0)
+    ax.tick_params(axis="x", labelsize=12)
     ax.set_axisbelow(True)
     ax.invert_yaxis()
 
@@ -233,12 +235,13 @@ def _draw_stacked_bar(ax, labels, datasets, colors, show_values, grid_color) -> 
             for j, (v, b) in enumerate(zip(values, bottoms)):
                 if v > 0:
                     ax.text(j, b + v / 2, _format_value(v),
-                            ha="center", va="center", fontsize=8, color="white", fontweight="bold")
+                            ha="center", va="center", fontsize=11, color="white", fontweight="bold")
         bottoms += values
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=13)
     ax.yaxis.grid(True, color=grid_color, linewidth=0.5, zorder=0)
+    ax.tick_params(axis="y", labelsize=12)
     ax.set_axisbelow(True)
 
 
@@ -254,11 +257,12 @@ def _draw_line(ax, labels, datasets, colors, show_values, grid_color) -> None:
                 label=ds.get("label", ""), color=color, zorder=3)
         if show_values:
             for j, v in enumerate(values):
-                ax.text(j, v, f" {_format_value(v)}", fontsize=8, va="bottom")
+                ax.text(j, v, f" {_format_value(v)}", fontsize=11, fontweight="bold", va="bottom")
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=13)
     ax.yaxis.grid(True, color=grid_color, linewidth=0.5, zorder=0)
+    ax.tick_params(axis="y", labelsize=12)
     ax.set_axisbelow(True)
 
 
@@ -276,11 +280,11 @@ def _draw_pie(ax, labels, datasets, colors, donut, show_values) -> None:
         autopct=autopct if show_values else None,
         startangle=90,
         pctdistance=0.75 if donut else 0.6,
-        textprops={"fontsize": 10},
+        textprops={"fontsize": 13},
     )
 
     for at in autotexts:
-        at.set_fontsize(10)
+        at.set_fontsize(13)
         at.set_fontweight("bold")
         at.set_color("white")
 
@@ -288,7 +292,7 @@ def _draw_pie(ax, labels, datasets, colors, donut, show_values) -> None:
         centre = plt.Circle((0, 0), 0.55, fc="white")
         ax.add_artist(centre)
         ax.legend(wedges, labels, loc="center left", bbox_to_anchor=(1, 0.5),
-                  frameon=False, fontsize=10)
+                  frameon=False, fontsize=13)
 
     ax.set_aspect("equal")
 

@@ -22,6 +22,7 @@ from app.models.profile import (
     ColorDNA,
     TypographyDNA,
     LayoutDetail,
+    PlaceholderDetail,
     ChartGuidelines,
     ImageGuidelines,
     TemplateProfile,
@@ -196,6 +197,9 @@ def _analyze_all_layouts(prs: Presentation, profile: TemplateProfile) -> None:
     heading_sizes: set[float] = set()
     body_sizes: set[float] = set()
 
+    slide_w_cm = profile.slide_width_cm
+    slide_h_cm = profile.slide_height_cm
+
     for idx, layout in enumerate(prs.slide_layouts):
         detail = LayoutDetail(index=idx, name=layout.name)
 
@@ -210,6 +214,26 @@ def _analyze_all_layouts(prs: Presentation, profile: TemplateProfile) -> None:
 
             width_cm = _emu_to_cm(ph.width) if ph.width else 0
             height_cm = _emu_to_cm(ph.height) if ph.height else 0
+            left_cm = _emu_to_cm(ph.left) if ph.left else 0
+            top_cm = _emu_to_cm(ph.top) if ph.top else 0
+
+            # Classify spatial position based on coordinates
+            position = _classify_position(left_cm, top_cm, width_cm, height_cm, slide_w_cm, slide_h_cm)
+
+            font_sizes = _get_font_sizes_from_ph(ph)
+
+            # Store detailed placeholder info
+            ph_detail = PlaceholderDetail(
+                type=type_name,
+                index=ph.placeholder_format.idx,
+                left_cm=left_cm,
+                top_cm=top_cm,
+                width_cm=width_cm,
+                height_cm=height_cm,
+                font_sizes_pt=font_sizes,
+                position=position,
+            )
+            detail.placeholder_details.append(ph_detail)
 
             # Detect special placeholder types
             if ph_type == _PH_PICTURE:
@@ -233,11 +257,13 @@ def _analyze_all_layouts(prs: Presentation, profile: TemplateProfile) -> None:
                 content_phs.append(ph)
 
             # Collect font sizes
-            font_sizes = _get_font_sizes_from_ph(ph)
             if ph_type == _PH_TITLE:
                 heading_sizes.update(font_sizes)
             elif ph_type in (_PH_BODY, _PH_OBJECT):
                 body_sizes.update(font_sizes)
+
+        # Build a human-readable spatial description from placeholder details
+        detail.spatial_description = _build_spatial_description(detail)
 
         # Compute text constraints for this layout
         _compute_layout_constraints(detail, layout)
@@ -249,6 +275,30 @@ def _analyze_all_layouts(prs: Presentation, profile: TemplateProfile) -> None:
         profile.typography_dna.heading_sizes_pt = sorted(heading_sizes, reverse=True)
     if body_sizes:
         profile.typography_dna.body_sizes_pt = sorted(body_sizes, reverse=True)
+
+
+def _classify_position(left_cm: float, top_cm: float, width_cm: float, height_cm: float,
+                       slide_w: float, slide_h: float) -> str:
+    """Classify a placeholder's spatial position relative to the slide."""
+    center_x = left_cm + width_cm / 2
+    coverage_w = width_cm / slide_w if slide_w > 0 else 0
+
+    if coverage_w > 0.85:
+        return "full-width"
+    if center_x < slide_w * 0.35:
+        return "left"
+    if center_x > slide_w * 0.65:
+        return "right"
+    return "center"
+
+
+def _build_spatial_description(detail: LayoutDetail) -> str:
+    """Build a human-readable spatial description of how placeholders are arranged."""
+    parts: list[str] = []
+    for ph in detail.placeholder_details:
+        size = f"{ph.width_cm:.0f}x{ph.height_cm:.0f}cm"
+        parts.append(f"{ph.type}({ph.position}, {size})")
+    return " | ".join(parts) if parts else ""
 
 
 def _compute_layout_constraints(detail: LayoutDetail, layout) -> None:

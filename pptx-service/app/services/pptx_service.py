@@ -13,12 +13,36 @@ from pptx.util import Inches, Pt, Emu
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
+from contextvars import ContextVar
+from typing import Callable, Optional
+
 from app.models.schemas import PresentationData, SlideContent
 from app.services import template_service
 from app.services.image_service import generate_image
 from app.services.chart_service import generate_chart, parse_chart_data
 
 logger = logging.getLogger(__name__)
+
+ProgressCallback = Callable[[str, str, Optional[int]], None]
+_progress_ctx: ContextVar[Optional[ProgressCallback]] = ContextVar(
+    "_progress_ctx", default=None
+)
+
+_LAYOUT_LABELS: dict[str, str] = {
+    "title": "Titelfolie",
+    "section": "Kapitelfolie",
+    "content": "Inhalt",
+    "two_column": "Zwei Spalten",
+    "image": "Bildfolie",
+    "chart": "Diagramm",
+    "closing": "Abschlussfolie",
+}
+
+
+def _report_progress(step: str, message: str, progress: int | None = None) -> None:
+    cb = _progress_ctx.get(None)
+    if cb is not None:
+        cb(step, message, progress)
 
 # Placeholder type constants from the OOXML spec
 _PH_TITLE = 1       # TITLE
@@ -98,28 +122,48 @@ _FALLBACK_LAYOUT: dict[str, int] = {
 }
 
 
-def generate_pptx(data: PresentationData, template_id: str = "default") -> Path:
+def generate_pptx(
+    data: PresentationData,
+    template_id: str = "default",
+    progress_callback: ProgressCallback | None = None,
+) -> Path:
     """Generate a PPTX file from structured presentation data."""
-    prs = template_service.load_presentation(template_id)
+    token = _progress_ctx.set(progress_callback)
+    try:
+        _report_progress("template", "Template wird geladen...", 5)
+        prs = template_service.load_presentation(template_id)
 
-    # Load AI analysis mapping if available
-    analysis_map = _load_analysis_map(template_id)
+        analysis_map = _load_analysis_map(template_id)
+        _remove_all_slides(prs)
+        _set_metadata(prs, data)
+        _report_progress("template", "Template bereit", 10)
 
-    # Remove all existing demo/example slides from the template
-    _remove_all_slides(prs)
+        total = len(data.slides)
+        for i, slide_data in enumerate(data.slides):
+            progress = 10 + int((i / total) * 80)
+            label = _LAYOUT_LABELS.get(slide_data.layout, slide_data.layout)
+            title_preview = f" — {slide_data.title[:40]}" if slide_data.title else ""
+            _report_progress(
+                "slide", f"Folie {i + 1}/{total}: {label}{title_preview}", progress,
+            )
+            _add_slide(prs, slide_data, analysis_map)
+            # Mark slide as done
+            _report_progress(
+                "slide", f"Folie {i + 1}/{total} fertig", 10 + int(((i + 1) / total) * 80),
+            )
 
-    _set_metadata(prs, data)
+        _report_progress("saving", "Präsentation wird gespeichert...", 95)
+        output_dir = Path(tempfile.mkdtemp(prefix="slidegen_"))
+        safe_title = "".join(
+            c if c.isalnum() or c in " _-" else "_" for c in data.title
+        )[:50]
+        output_path = output_dir / f"{safe_title}.pptx"
+        prs.save(str(output_path))
 
-    for slide_data in data.slides:
-        _add_slide(prs, slide_data, analysis_map)
-
-    output_dir = Path(tempfile.mkdtemp(prefix="slidegen_"))
-    safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in data.title)[:50]
-    output_path = output_dir / f"{safe_title}.pptx"
-    prs.save(str(output_path))
-
-    logger.info(f"Generated PPTX: {output_path} ({len(data.slides)} slides)")
-    return output_path
+        logger.info(f"Generated PPTX: {output_path} ({len(data.slides)} slides)")
+        return output_path
+    finally:
+        _progress_ctx.reset(token)
 
 
 def _remove_all_slides(prs: Presentation) -> None:
@@ -256,7 +300,6 @@ def _handle_title(slide, data: SlideContent) -> None:
 
     if title_ph:
         title_ph.text = data.title
-        # Subtitle goes into the first body placeholder
         if data.subtitle and body_phs:
             body_phs[0].text = data.subtitle
     elif body_phs:
@@ -265,11 +308,30 @@ def _handle_title(slide, data: SlideContent) -> None:
         if data.subtitle and len(body_phs) > 1:
             body_phs[1].text = data.subtitle
 
+    # Fill picture placeholder if the title layout has one (e.g. "Titelfolie + Bild")
+    picture_ph = _find_ph_by_type(slide, _PH_PICTURE)
+    if picture_ph:
+        desc = data.image_description or data.subtitle or data.title
+        if desc:
+            _report_progress("image", f"Titelbild wird generiert: {desc[:60]}")
+            ph_width = picture_ph.width
+            ph_height = picture_ph.height
+            width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
+            height_px = max(512, min(1536, int(ph_height / 914400 * 96)))
+            image_path = generate_image(desc, width=width_px, height=height_px)
+            if image_path:
+                try:
+                    picture_ph.insert_picture(str(image_path))
+                    logger.info(f"Inserted title image: {desc[:60]}...")
+                except Exception:
+                    logger.exception("Failed to insert title image")
+
 
 def _handle_section(slide, data: SlideContent) -> None:
-    """Populate a section header slide."""
+    """Populate a section header slide, optionally with content bullets."""
     title_ph = _find_ph_by_type(slide, _PH_TITLE)
-    body_phs = _find_all_ph_by_types(slide, [_PH_BODY, _PH_SUBTITLE, _PH_OBJECT])
+    body_phs = _find_all_ph_by_types(slide, [_PH_BODY, _PH_SUBTITLE])
+    content_ph = _find_content_placeholder(slide)
 
     if title_ph:
         title_ph.text = data.title
@@ -280,6 +342,10 @@ def _handle_section(slide, data: SlideContent) -> None:
         if data.subtitle and len(body_phs) > 1:
             body_phs[1].text = data.subtitle
 
+    # Fill OBJECT placeholder with bullets if available (e.g. "Kapitelbeginn + Inhalt")
+    if content_ph and data.bullets:
+        _fill_bullet_list(content_ph, data.bullets)
+
 
 def _handle_content(slide, data: SlideContent) -> None:
     """Populate a content slide with title and bullets."""
@@ -287,12 +353,12 @@ def _handle_content(slide, data: SlideContent) -> None:
     content_ph = _find_content_placeholder(slide)
 
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
     else:
         # Fallback: use a BODY placeholder for the title
         body_phs = _find_all_ph_by_types(slide, [_PH_BODY])
         if body_phs:
-            body_phs[0].text = data.title
+            body_phs[0].text = _truncate_title(data.title)
 
     if content_ph is None:
         return
@@ -300,14 +366,14 @@ def _handle_content(slide, data: SlideContent) -> None:
     if data.bullets:
         _fill_bullet_list(content_ph, data.bullets)
     elif data.body:
-        content_ph.text = data.body
+        _set_text_with_bold(content_ph, data.body)
 
 
 def _handle_two_column(slide, data: SlideContent) -> None:
     """Populate a two-column slide."""
     title_ph = _find_ph_by_type(slide, _PH_TITLE)
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
 
     # Find the two OBJECT/BODY placeholders for columns
     col_phs = _find_all_ph_by_types(slide, [_PH_OBJECT])
@@ -334,16 +400,21 @@ def _handle_two_column(slide, data: SlideContent) -> None:
 
 
 def _handle_image(slide, data: SlideContent) -> None:
-    """Populate an image slide: generate image and insert into picture placeholder."""
+    """Populate an image slide: generate image and insert into picture placeholder.
+
+    Also fills the OBJECT/content placeholder with bullets when the layout
+    offers one (e.g. "Bild + Inhalt").
+    """
     title_ph = _find_ph_by_type(slide, _PH_TITLE)
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
 
     picture_ph = _find_ph_by_type(slide, _PH_PICTURE)
     desc = data.image_description or data.body or ""
 
+    image_inserted = False
     if picture_ph and desc:
-        # Get picture placeholder dimensions for optimal image sizing
+        _report_progress("image", f"Bild wird generiert: {desc[:60]}")
         ph_width = picture_ph.width
         ph_height = picture_ph.height
         width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
@@ -354,23 +425,31 @@ def _handle_image(slide, data: SlideContent) -> None:
             try:
                 picture_ph.insert_picture(str(image_path))
                 logger.info(f"Inserted generated image into picture placeholder: {desc[:60]}...")
-                return
+                image_inserted = True
             except Exception:
                 logger.exception("Failed to insert image into picture placeholder")
 
-    # Fallback: put the description text in a content placeholder
+    # Fill the content placeholder with bullets/body text (for "Bild + Inhalt" layouts)
+    # Design-Prinzip "Klarheit vor Dekoration": Jedes Element muss einen Zweck haben.
     content_ph = _find_content_placeholder(slide)
-    if content_ph and desc:
-        content_ph.text = desc
+    if content_ph:
+        if data.bullets:
+            _fill_bullet_list(content_ph, data.bullets)
+        elif data.body:
+            _set_text_with_bold(content_ph, data.body)
+        elif desc:
+            logger.warning("Image slide '%s' has no bullets — using description as fallback", data.title)
+            _set_text_with_bold(content_ph, desc)
 
 
 def _handle_closing(slide, data: SlideContent) -> None:
-    """Populate a closing slide."""
+    """Populate a closing slide with title, subtitle, and optional bullets/body."""
     title_ph = _find_ph_by_type(slide, _PH_TITLE)
-    body_phs = _find_all_ph_by_types(slide, [_PH_BODY, _PH_SUBTITLE, _PH_OBJECT])
+    content_ph = _find_content_placeholder(slide)
+    body_phs = _find_all_ph_by_types(slide, [_PH_BODY, _PH_SUBTITLE])
 
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
         if data.subtitle and body_phs:
             body_phs[0].text = data.subtitle
     elif body_phs:
@@ -378,12 +457,19 @@ def _handle_closing(slide, data: SlideContent) -> None:
         if data.subtitle and len(body_phs) > 1:
             body_phs[1].text = data.subtitle
 
+    # Fill content/OBJECT placeholder with bullets or body text
+    if content_ph:
+        if data.bullets:
+            _fill_bullet_list(content_ph, data.bullets)
+        elif data.body:
+            _set_text_with_bold(content_ph, data.body)
+
 
 def _handle_chart(slide, data: SlideContent) -> None:
     """Populate a chart slide: generate chart image and insert into picture placeholder."""
     title_ph = _find_ph_by_type(slide, _PH_TITLE)
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
 
     # Parse chart JSON from the slide data
     chart_data = None
@@ -414,6 +500,7 @@ def _handle_chart(slide, data: SlideContent) -> None:
         picture_ph = _find_content_placeholder(slide)
 
     if picture_ph:
+        _report_progress("chart", f"Diagramm wird erstellt: {chart_data.get('type', 'chart')}")
         ph_width = picture_ph.width
         ph_height = picture_ph.height
         width_px = max(600, min(1800, int(ph_width / 914400 * 96)))
@@ -533,6 +620,12 @@ def _find_content_placeholder(slide):
     return None
 
 
+import re as _re
+
+# Regex to split text on **bold** markers
+_BOLD_RE = _re.compile(r'\*\*(.+?)\*\*')
+
+
 def _fill_bullets(placeholder, markdown_text: str) -> None:
     """Fill a placeholder with bullet lines parsed from Markdown."""
     lines = [
@@ -543,17 +636,143 @@ def _fill_bullets(placeholder, markdown_text: str) -> None:
     _fill_bullet_list(placeholder, lines)
 
 
-def _fill_bullet_list(placeholder, items: list[str]) -> None:
-    """Fill a placeholder with a list of bullet strings."""
-    tf = placeholder.text_frame
+_NS_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+_NS_P = "{http://schemas.openxmlformats.org/presentationml/2006/main}"
+
+# Default bullet character used when the template has buNone at level 0
+_DEFAULT_BULLET_CHAR = "\u2022"  # •
+_DEFAULT_BULLET_FONT = "Arial"
+
+
+def _needs_bullet_char(tf) -> bool:
+    """Check if the text frame's level-0 paragraphs lack a bullet character.
+
+    Inspects the lstStyle for buNone or missing buChar at level 0/1.
+    When the master defines buNone, bullets render as plain text — we fix that.
+    """
+    txBody = tf._txBody
+    lstStyle = txBody.find(f"{_NS_A}lstStyle")
+    if lstStyle is not None and len(lstStyle) > 0:
+        lvl1 = lstStyle.find(f"{_NS_A}lvl1pPr")
+        if lvl1 is not None:
+            if lvl1.find(f"{_NS_A}buNone") is not None:
+                return True
+            if lvl1.find(f"{_NS_A}buChar") is not None:
+                return False
+    # Fall back: check if placeholder inherits from layout/master with buNone
+    # If no bullet info at all, default to adding bullets for OBJECT placeholders
+    return True
+
+
+def _ensure_bullet_char(paragraph) -> None:
+    """Add an explicit bullet character to a paragraph's XML properties."""
+    pPr = paragraph._p.find(f"{_NS_A}pPr")
+    if pPr is None:
+        pPr = etree.SubElement(paragraph._p, f"{_NS_A}pPr")
+        paragraph._p.insert(0, pPr)
+
+    # Remove buNone if present
+    buNone = pPr.find(f"{_NS_A}buNone")
+    if buNone is not None:
+        pPr.remove(buNone)
+
+    # Add buFont + buChar if not already there
+    if pPr.find(f"{_NS_A}buChar") is None:
+        buFont = etree.SubElement(pPr, f"{_NS_A}buFont")
+        buFont.set("typeface", _DEFAULT_BULLET_FONT)
+        buChar = etree.SubElement(pPr, f"{_NS_A}buChar")
+        buChar.set("char", _DEFAULT_BULLET_CHAR)
+
+
+def _truncate_title(text: str, max_chars: int = 50) -> str:
+    """Truncate a title to fit within the maximum character limit."""
+    if len(text) <= max_chars:
+        return text
+    # Try to cut at a word boundary
+    truncated = text[:max_chars]
+    last_space = truncated.rfind(" ")
+    if last_space > max_chars * 0.6:
+        truncated = truncated[:last_space]
+    return truncated.rstrip(" ,:;-")
+
+
+def _safe_clear_text_frame(tf):
+    """Clear text frame content while preserving the template's lstStyle element.
+
+    python-pptx's tf.clear() removes the lstStyle which contains font sizes,
+    bullet symbols and indentation inherited from the slide layout / master.
+    """
+    from copy import deepcopy
+
+    txBody = tf._txBody
+    lstStyle = txBody.find(f"{_NS_A}lstStyle")
+    lstStyle_copy = deepcopy(lstStyle) if lstStyle is not None and len(lstStyle) > 0 else None
+
     tf.clear()
     tf.word_wrap = True
-    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+
+    if lstStyle_copy is not None:
+        new_lstStyle = txBody.find(f"{_NS_A}lstStyle")
+        if new_lstStyle is not None:
+            txBody.replace(new_lstStyle, lstStyle_copy)
+        else:
+            first_p = txBody.find(f"{_NS_A}p")
+            if first_p is not None:
+                txBody.insert(list(txBody).index(first_p), lstStyle_copy)
+
+
+def _fill_bullet_list(placeholder, items: list[str]) -> None:
+    """Fill a placeholder with a list of bullet strings, rendering **bold** as actual bold.
+
+    Preserves the template's lstStyle to maintain font sizes, bullet symbols and indentation.
+    Adds explicit bullet characters when the template doesn't provide them at level 0.
+    """
+    tf = placeholder.text_frame
+    _safe_clear_text_frame(tf)
+
+    # Detect whether level 0 has a bullet character from the master/layout.
+    # If buNone is set or no buChar exists, we add an explicit bullet.
+    needs_explicit_bullet = _needs_bullet_char(tf)
+
     for i, item in enumerate(items):
         if i == 0:
-            tf.paragraphs[0].text = item
-            tf.paragraphs[0].level = 0
+            p = tf.paragraphs[0]
         else:
             p = tf.add_paragraph()
-            p.text = item
-            p.level = 0
+        p.level = 0
+        if needs_explicit_bullet:
+            _ensure_bullet_char(p)
+        _set_paragraph_with_bold(p, item)
+
+
+def _set_paragraph_with_bold(paragraph, text: str) -> None:
+    """Parse markdown bold (**text**) and create proper bold/normal runs."""
+    # Split text on **bold** markers
+    parts = _BOLD_RE.split(text)
+    # parts alternates: [normal, bold, normal, bold, ...]
+    # Even indices are normal text, odd indices are bold text
+    if len(parts) == 1 and '**' not in text:
+        # No bold formatting — simple text
+        paragraph.text = text
+        return
+
+    # Clear any existing runs, then add formatted runs
+    paragraph.clear()
+    for idx, part in enumerate(parts):
+        if not part:
+            continue
+        run = paragraph.add_run()
+        run.text = part
+        if idx % 2 == 1:
+            # Odd index = was inside **bold** markers
+            run.font.bold = True
+
+
+def _set_text_with_bold(placeholder, text: str) -> None:
+    """Set placeholder text, rendering any **bold** markdown as actual bold.
+    
+    Preserves the template's lstStyle to maintain font sizes.
+    """
+    tf = placeholder.text_frame
+    _safe_clear_text_frame(tf)
+    _set_paragraph_with_bold(tf.paragraphs[0], text)

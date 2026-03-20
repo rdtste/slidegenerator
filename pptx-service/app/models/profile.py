@@ -33,6 +33,18 @@ class TypographyDNA(BaseModel):
     line_spacing_factor: float = 1.2
 
 
+class PlaceholderDetail(BaseModel):
+    """Detailed information about a single placeholder in a layout."""
+    type: str = ""
+    index: int = 0
+    left_cm: float = 0.0
+    top_cm: float = 0.0
+    width_cm: float = 0.0
+    height_cm: float = 0.0
+    font_sizes_pt: list[float] = Field(default_factory=list)
+    position: str = ""  # "left", "right", "top", "bottom", "center", "full-width"
+
+
 class LayoutDetail(BaseModel):
     """Detailed classification of a single layout."""
     index: int
@@ -52,6 +64,9 @@ class LayoutDetail(BaseModel):
     max_chars_per_bullet: int = 0
     title_max_chars: int = 0
     placeholder_types: list[str] = Field(default_factory=list)
+    placeholder_details: list[PlaceholderDetail] = Field(default_factory=list)
+    spatial_description: str = ""  # AI-generated: "Picture left (50%), content right (50%)"
+    generation_rules: str = ""  # AI-generated: specific rules for filling this layout
 
 
 class ChartGuidelines(BaseModel):
@@ -88,5 +103,7 @@ class TemplateProfile(BaseModel):
     chart_guidelines: ChartGuidelines = Field(default_factory=ChartGuidelines)
     image_guidelines: ImageGuidelines = Field(default_factory=ImageGuidelines)
     supported_layout_types: list[str] = Field(default_factory=list)
+    design_rules: dict[str, str] = Field(default_factory=dict,
+        description="Overarching design quality rules (title_rules, bullet_rules, image_rules, etc.)")
     guidelines: str = ""
     learned_at: str = ""
