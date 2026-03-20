@@ -9,6 +9,14 @@ export class ChatRequestDto {
   @IsString()
   @IsOptional()
   templateId?: string;
+
+  @IsString()
+  @IsOptional()
+  audience?: string;
+
+  @IsString()
+  @IsOptional()
+  imageStyle?: string;
 }
 
 export class SlideDto {
@@ -26,4 +34,9 @@ export class SlideDto {
 export class ChatResponseDto {
   markdown!: string;
   slides!: SlideDto[];
+}
+
+export class ClarifyResponseDto {
+  needsClarification!: boolean;
+  questions!: string;
 }

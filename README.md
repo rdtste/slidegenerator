@@ -1,4 +1,4 @@
-# K8Marp — Prompt-to-PowerPoint Generator
+# Slidegenerator — Prompt-to-PowerPoint Generator
 
 Generiert professionelle PowerPoint-Präsentationen aus natürlicher Sprache,
 basierend auf ausgewählten Folienmastern. Cloud-native Microservice-Architektur
@@ -63,19 +63,19 @@ Frontend: http://localhost:4200 | Backend: http://localhost:3000 | PPTX-Service:
 
 ```bash
 # Images bauen
-docker build -t k8marp-frontend ./frontend
-docker build -t k8marp-backend ./backend
-docker build -t k8marp-pptx-service ./pptx-service
+docker build -t slidegenerator-frontend ./frontend
+docker build -t slidegenerator-backend ./backend
+docker build -t slidegenerator-pptx-service ./pptx-service
 
 # Helm installieren
-helm install k8marp ./k8s/k8marp \
+helm install slidegenerator ./k8s/slidegenerator \
   --set backend.env.OPENAI_API_KEY=sk-your-key
 ```
 
 ## Projektstruktur
 
 ```
-k8marp/
+slidegenerator/
 ├── frontend/              # Angular 21 (Standalone Components, Signals)
 │   └── src/app/
 │       ├── features/      # Chat, Editor, Preview, ExportPanel
@@ -89,7 +89,7 @@ k8marp/
 ├── pptx-service/          # FastAPI + python-pptx
 │   └── app/
 │       └── services/      # Markdown Parser, PPTX Generator, Templates
-├── k8s/k8marp/            # Helm Chart
+├── k8s/slidegenerator/            # Helm Chart
 │   └── templates/         # Deployments, Services, Ingress, PVC
 └── docker-compose.yml
 ```

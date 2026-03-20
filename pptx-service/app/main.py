@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    title="K8Marp PPTX Service",
+    title="Slidegenerator PPTX Service",
     description="Microservice für Folienmaster-basierte PPTX-Generierung.",
     version="0.1.0",
 )

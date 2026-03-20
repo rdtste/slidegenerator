@@ -28,6 +28,9 @@ backend/presentations/
 # Analysis cache
 backend/templates/*.analysis.json
 
+# Template metadata
+backend/templates/*.meta.json
+
 # OS
 .DS_Store
 Thumbs.db

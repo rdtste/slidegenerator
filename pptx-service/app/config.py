@@ -10,6 +10,11 @@ class Settings(BaseSettings):
 
     templates_dir: Path = Path(__file__).resolve().parent.parent / "templates"
 
+    # GCP settings for Imagen image generation
+    gcp_project_id: str = "rd-cmpd-prod513-psl-mate-dev"
+    gcp_region: str = "europe-west1"
+    imagen_model: str = "imagen-3.0-generate-002"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     def model_post_init(self, __context: object) -> None:

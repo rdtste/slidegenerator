@@ -3,18 +3,18 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-pptx-service
   labels:
-    app.kubernetes.io/name: k8marp-pptx-service
+    app.kubernetes.io/name: slidegenerator-pptx-service
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.pptxService.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: k8marp-pptx-service
+      app.kubernetes.io/name: slidegenerator-pptx-service
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: k8marp-pptx-service
+        app.kubernetes.io/name: slidegenerator-pptx-service
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
@@ -54,7 +54,7 @@ metadata:
   name: {{ .Release.Name }}-pptx-service
 spec:
   selector:
-    app.kubernetes.io/name: k8marp-pptx-service
+    app.kubernetes.io/name: slidegenerator-pptx-service
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
     - port: 8000

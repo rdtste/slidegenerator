@@ -14,44 +14,21 @@
   }
 }
 
-.template-section {
-  padding: 16px;
+.selected-template {
+  padding: 12px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
 
-  label {
-    font-size: 0.85rem;
+  .template-label {
     color: var(--text-muted);
   }
 
-  select {
-    background: var(--bg);
+  .template-value {
+    font-weight: 600;
     color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    outline: none;
-
-    &:focus { border-color: var(--primary); }
-  }
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1px dashed var(--border);
-  color: var(--text-muted);
-  cursor: pointer;
-  text-align: center;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  transition: border-color 0.15s, color 0.15s;
-
-  &:hover {
-    border-color: var(--primary);
-    color: var(--primary);
   }
 }
 
@@ -101,7 +78,7 @@
   min-height: 20px;
 }
 
-.templates-section {
+.slide-list {
   padding: 16px;
   border-top: 1px solid var(--border);
   display: flex;
@@ -111,23 +88,18 @@
   h3 {
     font-size: 0.85rem;
     color: var(--text-muted);
-    margin: 0 0 8px;
-  }
-
-  .empty-hint {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    padding: 8px 0;
+    margin: 0 0 10px;
   }
 }
 
-.template-item {
+.slide-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 8px 10px;
   background: var(--bg);
   border-radius: 8px;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.1s, outline 0.1s;
 
@@ -142,43 +114,25 @@
   }
 }
 
-.template-info {
-  flex: 1;
-  min-width: 0;
+.slide-num {
+  background: var(--primary);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.template-name {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.template-meta {
+  align-items: center;
+  justify-content: center;
   font-size: 0.7rem;
-  color: var(--text-muted);
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.template-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  line-height: 1;
-  flex-shrink: 0;
-  transition: background 0.1s;
-
-  &.delete {
-    color: #ef4444;
-    &:hover { background: rgba(239, 68, 68, 0.15); }
-  }
+.slide-layout {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  margin-left: auto;
+  text-transform: uppercase;
 }
 
 .slide-list {

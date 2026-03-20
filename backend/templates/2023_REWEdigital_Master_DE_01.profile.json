@@ -1,0 +1,384 @@
+{
+  "template_id": "2023_REWEdigital_Master_DE_01",
+  "template_name": "Benutzerdefiniert 31",
+  "description": "Ein modernes und professionelles PowerPoint-Template, optimiert für digitale Inhalte und Geschäftspräsentationen.",
+  "design_personality": "Das Template zeichnet sich durch ein modernes, klares und professionelles Design aus. Die Kombination aus einem ruhigen Blau (#95B3FF) und einem lebhaften Gelb-Grün (#D2EB23) auf weißem Hintergrund schafft eine dynamische, aber dennoch seriöse Ästhetik, ideal für digitale und geschäftliche Inhalte.",
+  "slide_width_cm": 33.9,
+  "slide_height_cm": 19.1,
+  "color_dna": {
+    "primary": "#95B3FF",
+    "accent1": "#95B3FF",
+    "accent2": "#D2EB23",
+    "accent3": "#00195A",
+    "accent4": "#D5E0FF",
+    "accent5": "#E2F274",
+    "accent6": "#00195A",
+    "background": "#FFFFFF",
+    "text": "#000000",
+    "heading": "#00195A",
+    "chart_colors": [
+      "#95B3FF",
+      "#D2EB23",
+      "#00195A",
+      "#D5E0FF",
+      "#E2F274",
+      "#00195A"
+    ]
+  },
+  "typography_dna": {
+    "heading_font": "Calibri",
+    "body_font": "Calibri",
+    "heading_sizes_pt": [],
+    "body_sizes_pt": [
+      60,
+      48,
+      44,
+      40,
+      28,
+      24,
+      20,
+      18,
+      16,
+      14,
+      9
+    ]
+  },
+  "layout_catalog": [
+    {
+      "layout_index": 0,
+      "layout_name": "Titelfolie + Bild",
+      "mapped_type": "title",
+      "description": "Titelfolie mit prominentem Bild und Textplatzhaltern.",
+      "recommended_usage": "Startfolie für Präsentationen, die ein visuelles Thema hervorheben.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 10,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 1,
+      "layout_name": "Titelfolie",
+      "mapped_type": "title",
+      "description": "Standard-Titelfolie mit mehreren Textplatzhaltern.",
+      "recommended_usage": "Klassische Startfolie für formelle Präsentationen.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 10,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 2,
+      "layout_name": "Agenda",
+      "mapped_type": "section",
+      "description": "Folie zur Darstellung der Präsentationsstruktur.",
+      "recommended_usage": "Nach der Titelfolie, um die Gliederung vorzustellen.",
+      "max_bullets": 6,
+      "max_chars_per_bullet": 35,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 3,
+      "layout_name": "Kapitelbeginn",
+      "mapped_type": "section",
+      "description": "Einfache Folie für den Beginn eines neuen Abschnitts.",
+      "recommended_usage": "Zwischen den Hauptkapiteln zur Strukturierung.",
+      "max_bullets": 0,
+      "max_chars_per_bullet": 0,
+      "title_max_chars": 57
+    },
+    {
+      "layout_index": 4,
+      "layout_name": "Kapitelbeginn + Inhalt",
+      "mapped_type": "section",
+      "description": "Kapitelbeginn mit zusätzlichem Inhaltsbereich.",
+      "recommended_usage": "Einführung eines Kapitels mit erster Inhaltsübersicht.",
+      "max_bullets": 6,
+      "max_chars_per_bullet": 22,
+      "title_max_chars": 28
+    },
+    {
+      "layout_index": 5,
+      "layout_name": "Inhalt 1-spaltig",
+      "mapped_type": "content",
+      "description": "Standard-Inhaltsfolie mit einem Haupttextbereich.",
+      "recommended_usage": "Für detaillierte Bullet-Point-Listen oder längere Textabschnitte.",
+      "max_bullets": 10,
+      "max_chars_per_bullet": 73,
+      "title_max_chars": 56
+    },
+    {
+      "layout_index": 6,
+      "layout_name": "Inhalt 2-spaltig",
+      "mapped_type": "two_column",
+      "description": "Inhaltsfolie mit zwei gleichberechtigten Spalten.",
+      "recommended_usage": "Für Vergleiche, Pro/Kontra-Listen oder parallele Informationen.",
+      "max_bullets": 8,
+      "max_chars_per_bullet": 26,
+      "title_max_chars": 56
+    },
+    {
+      "layout_index": 7,
+      "layout_name": "Inhalt 3-spaltig",
+      "mapped_type": "content",
+      "description": "Inhaltsfolie mit drei separaten Textbereichen.",
+      "recommended_usage": "Darstellung von drei verwandten Konzepten oder Schritten.",
+      "max_bullets": 8,
+      "max_chars_per_bullet": 17,
+      "title_max_chars": 56
+    },
+    {
+      "layout_index": 8,
+      "layout_name": "Bild + Inhalt ",
+      "mapped_type": "image",
+      "description": "Folie mit einem Bild und einem zugehörigen Inhaltsbereich.",
+      "recommended_usage": "Visualisierung eines Themas mit begleitenden Erläuterungen.",
+      "max_bullets": 5,
+      "max_chars_per_bullet": 22,
+      "title_max_chars": 34
+    },
+    {
+      "layout_index": 9,
+      "layout_name": "Bild + Inhalt (1:2)",
+      "mapped_type": "image",
+      "description": "Folie mit vertikalem Bild und zwei Inhaltsspalten.",
+      "recommended_usage": "Darstellung eines vertikalen Bildes mit begleitenden Details.",
+      "max_bullets": 6,
+      "max_chars_per_bullet": 19,
+      "title_max_chars": 45
+    },
+    {
+      "layout_index": 10,
+      "layout_name": "Bild + Inhalt (2:1)",
+      "mapped_type": "image",
+      "description": "Folie mit horizontalem Bild und einem Inhaltsbereich.",
+      "recommended_usage": "Präsentation eines breiten Bildes mit zugehörigen Erläuterungen.",
+      "max_bullets": 5,
+      "max_chars_per_bullet": 17,
+      "title_max_chars": 28
+    },
+    {
+      "layout_index": 11,
+      "layout_name": "Bild",
+      "mapped_type": "chart",
+      "description": "Vollbild-Folie für eine einzelne, dominante Visualisierung.",
+      "recommended_usage": "Für hochauflösende Fotos, Grafiken oder generierte Diagramme ohne Text.",
+      "max_bullets": 0,
+      "max_chars_per_bullet": 0,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 12,
+      "layout_name": "Bild + Box",
+      "mapped_type": "chart",
+      "description": "Vollbild-Folie mit einem überlagerten Textfeld.",
+      "recommended_usage": "Beeindruckende Visualisierung wie ein Diagramm mit kurzem Kommentar.",
+      "max_bullets": 5,
+      "max_chars_per_bullet": 38,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 13,
+      "layout_name": "Zitat",
+      "mapped_type": "content",
+      "description": "Spezielle Folie zur Hervorhebung eines Zitats.",
+      "recommended_usage": "Präsentation von Kernaussagen, Testimonials oder wichtigen Zitaten.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 20,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 14,
+      "layout_name": "Nur Titel 1-zeilig",
+      "mapped_type": "content",
+      "description": "Minimalistische Folie mit einem Titel und optionalem Untertitel.",
+      "recommended_usage": "Für kurze Zwischenüberschriften oder als Platzhalter für einfache Aussagen.",
+      "max_bullets": 0,
+      "max_chars_per_bullet": 0,
+      "title_max_chars": 56
+    },
+    {
+      "layout_index": 15,
+      "layout_name": "Nur Titel 2-zeilig",
+      "mapped_type": "content",
+      "description": "Minimalistische Folie mit einem längeren Titel und optionalem Untertitel.",
+      "recommended_usage": "Für kurze Zwischenüberschriften oder als Platzhalter für einfache Aussagen.",
+      "max_bullets": 0,
+      "max_chars_per_bullet": 0,
+      "title_max_chars": 56
+    },
+    {
+      "layout_index": 17,
+      "layout_name": "Kontakt",
+      "mapped_type": "closing",
+      "description": "Abschlussfolie mit Kontaktinformationen.",
+      "recommended_usage": "Am Ende der Präsentation für Kontaktdaten.",
+      "max_bullets": 4,
+      "max_chars_per_bullet": 17,
+      "title_max_chars": 36
+    },
+    {
+      "layout_index": 18,
+      "layout_name": "Kontakt Team",
+      "mapped_type": "closing",
+      "description": "Abschlussfolie zur Vorstellung von Teammitgliedern.",
+      "recommended_usage": "Am Ende der Präsentation zur Vorstellung des Teams.",
+      "max_bullets": 4,
+      "max_chars_per_bullet": 17,
+      "title_max_chars": 36
+    },
+    {
+      "layout_index": 19,
+      "layout_name": "Kontakt Team + Bilder",
+      "mapped_type": "closing",
+      "description": "Abschlussfolie zur Vorstellung von Teammitgliedern mit Bildern.",
+      "recommended_usage": "Am Ende der Präsentation zur visuellen Vorstellung des Teams.",
+      "max_bullets": 4,
+      "max_chars_per_bullet": 17,
+      "title_max_chars": 36
+    },
+    {
+      "layout_index": 20,
+      "layout_name": "Farbige Titelfolie + Foto",
+      "mapped_type": "title",
+      "description": "Farbige Titelfolie mit Foto und Textplatzhaltern.",
+      "recommended_usage": "Alternative Startfolie mit starker visueller Wirkung.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 10,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 21,
+      "layout_name": "Farbige Titelfolie + Foto 2",
+      "mapped_type": "title",
+      "description": "Farbige Titelfolie mit Foto (anderes Format) und Textplatzhaltern.",
+      "recommended_usage": "Alternative Startfolie mit starker visueller Wirkung.",
+      "max_bullets": 2,
+      "max_chars_per_bullet": 10,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 22,
+      "layout_name": "Farbige Titelfolie Linksbündig",
+      "mapped_type": "title",
+      "description": "Farbige Titelfolie mit linksbündigem Text.",
+      "recommended_usage": "Moderne, asymmetrische Startfolie.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 10,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 23,
+      "layout_name": "Farbige Titelfolie Zentriert",
+      "mapped_type": "title",
+      "description": "Farbige Titelfolie mit zentriertem Text.",
+      "recommended_usage": "Klassische, aber farbige Startfolie.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 17,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 24,
+      "layout_name": "Farbige Titelfolie + GroßesBild",
+      "mapped_type": "title",
+      "description": "Farbige Titelfolie mit großem, dominantem Bild.",
+      "recommended_usage": "Startfolie, die ein Thema visuell stark untermauert.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 25,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 25,
+      "layout_name": "Farbige Agenda",
+      "mapped_type": "section",
+      "description": "Farbige Folie zur Darstellung der Präsentationsstruktur.",
+      "recommended_usage": "Alternative Agenda-Folie mit farbiger Akzentuierung.",
+      "max_bullets": 7,
+      "max_chars_per_bullet": 35,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 26,
+      "layout_name": "Farbiger Kapitelbeginn",
+      "mapped_type": "section",
+      "description": "Farbige Folie für den Beginn eines neuen Abschnitts.",
+      "recommended_usage": "Alternative Kapitelbeginn-Folie mit farbiger Akzentuierung.",
+      "max_bullets": 0,
+      "max_chars_per_bullet": 0,
+      "title_max_chars": 57
+    },
+    {
+      "layout_index": 27,
+      "layout_name": "Farbiges Zitat",
+      "mapped_type": "content",
+      "description": "Farbige Folie zur Hervorhebung eines Zitats.",
+      "recommended_usage": "Alternative Zitat-Folie mit farbiger Akzentuierung.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 20,
+      "title_max_chars": 0
+    },
+    {
+      "layout_index": 28,
+      "layout_name": "Header + Content",
+      "mapped_type": "content",
+      "description": "Einfache Inhaltsfolie mit Header und Haupttext.",
+      "recommended_usage": "Für kurze Textabschnitte oder Aufzählungen mit klarer Überschrift.",
+      "max_bullets": 0,
+      "max_chars_per_bullet": 0,
+      "title_max_chars": 28
+    },
+    {
+      "layout_index": 29,
+      "layout_name": "1_Farbige Titelfolie + Foto",
+      "mapped_type": "title",
+      "description": "Farbige Titelfolie mit Foto und Textplatzhaltern.",
+      "recommended_usage": "Alternative Startfolie mit starker visueller Wirkung.",
+      "max_bullets": 1,
+      "max_chars_per_bullet": 10,
+      "title_max_chars": 0
+    }
+  ],
+  "chart_guidelines": {
+    "color_sequence": [
+      "#95B3FF",
+      "#D2EB23",
+      "#00195A",
+      "#D5E0FF",
+      "#E2F274",
+      "#00195A"
+    ],
+    "font_family": "Calibri",
+    "style": "modern_flat",
+    "available_chart_layouts": []
+  },
+  "image_guidelines": {
+    "available_image_layouts": [
+      0,
+      8,
+      9,
+      10,
+      11,
+      12,
+      19,
+      20,
+      21,
+      24,
+      29
+    ],
+    "primary_aspect_ratio": "1:1",
+    "style_keywords": [
+      "professional",
+      "corporate",
+      "modern",
+      "clean"
+    ],
+    "accent_color": "#95B3FF"
+  },
+  "supported_layout_types": [
+    "closing",
+    "content",
+    "image",
+    "section",
+    "title",
+    "two_column"
+  ],
+  "guidelines": "Nutzen Sie die Akzentfarben sparsam für Hervorhebungen. Halten Sie Texte prägnant und nutzen Sie Bullet Points. Bilder sollten hochwertig sein und zum digitalen, modernen Charakter passen. Achten Sie auf ausreichend Weißraum für eine klare Lesbarkeit.",
+  "learned_at": "2026-03-20T07:37:18.368Z"
+}

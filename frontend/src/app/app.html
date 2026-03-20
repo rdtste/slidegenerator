@@ -1,25 +1,182 @@
 <div class="app">
   <header class="header">
-    <h1>K8Marp</h1>
+    <h1>Slidegenerator</h1>
     <span class="subtitle">Prompt → Markdown → PowerPoint</span>
     <div class="header-spacer"></div>
+    <button class="btn-templates" (click)="openTemplateManager()">📁 Templates</button>
     <app-settings />
   </header>
 
+  <nav class="stepper">
+    @for (s of [{n:1,label:'Einrichten'},{n:2,label:'Erstellen'},{n:3,label:'Prüfen'},{n:4,label:'Exportieren'}]; track s.n) {
+      @if (s.n > 1) {
+        <div class="step-connector" [class.done]="state.currentStep() >= s.n"></div>
+      }
+      <button
+        class="step"
+        [class.active]="state.currentStep() === s.n"
+        [class.done]="state.currentStep() > s.n"
+        [disabled]="s.n >= 3 && !state.hasMarkdown()"
+        (click)="goToStep(s.n)">
+        <span class="step-num">
+          @if (state.currentStep() > s.n) { ✓ } @else { {{ s.n }} }
+        </span>
+        <span class="step-label">{{ s.label }}</span>
+      </button>
+    }
+  </nav>
+
   <main class="main">
-    <div class="col col-chat">
-      <app-chat />
-    </div>
-    <div class="col col-center">
-      <div class="center-top">
-        <app-editor />
+    <!-- Step 1: Einrichten -->
+    @if (state.currentStep() === 1) {
+      <div class="step-content setup-step">
+        <div class="setup-inner">
+          <section class="setup-section">
+            <h3>Folienmaster wählen</h3>
+            <div class="template-row">
+              <select [(ngModel)]="state.selectedTemplateId" class="template-select">
+                <option value="default">Kein Template (Standard-Design)</option>
+                @for (t of state.templates(); track t.id) {
+                  <option [value]="t.id">{{ t.name }}</option>
+                }
+              </select>
+              <button class="btn-upload" (click)="openTemplateManager()">Verwalten</button>
+            </div>
+          </section>
+
+          <section class="setup-section">
+            <h3>Für wen ist die Präsentation?</h3>
+            <div class="audience-cards">
+              @for (a of audienceOptions; track a.id) {
+                <button
+                  class="audience-card"
+                  [class.active]="state.audience() === a.id"
+                  (click)="state.audience.set(a.id)">
+                  <span class="audience-icon">{{ a.icon }}</span>
+                  <span class="audience-title">{{ a.title }}</span>
+                  <span class="audience-desc">{{ a.desc }}</span>
+                </button>
+              }
+            </div>
+          </section>
+
+          <section class="setup-section">
+            <h3>Bildstil</h3>
+            <div class="image-style-cards">
+              @for (s of imageStyleOptions; track s.id) {
+                <button
+                  class="image-style-card"
+                  [class.active]="state.imageStyle() === s.id"
+                  (click)="state.imageStyle.set(s.id)">
+                  <span class="image-style-icon">{{ s.icon }}</span>
+                  <span class="image-style-title">{{ s.title }}</span>
+                  <span class="image-style-desc">{{ s.desc }}</span>
+                </button>
+              }
+            </div>
+          </section>
+
+          <div class="step-nav">
+            <div></div>
+            <button class="btn-next" (click)="goToStep(2)">Weiter: Erstellen →</button>
+          </div>
+        </div>
       </div>
-      <div class="center-bottom">
-        <app-preview />
+    }
+
+    <!-- Step 2: Erstellen -->
+    @if (state.currentStep() === 2) {
+      <div class="step-content chat-step">
+        <app-chat />
+        <div class="step-nav pad">
+          <button class="btn-back" (click)="goToStep(1)">← Einrichten</button>
+          <button class="btn-next" (click)="goToStep(3)" [disabled]="!state.hasMarkdown()">Weiter: Prüfen →</button>
+        </div>
       </div>
-    </div>
-    <div class="col col-export">
-      <app-export-panel />
-    </div>
+    }
+
+    <!-- Step 3: Prüfen & Bearbeiten (per-slide) -->
+    @if (state.currentStep() === 3) {
+      <div class="step-content review-step">
+        <!-- Slide picker sidebar -->
+        <div class="slide-picker">
+          <h3>Folien</h3>
+          @for (slide of state.slides(); track $index) {
+            <button
+              class="slide-pick"
+              [class.active]="state.selectedSlideIndex() === $index"
+              (click)="goToSlide($index)">
+              <span class="pick-num">{{ $index + 1 }}</span>
+              <span class="pick-title">{{ slide.title || '(Ohne Titel)' }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Slide content area -->
+        <div class="slide-viewer">
+          <!-- Navigation bar -->
+          <div class="slide-nav-bar">
+            <button class="btn-slide-nav" (click)="prevSlide()" [disabled]="state.selectedSlideIndex() === 0">←</button>
+            <span class="slide-indicator">Folie {{ state.selectedSlideIndex() + 1 }} / {{ state.slideCount() }}</span>
+            <button class="btn-slide-nav" (click)="nextSlide()" [disabled]="state.selectedSlideIndex() >= state.slideCount() - 1">→</button>
+          </div>
+
+          <div class="slide-content-split">
+            <!-- Preview -->
+            <div class="slide-preview-pane">
+              @if (slideSrcdoc()) {
+                <iframe class="slide-iframe" [srcdoc]="slideSrcdoc()"></iframe>
+              } @else {
+                <div class="slide-placeholder">Vorschau wird geladen...</div>
+              }
+            </div>
+
+            <!-- Markdown for this slide -->
+            <div class="slide-markdown-pane">
+              <div class="slide-md-toolbar">
+                @if (editingSlide()) {
+                  <button class="btn-sm" (click)="saveSlideEdit()">Übernehmen</button>
+                  <button class="btn-sm btn-cancel" (click)="cancelSlideEdit()">Abbrechen</button>
+                } @else {
+                  <button class="btn-sm" (click)="startSlideEdit()">Bearbeiten</button>
+                }
+                <span class="slide-layout-badge">{{ state.slides()[state.selectedSlideIndex()]?.layout }}</span>
+              </div>
+              @if (editingSlide()) {
+                <textarea class="slide-md-editor" [(ngModel)]="slideEditValue"></textarea>
+              } @else {
+                <pre class="slide-md-view">{{ state.currentSlideMarkdown() }}</pre>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-nav pad fixed-nav">
+        <button class="btn-back" (click)="goToStep(2)">← Erstellen</button>
+        <button class="btn-next" (click)="goToStep(4)">Weiter: Exportieren →</button>
+      </div>
+    }
+
+    <!-- Step 4: Exportieren -->
+    @if (state.currentStep() === 4) {
+      <div class="step-content export-step-single">
+        <app-export-panel />
+        <div class="markdown-copy-section">
+          <h3>Markdown</h3>
+          <button class="btn-copy" (click)="copyAllMarkdown()">
+            {{ copied() ? '✓ Kopiert!' : '📋 Gesamtes Markdown kopieren' }}
+          </button>
+          <pre class="full-markdown-view">{{ state.markdown() }}</pre>
+        </div>
+      </div>
+      <div class="step-nav pad fixed-nav">
+        <button class="btn-back" (click)="goToStep(3)">← Prüfen</button>
+        <div></div>
+      </div>
+    }
   </main>
 </div>
+
+@if (showTemplateManager()) {
+  <app-template-management (closed)="closeTemplateManager()" />
+}

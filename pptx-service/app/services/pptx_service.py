@@ -15,6 +15,8 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from app.models.schemas import PresentationData, SlideContent
 from app.services import template_service
+from app.services.image_service import generate_image
+from app.services.chart_service import generate_chart, parse_chart_data
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,13 @@ _LAYOUT_SCORES: dict[str, list[tuple[str, int, list[str]]]] = {
         ("picture", 50, []),
         ("foto", 50, []),
     ],
+    "chart": [
+        ("diagramm", 90, []),
+        ("chart", 90, []),
+        ("grafik", 70, ["hintergrund"]),
+        ("bild + inhalt", 40, []),
+        ("bild", 30, ["titelfolie"]),
+    ],
     "closing": [
         ("danke", 100, []),
         ("thank", 100, []),
@@ -84,6 +93,7 @@ _FALLBACK_LAYOUT: dict[str, int] = {
     "content": 1,
     "two_column": 3,
     "image": 5,
+    "chart": 5,
     "closing": 0,
 }
 
@@ -103,7 +113,7 @@ def generate_pptx(data: PresentationData, template_id: str = "default") -> Path:
     for slide_data in data.slides:
         _add_slide(prs, slide_data, analysis_map)
 
-    output_dir = Path(tempfile.mkdtemp(prefix="k8marp_"))
+    output_dir = Path(tempfile.mkdtemp(prefix="slidegen_"))
     safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in data.title)[:50]
     output_path = output_dir / f"{safe_title}.pptx"
     prs.save(str(output_path))
@@ -324,14 +334,33 @@ def _handle_two_column(slide, data: SlideContent) -> None:
 
 
 def _handle_image(slide, data: SlideContent) -> None:
-    """Populate an image slide (text description in content placeholder)."""
+    """Populate an image slide: generate image and insert into picture placeholder."""
     title_ph = _find_ph_by_type(slide, _PH_TITLE)
     if title_ph:
         title_ph.text = data.title
 
+    picture_ph = _find_ph_by_type(slide, _PH_PICTURE)
+    desc = data.image_description or data.body or ""
+
+    if picture_ph and desc:
+        # Get picture placeholder dimensions for optimal image sizing
+        ph_width = picture_ph.width
+        ph_height = picture_ph.height
+        width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
+        height_px = max(512, min(1536, int(ph_height / 914400 * 96)))
+
+        image_path = generate_image(desc, width=width_px, height=height_px)
+        if image_path:
+            try:
+                picture_ph.insert_picture(str(image_path))
+                logger.info(f"Inserted generated image into picture placeholder: {desc[:60]}...")
+                return
+            except Exception:
+                logger.exception("Failed to insert image into picture placeholder")
+
+    # Fallback: put the description text in a content placeholder
     content_ph = _find_content_placeholder(slide)
-    if content_ph:
-        desc = data.image_description or data.body or "(Bild hier einf\u00fcgen)"
+    if content_ph and desc:
         content_ph.text = desc
 
 
@@ -350,12 +379,102 @@ def _handle_closing(slide, data: SlideContent) -> None:
             body_phs[1].text = data.subtitle
 
 
+def _handle_chart(slide, data: SlideContent) -> None:
+    """Populate a chart slide: generate chart image and insert into picture placeholder."""
+    title_ph = _find_ph_by_type(slide, _PH_TITLE)
+    if title_ph:
+        title_ph.text = data.title
+
+    # Parse chart JSON from the slide data
+    chart_data = None
+    if data.chart_data:
+        import json
+        try:
+            chart_data = json.loads(data.chart_data)
+        except (json.JSONDecodeError, ValueError):
+            logger.warning(f"Failed to parse chart JSON: {data.chart_data[:100]}")
+
+    if not chart_data:
+        # Fallback: try to extract from body text
+        chart_data = parse_chart_data(data.body) if data.body else None
+
+    if not chart_data:
+        # No chart data — fall back to content handler
+        logger.warning("No chart data found, falling back to content handler")
+        _handle_content(slide, data)
+        return
+
+    # Load template profile for chart styling
+    chart_colors = _load_chart_colors()
+
+    # Find picture or chart placeholder for the chart image
+    picture_ph = _find_ph_by_type(slide, _PH_PICTURE)
+    if not picture_ph:
+        # Fall back to any OBJECT placeholder
+        picture_ph = _find_content_placeholder(slide)
+
+    if picture_ph:
+        ph_width = picture_ph.width
+        ph_height = picture_ph.height
+        width_px = max(600, min(1800, int(ph_width / 914400 * 96)))
+        height_px = max(400, min(1200, int(ph_height / 914400 * 96)))
+
+        chart_path = generate_chart(
+            chart_data=chart_data,
+            colors=chart_colors if chart_colors else None,
+            width_px=width_px,
+            height_px=height_px,
+        )
+
+        if chart_path:
+            try:
+                if hasattr(picture_ph, 'insert_picture'):
+                    picture_ph.insert_picture(str(chart_path))
+                else:
+                    # OBJECT placeholder: add picture as a shape
+                    from pptx.util import Emu
+                    slide.shapes.add_picture(
+                        str(chart_path),
+                        picture_ph.left, picture_ph.top,
+                        picture_ph.width, picture_ph.height,
+                    )
+                logger.info(f"Inserted chart image: {chart_data.get('type', 'unknown')} chart")
+                return
+            except Exception:
+                logger.exception("Failed to insert chart image")
+
+    # Last resort: put chart title/data description in text
+    content_ph = _find_content_placeholder(slide)
+    if content_ph:
+        content_ph.text = f"[Diagramm: {chart_data.get('title', data.title)}]"
+
+
+def _load_chart_colors() -> list[str] | None:
+    """Try to load chart colors from the template profile."""
+    # Check for profile JSON in the templates directory
+    import json
+    from app.config import settings
+
+    templates_dir = settings.templates_dir
+    for profile_path in templates_dir.glob("*.profile.json"):
+        try:
+            with open(profile_path, "r", encoding="utf-8") as f:
+                profile = json.load(f)
+            colors = profile.get("color_dna", {}).get("chart_colors", [])
+            if colors:
+                return colors
+        except Exception:
+            pass
+    return None
+
+
 _LAYOUT_HANDLERS = {
     "title": _handle_title,
     "section": _handle_section,
     "content": _handle_content,
     "two_column": _handle_two_column,
     "image": _handle_image,
+    "chart": _handle_chart,
     "closing": _handle_closing,
 }
 

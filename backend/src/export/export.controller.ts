@@ -6,13 +6,11 @@ import { ExportRequestDto } from './export.dto';
 const CONTENT_TYPES: Record<string, string> = {
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   pdf: 'application/pdf',
-  html: 'text/html; charset=utf-8',
 };
 
 const EXTENSIONS: Record<string, string> = {
   pptx: '.pptx',
   pdf: '.pdf',
-  html: '.html',
 };
 
 @Controller('export')
@@ -33,9 +31,6 @@ export class ExportController {
           break;
         case 'pdf':
           buffer = await this.exportService.generatePdf(dto.markdown);
-          break;
-        case 'html':
-          buffer = await this.exportService.generateHtml(dto.markdown);
           break;
         default:
           throw new HttpException({ detail: `Unbekanntes Format: ${format}` }, HttpStatus.BAD_REQUEST);

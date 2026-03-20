@@ -14,9 +14,11 @@ _NOTES_RE = re.compile(r"<!--\s*notes:\s*(.*?)\s*-->", re.DOTALL)
 _HEADING1_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 _HEADING2_RE = re.compile(r"^##\s+(.+)$", re.MULTILINE)
 _BULLET_RE = re.compile(r"^[-*]\s+(.+)$", re.MULTILINE)
+_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\([^)]*\)")
+_CHART_BLOCK_RE = re.compile(r"```chart\s*\n(.*?)\n```", re.DOTALL)
 _FRONTMATTER_RE = re.compile(r"^---\s*\n.*?\n---\s*\n", re.DOTALL)
 
-VALID_LAYOUTS = {"title", "section", "content", "two_column", "image", "closing"}
+VALID_LAYOUTS = {"title", "section", "content", "two_column", "image", "chart", "closing"}
 
 
 def parse_markdown(markdown: str) -> PresentationData:
@@ -64,6 +66,14 @@ def _parse_slide(raw: str) -> SlideContent | None:
     headings_h2 = _HEADING2_RE.findall(clean)
     bullets = _BULLET_RE.findall(clean)
 
+    # Extract image description from ![alt](url) syntax
+    image_match = _IMAGE_RE.search(clean)
+    image_description = image_match.group(1).strip() if image_match else ""
+
+    # Extract chart data from ```chart ... ``` block
+    chart_match = _CHART_BLOCK_RE.search(clean)
+    chart_data = chart_match.group(1).strip() if chart_match else ""
+
     title = headings_h1[0].strip() if headings_h1 else ""
     subtitle = headings_h2[0].strip() if headings_h2 else ""
 
@@ -75,6 +85,12 @@ def _parse_slide(raw: str) -> SlideContent | None:
         if stripped.startswith("- ") or stripped.startswith("* "):
             continue
         if stripped.startswith("## Links") or stripped.startswith("## Rechts"):
+            continue
+        if _IMAGE_RE.match(stripped):
+            continue
+        if stripped.startswith("```"):
+            continue
+        if chart_data and stripped in chart_data:
             continue
         if stripped:
             body_lines.append(stripped)
@@ -92,6 +108,8 @@ def _parse_slide(raw: str) -> SlideContent | None:
         body=body,
         bullets=bullets,
         notes=notes,
+        image_description=image_description,
+        chart_data=chart_data,
         left_column=left_column,
         right_column=right_column,
     )

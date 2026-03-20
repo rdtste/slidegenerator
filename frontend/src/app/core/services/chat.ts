@@ -1,8 +1,16 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { ChatMessage, SlideContent, TemplateInfo } from '../models';
+import { ChatMessage, SlideContent, TemplateInfo, Audience, ImageStyle } from '../models';
+
+function generateSessionId(): string {
+  return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ChatState {
+  readonly sessionId = generateSessionId();
+  readonly currentStep = signal(1);
+  readonly audience = signal<Audience>('management');
+  readonly imageStyle = signal<ImageStyle>('photo');
   readonly messages = signal<ChatMessage[]>([
     { role: 'system', content: 'Beschreibe deine Präsentation. Zum Beispiel: "Erstelle eine 10-seitige Präsentation über unsere Q1-Ergebnisse 2026."' },
   ]);
@@ -13,9 +21,22 @@ export class ChatState {
   readonly selectedTemplateId = signal('default');
   readonly previewHtml = signal('');
   readonly selectedSlideIndex = signal(0);
+  readonly slidePreviewHtml = signal('');
 
   readonly slideCount = computed(() => this.slides().length);
   readonly hasMarkdown = computed(() => this.markdown().trim().length > 0);
+
+  readonly slideMarkdowns = computed(() => {
+    const md = this.markdown();
+    if (!md.trim()) return [];
+    return md.split(/^\s*---\s*$/m).filter((s) => s.trim());
+  });
+
+  readonly currentSlideMarkdown = computed(() => {
+    const chunks = this.slideMarkdowns();
+    const idx = this.selectedSlideIndex();
+    return chunks[idx] ?? '';
+  });
 
   addMessage(msg: ChatMessage): void {
     this.messages.update((msgs) => [...msgs, msg]);

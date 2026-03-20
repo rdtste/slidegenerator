@@ -11,6 +11,7 @@ from app.config import settings
 from app.models.schemas import TemplateInfo
 from app.services.template_service import list_templates, get_template_path
 from app.services.theme_service import extract_theme, extract_structure, theme_to_css, TemplateTheme
+from app.services.profile_service import extract_profile
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -86,3 +87,16 @@ async def delete_template(template_id: str):
     path.unlink()
     logger.info(f"Template deleted: {template_id}")
     return {"deleted": True}
+
+
+@router.post("/templates/{template_id}/learn")
+async def learn_template(template_id: str):
+    """Deep-learn a template: extract comprehensive visual profile for generation alignment.
+
+    Returns a rich TemplateProfile with color DNA, typography DNA,
+    full layout catalog, chart/image guidelines, and supported layout types.
+    """
+    profile = extract_profile(template_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Template nicht gefunden")
+    return profile.model_dump()

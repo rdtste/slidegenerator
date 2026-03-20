@@ -2,15 +2,16 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
 
+// ── Header ──────────────────────────────────────────────
 .header {
   padding: 12px 24px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 16px;
-  position: relative;
 
   h1 {
     font-size: 1.25rem;
@@ -29,42 +30,653 @@
   flex: 1;
 }
 
-.main {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr 320px;
-  gap: 1px;
-  flex: 1;
-  overflow: hidden;
-  background: var(--border);
+.btn-templates {
+  background: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--border);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
 }
 
-.col {
+// ── Stepper ─────────────────────────────────────────────
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
   background: var(--surface);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background 0.15s, opacity 0.15s;
+  color: var(--text-muted);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &.active {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--primary);
+
+    .step-num {
+      background: var(--primary);
+      color: white;
+    }
+  }
+
+  &.done {
+    color: var(--accent);
+
+    .step-num {
+      background: var(--accent);
+      color: white;
+    }
+  }
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.step-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.step-connector {
+  width: 40px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.2s;
+
+  &.done {
+    background: var(--accent);
+  }
+}
+
+// ── Main content area ───────────────────────────────────
+.main {
+  flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.col-center {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 1px;
-  background: var(--border);
+.step-content {
+  flex: 1;
+  overflow: hidden;
+}
 
-  .center-top,
-  .center-bottom {
-    background: var(--surface);
+// ── Step 1: Setup ───────────────────────────────────────
+.setup-step {
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 32px 24px;
+}
+
+.setup-inner {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.setup-section {
+  h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 16px;
+  }
+}
+
+.template-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.template-select {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  outline: none;
+
+  &:focus {
+    border-color: var(--primary);
+  }
+}
+
+.btn-upload {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+}
+
+.audience-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.audience-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.08);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+}
+
+.audience-icon {
+  font-size: 2rem;
+}
+
+.audience-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.audience-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.image-style-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.image-style-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.08);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+}
+
+.image-style-icon {
+  font-size: 2rem;
+}
+
+.image-style-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.image-style-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+// ── Step 2: Chat ────────────────────────────────────────
+.chat-step {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  app-chat {
+    flex: 1;
     overflow: hidden;
   }
 }
 
-@media (max-width: 1024px) {
-  .main {
-    grid-template-columns: 1fr;
-    grid-template-rows: 300px 1fr auto;
+// ── Step 3: Review (per-slide) ──────────────────────────
+.review-step {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1px;
+  background: var(--border);
+}
+
+.slide-picker {
+  background: var(--surface);
+  overflow-y: auto;
+  padding: 12px 0;
+
+  h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0 12px 10px;
+    margin: 0;
+  }
+}
+
+.slide-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  font-size: 0.8rem;
+  transition: background 0.1s;
+
+  &:hover { background: var(--surface-hover); }
+
+  &.active {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--primary);
+
+    .pick-num {
+      background: var(--primary);
+      color: white;
+    }
+  }
+}
+
+.pick-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pick-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slide-viewer {
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slide-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.btn-slide-nav {
+  background: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover:not(:disabled) { background: var(--border); }
+  &:disabled { opacity: 0.3; cursor: not-allowed; }
+}
+
+.slide-indicator {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 100px;
+  text-align: center;
+}
+
+.slide-content-split {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.slide-preview-pane {
+  background: var(--bg);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.slide-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg);
+}
+
+.slide-placeholder {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.slide-markdown-pane {
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slide-md-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  background: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover { background: var(--border); }
+}
+
+.btn-cancel {
+  color: var(--text-muted);
+}
+
+.slide-layout-badge {
+  margin-left: auto;
+  background: var(--primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.slide-md-editor {
+  flex: 1;
+  width: 100%;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--text);
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+.slide-md-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+// ── Step 4: Export ──────────────────────────────────────
+.export-step-single {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.markdown-copy-section {
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+
+  h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+  }
+}
+
+.btn-copy {
+  align-self: flex-start;
+  background: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--border);
+    border-color: var(--primary);
+  }
+}
+
+.full-markdown-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+// ── Step Navigation ─────────────────────────────────────
+.step-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  &.pad {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
   }
 
-  .col-center {
+  &.fixed-nav {
+    flex-shrink: 0;
+  }
+}
+
+.btn-next {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.btn-back {
+  background: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--border);
+  }
+}
+
+// ── Responsive ──────────────────────────────────────────
+@media (max-width: 768px) {
+  .stepper {
+    padding: 12px 16px;
+    gap: 0;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .step-connector {
+    width: 20px;
+  }
+
+  .audience-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .image-style-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .review-step {
+    grid-template-columns: 1fr;
+
+    .slide-picker { display: none; }
+  }
+
+  .slide-content-split {
     grid-template-rows: 1fr 1fr;
+  }
+
+  .export-step-single {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 }

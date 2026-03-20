@@ -11,6 +11,6 @@ export class ExportRequestDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['pptx', 'pdf', 'html'])
+  @IsIn(['pptx', 'pdf'])
   format?: string = 'pptx';
 }

@@ -368,25 +368,89 @@ def _extract_layout_constraints(prs, theme: TemplateTheme) -> None:
 
 
 def theme_to_css(theme: TemplateTheme) -> str:
-    """Generate custom CSS that approximates the template's visual style."""
+    """Generate custom CSS that closely approximates the template's visual style."""
+
+    # Find representative font sizes from constraints
+    title_pt = 28.0
+    subtitle_pt = 20.0
+    body_pt = 14.0
+    for c in theme.layout_constraints:
+        if c.layout_type == "content":
+            for ph in c.placeholders:
+                if ph.role == "title":
+                    title_pt = ph.font_size_pt
+                elif ph.role == "content":
+                    body_pt = ph.font_size_pt
+            # Find subtitle placeholder
+            for ph in c.placeholders:
+                if ph.role == "subtitle" and ph.font_size_pt > body_pt:
+                    subtitle_pt = ph.font_size_pt
+            break
+
+    # Slide aspect ratio as width/height
+    w = theme.slide_width_cm or 33.9
+    h = theme.slide_height_cm or 19.1
+
+    # Marp renders slides at 1280×720 viewport. PowerPoint's pt sizes
+    # need to be converted to px: 1pt = 1.333px at 96dpi.
+    # Then scale from the template's native resolution to Marp's 1280px width.
+    # Template native width in px: w_cm / 2.54 * 96
+    native_w_px = w / 2.54 * 96
+    px_scale = 1280 / native_w_px  # ~1.0 for standard 33.9cm widescreen
+    pt_to_px = 1.333
+
+    title_px = round(title_pt * pt_to_px * px_scale)
+    subtitle_px = round(subtitle_pt * pt_to_px * px_scale)
+    body_px = round(body_pt * pt_to_px * px_scale)
+
     return f"""
     /* Template Theme: {theme.template_name or theme.template_id} */
+    /* Slide dimensions: {w}×{h}cm */
+
     section {{
       font-family: '{theme.body_font}', sans-serif !important;
       color: {theme.text_color} !important;
       background-color: {theme.bg_color} !important;
+      font-size: {body_px}px !important;
+      padding: 40px 50px !important;
+      width: 1280px !important;
+      height: {round(1280 * h / w)}px !important;
+      line-height: 1.5 !important;
     }}
+
+    /* Headings */
     section h1, section h2, section h3 {{
       font-family: '{theme.heading_font}', sans-serif !important;
       color: {theme.heading_color} !important;
+      margin-bottom: 0.3em !important;
     }}
     section h1 {{
+      font-size: {title_px}px !important;
       border-bottom: 3px solid {theme.accent_color} !important;
-      padding-bottom: 0.2em !important;
+      padding-bottom: 0.15em !important;
+      margin-top: 0 !important;
+    }}
+    section h2 {{
+      font-size: {subtitle_px}px !important;
+      font-weight: 400 !important;
+      color: {theme.accent_color} !important;
+      border-bottom: none !important;
+    }}
+
+    /* Lists */
+    section ul, section ol {{
+      font-size: {body_px}px !important;
+      line-height: 1.6 !important;
+      margin-top: 0.4em !important;
+    }}
+    section ul li, section ol li {{
+      margin-bottom: 0.15em !important;
     }}
     section ul li::marker, section ol li::marker {{
       color: {theme.accent_color};
     }}
+
+    /* Accent styling */
     section strong {{
       color: {theme.accent_color};
     }}

@@ -4,7 +4,7 @@ imagePullPolicy: IfNotPresent
 
 frontend:
   replicaCount: 2
-  image: k8marp-frontend:latest
+  image: slidegenerator-frontend:latest
   port: 80
   resources:
     requests:
@@ -16,7 +16,7 @@ frontend:
 
 backend:
   replicaCount: 2
-  image: k8marp-backend:latest
+  image: slidegenerator-backend:latest
   port: 3000
   resources:
     requests:
@@ -29,12 +29,12 @@ backend:
     OPENAI_API_KEY: ""
     OPENAI_BASE_URL: "https://api.openai.com/v1"
     OPENAI_MODEL: "gpt-4o"
-    PPTX_SERVICE_URL: "http://k8marp-pptx-service:8000"
+    PPTX_SERVICE_URL: "http://slidegenerator-pptx-service:8000"
     TEMPLATES_DIR: "/data/templates"
 
 pptxService:
   replicaCount: 2
-  image: k8marp-pptx-service:latest
+  image: slidegenerator-pptx-service:latest
   port: 8000
   resources:
     requests:
@@ -49,7 +49,7 @@ pptxService:
 ingress:
   enabled: true
   className: nginx
-  host: k8marp.local
+  host: slidegenerator.local
   tls: false
 
 persistence:

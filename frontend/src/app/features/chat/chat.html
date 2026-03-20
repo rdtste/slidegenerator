@@ -1,16 +1,22 @@
 <div class="chat-panel">
-  <h2>1. Präsentation beschreiben</h2>
-
   <div class="chat-messages">
     @for (msg of state.messages(); track $index) {
-      <div class="message" [class]="msg.role">
+      <div class="message" [class]="msg.role" [class.clarification]="clarifying() && msg.role === 'assistant' && $last">
         {{ msg.content }}
       </div>
     }
     @if (state.loading()) {
-      <div class="message assistant loading">Generiere Folien...</div>
+      <div class="message assistant loading">
+        {{ clarifying() ? 'Prüfe Prompt...' : 'Generiere Folien...' }}
+      </div>
     }
   </div>
+
+  @if (clarifying() && !state.loading()) {
+    <div class="clarify-actions">
+      <button class="skip-btn" (click)="skipClarification()">Überspringen — direkt generieren</button>
+    </div>
+  }
 
   <div class="chat-input">
     @if (attachedFiles().length) {
@@ -24,18 +30,26 @@
       </div>
     }
     <div class="input-row">
-      <label class="attach-btn" for="chatFileUpload" title="Dokument anhängen (PDF, DOCX, TXT)">
-        📎
-      </label>
-      <input type="file" id="chatFileUpload" accept=".pdf,.docx,.txt,.md" multiple hidden (change)="onFileSelect($event)" />
+      @if (!clarifying()) {
+        <label class="attach-btn" for="chatFileUpload" title="Dokument anhängen (PDF, DOCX, TXT)">
+          📎
+        </label>
+        <input type="file" id="chatFileUpload" accept=".pdf,.docx,.txt,.md" multiple hidden (change)="onFileSelect($event)" />
+      }
       <textarea
         [(ngModel)]="prompt"
-        placeholder="Beschreibe deine Präsentation..."
+        [placeholder]="clarifying() ? 'Beantworte die Rückfragen...' : 'Beschreibe deine Präsentation...'"
         rows="3"
         (keydown)="onKeydown($event)"
       ></textarea>
       <button (click)="send()" [disabled]="state.loading() || !prompt().trim()">
-        {{ state.loading() ? 'Generiere...' : 'Generieren' }}
+        @if (state.loading()) {
+          Generiere...
+        } @else if (clarifying()) {
+          Antworten
+        } @else {
+          Generieren
+        }
       </button>
     </div>
   </div>

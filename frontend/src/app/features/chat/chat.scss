@@ -3,15 +3,6 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-
-  h2 {
-    padding: 12px 16px;
-    margin: 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-  }
 }
 
 .chat-messages {
@@ -173,5 +164,32 @@
 
   &:hover {
     color: var(--danger);
+  }
+}
+
+.message.clarification {
+  border-left: 3px solid var(--primary);
+  white-space: pre-line;
+}
+
+.clarify-actions {
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px;
+
+  .skip-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+
+    &:hover {
+      border-color: var(--primary);
+      color: var(--text);
+    }
   }
 }

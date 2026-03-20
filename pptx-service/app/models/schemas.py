@@ -6,13 +6,14 @@ from pydantic import BaseModel, Field
 # --- Slides ---
 
 class SlideContent(BaseModel):
-    layout: str = Field("content", description="Slide layout type: title, section, content, two_column, image, closing")
+    layout: str = Field("content", description="Slide layout type: title, section, content, two_column, image, chart, closing")
     title: str = Field("", description="Slide title / heading")
     subtitle: str = Field("", description="Subtitle or subheading")
     body: str = Field("", description="Body text (Markdown)")
     bullets: list[str] = Field(default_factory=list, description="Bullet points")
     notes: str = Field("", description="Presenter notes")
     image_description: str = Field("", description="Description/placeholder for image")
+    chart_data: str = Field("", description="JSON chart data for chart layout")
     left_column: str = Field("", description="Left column content (two_column layout)")
     right_column: str = Field("", description="Right column content (two_column layout)")
 

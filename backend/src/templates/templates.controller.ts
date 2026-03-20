@@ -2,8 +2,11 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
+  Body,
+  Headers,
   UploadedFile,
   UseInterceptors,
   HttpException,
@@ -13,7 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TemplatesService } from './templates.service';
 import { TemplateAnalysisService } from './template-analysis.service';
-import { TemplateInfoDto } from './templates.dto';
+import { TemplateInfoDto, TemplateScope } from './templates.dto';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
@@ -27,13 +30,16 @@ export class TemplatesController {
   ) {}
 
   @Get()
-  list(): TemplateInfoDto[] {
-    return this.templatesService.listTemplates();
+  list(@Headers('x-session-id') sessionId?: string): TemplateInfoDto[] {
+    return this.templatesService.listTemplates(sessionId);
   }
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  upload(@UploadedFile() file: Express.Multer.File): TemplateInfoDto {
+  upload(
+    @UploadedFile() file: Express.Multer.File,
+    @Headers('x-session-id') sessionId?: string,
+  ): TemplateInfoDto {
     const ext = file?.originalname?.toLowerCase();
     if (!file || (!ext?.endsWith('.pptx') && !ext?.endsWith('.potx'))) {
       throw new HttpException(
@@ -48,14 +54,35 @@ export class TemplatesController {
       );
     }
 
-    const info = this.templatesService.saveTemplate(file.originalname, file.buffer);
+    const info = this.templatesService.saveTemplate(file.originalname, file.buffer, sessionId);
 
-    // Fire-and-forget AI analysis
-    this.analysisService.analyzeTemplate(info.id).catch((err) =>
-      this.logger.warn(`Background analysis failed for ${info.id}: ${err}`),
+    // Fire-and-forget deep learning (replaces simple analysis)
+    this.analysisService.learnTemplate(info.id).catch((err) =>
+      this.logger.warn(`Background learning failed for ${info.id}: ${err}`),
     );
 
     return info;
+  }
+
+  @Patch(':id/scope')
+  setScope(
+    @Param('id') id: string,
+    @Body('scope') scope: string,
+  ): TemplateInfoDto {
+    if (scope !== 'global' && scope !== 'session') {
+      throw new HttpException(
+        { detail: 'Scope muss "global" oder "session" sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const result = this.templatesService.setScope(id, scope as TemplateScope);
+    if (!result) {
+      throw new HttpException(
+        { detail: 'Template nicht gefunden' },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return result;
   }
 
   @Post(':id/analyze')
@@ -70,16 +97,45 @@ export class TemplatesController {
     return { analyzed: true };
   }
 
+  @Post(':id/learn')
+  async learn(@Param('id') id: string) {
+    const profile = await this.analysisService.learnTemplate(id);
+    if (!profile) {
+      throw new HttpException(
+        { detail: 'Template-Learning fehlgeschlagen' },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return {
+      learned: true,
+      layouts_classified: profile.layout_catalog.length,
+      supported_types: profile.supported_layout_types,
+      design_personality: profile.design_personality,
+    };
+  }
+
   @Get(':id/analysis')
   async getAnalysis(@Param('id') id: string) {
     const analysis = await this.analysisService.getAnalysis(id);
     if (!analysis) {
       throw new HttpException(
-        { detail: 'Keine Analyse vorhanden. POST /templates/:id/analyze aufrufen.' },
+        { detail: 'Keine Analyse vorhanden. POST /templates/:id/learn aufrufen.' },
         HttpStatus.NOT_FOUND,
       );
     }
     return analysis;
+  }
+
+  @Get(':id/profile')
+  getProfile(@Param('id') id: string) {
+    const profile = this.analysisService.getProfile(id);
+    if (!profile) {
+      throw new HttpException(
+        { detail: 'Kein Profil vorhanden. POST /templates/:id/learn aufrufen.' },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return profile;
   }
 
   @Delete(':id')

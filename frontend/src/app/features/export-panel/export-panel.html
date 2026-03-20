@@ -1,36 +1,9 @@
 <div class="export-panel">
-  <h2>Template &amp; Export</h2>
+  <h2>Export</h2>
 
-  <div class="template-section">
-    <label>Folienmaster w&auml;hlen:</label>
-    <select [(ngModel)]="state.selectedTemplateId">
-      <option value="default">Kein Template (Standard)</option>
-      @for (t of state.templates(); track t.id) {
-        <option [value]="t.id">{{ t.name }}</option>
-      }
-    </select>
-
-    <label class="btn-outline" for="templateUpload">+ Template hochladen</label>
-    <input type="file" id="templateUpload" accept=".pptx,.potx" hidden (change)="onTemplateUpload($event)">
-  </div>
-
-  <div class="templates-section">
-    <h3>Verf&uuml;gbare Templates</h3>
-    @if (state.templates().length === 0) {
-      <div class="empty-hint">Noch keine Templates hochgeladen.</div>
-    }
-
-    @for (t of state.templates(); track t.id) {
-      <div class="template-item" [class.active]="state.selectedTemplateId() === t.id">
-        <div class="template-info" (click)="selectTemplate(t.id)">
-          <span class="template-name">{{ t.name }}</span>
-          <span class="template-meta">{{ t.description }}</span>
-        </div>
-        @if (t.id !== 'default') {
-          <button class="template-action-btn delete" title="Template l&ouml;schen" (click)="deleteTemplate(t.id, $event)">×</button>
-        }
-      </div>
-    }
+  <div class="selected-template">
+    <span class="template-label">Template:</span>
+    <span class="template-value">{{ state.selectedTemplateId() === 'default' ? 'Standard-Design' : state.selectedTemplateId() }}</span>
   </div>
 
   <div class="export-actions">
@@ -40,15 +13,12 @@
     <button class="btn-secondary" (click)="download('pdf')" [disabled]="!state.hasMarkdown() || exporting()">
       PDF
     </button>
-    <button class="btn-secondary" (click)="download('html')" [disabled]="!state.hasMarkdown() || exporting()">
-      HTML
-    </button>
   </div>
 
   <div class="status">{{ exportStatus() }}</div>
 
   <div class="slide-list">
-    <h3>Folien&uuml;bersicht</h3>
+    <h3>Folienübersicht</h3>
     @for (slide of state.slides(); track $index) {
       <div class="slide-item" [class.active]="state.selectedSlideIndex() === $index" (click)="selectSlide($index)">
         <span class="slide-num">{{ $index + 1 }}</span>

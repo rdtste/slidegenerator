@@ -8,8 +8,8 @@ import {
 } from './settings.dto';
 
 const REGIONS: RegionOption[] = [
-  { id: 'europe-west3', name: 'Europe West 3 (Frankfurt)' },
   { id: 'europe-west1', name: 'Europe West 1 (Belgium)' },
+  { id: 'europe-west3', name: 'Europe West 3 (Frankfurt)' },
   { id: 'europe-west4', name: 'Europe West 4 (Netherlands)' },
   { id: 'europe-west9', name: 'Europe West 9 (Paris)' },
   { id: 'us-central1', name: 'US Central 1 (Iowa)' },
@@ -19,8 +19,8 @@ const REGIONS: RegionOption[] = [
 ];
 
 const MODELS: ModelOption[] = [
-  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
   { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
   { id: 'google/gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
   { id: 'google/gemini-2.0-pro', name: 'Gemini 2.0 Pro' },
   { id: 'google/gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
@@ -41,8 +41,8 @@ export class SettingsService {
       'GCP_PROJECT_ID',
       'rd-cmpd-prod513-psl-mate-dev',
     );
-    this.gcpRegion = this.config.get<string>('GCP_REGION', 'europe-west3');
-    this.model = this.config.get<string>('GCP_MODEL', 'gemini-2.5-flash');
+    this.gcpRegion = this.config.get<string>('GCP_REGION', 'europe-west1');
+    this.model = this.config.get<string>('GCP_MODEL', 'google/gemini-2.5-pro');
 
     this.auth = new GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],

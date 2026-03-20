@@ -1,0 +1,73 @@
+<div class="tm-overlay" (click)="close()">
+  <div class="tm-panel" (click)="$event.stopPropagation()">
+    <div class="tm-header">
+      <h2>Template Management</h2>
+      <button class="tm-close" (click)="close()">×</button>
+    </div>
+
+    <div class="tm-body">
+      <!-- Upload -->
+      <section class="tm-section">
+        <h3>Template hochladen</h3>
+        <p class="tm-hint">Lade eine .pptx oder .potx Datei hoch. Das Template wird automatisch analysiert und gelernt.</p>
+        <label class="tm-upload-btn" for="tmUpload">+ Template hochladen</label>
+        <input type="file" id="tmUpload" accept=".pptx,.potx" hidden (change)="onUpload($event)">
+      </section>
+
+      <!-- Template List -->
+      <section class="tm-section">
+        <h3>Verfügbare Templates</h3>
+
+        @if (state.templates().length === 0) {
+          <div class="tm-empty">Noch keine Templates hochgeladen.</div>
+        }
+
+        @for (t of state.templates(); track t.id) {
+          <div class="tm-item" [class.active]="state.selectedTemplateId() === t.id" (click)="selectTemplate(t.id)">
+            <div class="tm-item-info">
+              <div class="tm-item-row">
+                <span class="tm-item-name">{{ t.name }}</span>
+                @if (t.scope === 'global') {
+                  <span class="tm-badge global">Global</span>
+                } @else {
+                  <span class="tm-badge session">Session</span>
+                }
+              </div>
+              <span class="tm-item-desc">{{ t.description }}</span>
+              <span class="tm-item-layouts">{{ t.layouts.length }} Layouts</span>
+            </div>
+            @if (t.id !== 'default') {
+              <div class="tm-actions">
+                <button class="tm-action learn"
+                  title="Template lernen (KI-Analyse)"
+                  [disabled]="learning()"
+                  (click)="learn(t.id, $event)">
+                  {{ learning() ? '⏳' : '🧠' }} Lernen
+                </button>
+                <button class="tm-action scope"
+                  [title]="t.scope === 'global' ? 'Auf Session beschränken' : 'Global freigeben'"
+                  (click)="toggleScope(t.id, t.scope, $event)">
+                  {{ t.scope === 'global' ? '🔒 Session' : '🌐 Global' }}
+                </button>
+                <button class="tm-action delete"
+                  title="Template löschen"
+                  (click)="deleteTemplate(t.id, $event)">
+                  🗑️ Löschen
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Status -->
+      @if (status()) {
+        <div class="tm-status">{{ status() }}</div>
+      }
+
+      @if (learnResult()) {
+        <div class="tm-learn-result">{{ learnResult() }}</div>
+      }
+    </div>
+  </div>
+</div>

@@ -10,7 +10,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ChatService } from './chat.service';
 import { DocumentService } from './document.service';
-import { ChatResponseDto } from './chat.dto';
+import { ChatResponseDto, ClarifyResponseDto } from './chat.dto';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.md'];
@@ -22,11 +22,45 @@ export class ChatController {
     private readonly documentService: DocumentService,
   ) {}
 
+  @Post('clarify')
+  @UseInterceptors(FilesInterceptor('files', 5))
+  async clarify(
+    @Body('prompt') prompt: string,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ): Promise<ClarifyResponseDto> {
+    if (!prompt?.trim()) {
+      throw new HttpException(
+        { detail: 'Prompt darf nicht leer sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const documentTexts: string[] = [];
+      if (files?.length) {
+        for (const file of files) {
+          const text = await this.documentService.extractText(file);
+          documentTexts.push(text);
+        }
+      }
+      return await this.chatService.clarify(prompt.trim(), documentTexts);
+    } catch (error: unknown) {
+      if (error instanceof HttpException) throw error;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new HttpException(
+        { detail: `LLM-Fehler: ${message}` },
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
   @Post()
   @UseInterceptors(FilesInterceptor('files', 5))
   async chat(
     @Body('prompt') prompt: string,
     @Body('templateId') templateId?: string,
+    @Body('audience') audience?: string,
+    @Body('imageStyle') imageStyle?: string,
     @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<ChatResponseDto> {
     if (!prompt?.trim()) {
@@ -59,7 +93,7 @@ export class ChatController {
         }
       }
 
-      return await this.chatService.generate(prompt.trim(), documentTexts, templateId);
+      return await this.chatService.generate(prompt.trim(), documentTexts, templateId, audience, imageStyle);
     } catch (error: unknown) {
       if (error instanceof HttpException) throw error;
       const message = error instanceof Error ? error.message : 'Unknown error';
