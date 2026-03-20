@@ -1,13 +1,31 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ReplaySubject, Observable } from 'rxjs';
+import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+
+interface ProgressEvent {
+  step: string;
+  message: string;
+  progress?: number | null;
+  [key: string]: unknown;
+}
+
+interface ExportJob {
+  status: 'processing' | 'complete' | 'error';
+  subject: ReplaySubject<MessageEvent>;
+  buffer?: Buffer;
+  filename: string;
+  createdAt: number;
+}
 
 @Injectable()
 export class ExportService {
   private readonly logger = new Logger(ExportService.name);
   private readonly pptxServiceUrl: string;
+  private readonly jobs = new Map<string, ExportJob>();
 
   constructor(private readonly config: ConfigService) {
     this.pptxServiceUrl = this.config.get<string>(
@@ -16,8 +34,140 @@ export class ExportService {
     );
   }
 
+  async startPptxJob(markdown: string, templateId: string): Promise<string> {
+    const jobId = randomUUID();
+    const job: ExportJob = {
+      status: 'processing',
+      subject: new ReplaySubject<MessageEvent>(),
+      filename: 'presentation.pptx',
+      createdAt: Date.now(),
+    };
+    this.jobs.set(jobId, job);
+
+    this.processPptxJob(jobId, markdown, templateId).catch((err) => {
+      this.logger.error(`Job ${jobId} failed: ${err.message}`);
+      if (job.status === 'processing') {
+        job.status = 'error';
+        job.subject.next({ data: { step: 'error', message: err.message } } as MessageEvent);
+        job.subject.complete();
+      }
+    });
+
+    return jobId;
+  }
+
+  private async processPptxJob(
+    jobId: string,
+    markdown: string,
+    templateId: string,
+  ): Promise<void> {
+    const job = this.jobs.get(jobId);
+    if (!job) return;
+
+    this.logger.log(`Starting streaming PPTX generation for job ${jobId}`);
+
+    const response = await fetch(
+      `${this.pptxServiceUrl}/api/v1/generate-stream`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdown, template_id: templateId }),
+      },
+    );
+
+    if (!response.ok || !response.body) {
+      const body = await response.text().catch(() => 'unknown');
+      throw new Error(`PPTX service returned ${response.status}: ${body}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fileId: string | undefined;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop()!;
+
+      for (const part of parts) {
+        if (!part.trim()) continue;
+
+        let eventType = 'message';
+        let data = '';
+
+        for (const line of part.split('\n')) {
+          if (line.startsWith('event: ')) eventType = line.slice(7);
+          else if (line.startsWith('data: ')) data = line.slice(6);
+        }
+        if (!data) continue;
+
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          continue;
+        }
+
+        if (eventType === 'complete') {
+          fileId = parsed['fileId'] as string;
+          job.filename = (parsed['filename'] as string) || 'presentation.pptx';
+
+          const fileResponse = await fetch(
+            `${this.pptxServiceUrl}/api/v1/download/${fileId}`,
+          );
+          if (!fileResponse.ok) {
+            throw new Error('Failed to download generated file from pptx-service');
+          }
+          job.buffer = Buffer.from(await fileResponse.arrayBuffer());
+          job.status = 'complete';
+          job.subject.next({ data: parsed, type: 'complete' } as MessageEvent);
+          job.subject.complete();
+          this.logger.log(`Job ${jobId} complete: ${job.filename}`);
+        } else if (eventType === 'fail') {
+          job.status = 'error';
+          job.subject.next({ data: parsed, type: 'fail' } as MessageEvent);
+          job.subject.complete();
+          this.logger.warn(`Job ${jobId} failed: ${parsed['detail']}`);
+        } else {
+          job.subject.next({ data: parsed, type: 'progress' } as MessageEvent);
+        }
+      }
+    }
+
+    if (job.status === 'processing') {
+      job.status = 'error';
+      job.subject.next({
+        data: { step: 'error', message: 'Verbindung zum Generierungs-Service unterbrochen' },
+        type: 'fail',
+      } as MessageEvent);
+      job.subject.complete();
+    }
+  }
+
+  getJobProgress(jobId: string): Observable<MessageEvent> {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      throw new HttpException({ detail: 'Job nicht gefunden' }, HttpStatus.NOT_FOUND);
+    }
+    return job.subject.asObservable();
+  }
+
+  getJobFile(jobId: string): { buffer: Buffer; filename: string } {
+    const job = this.jobs.get(jobId);
+    if (!job || job.status !== 'complete' || !job.buffer) {
+      throw new HttpException({ detail: 'Datei nicht verfügbar' }, HttpStatus.NOT_FOUND);
+    }
+    const { buffer, filename } = job;
+    this.jobs.delete(jobId);
+    return { buffer, filename };
+  }
+
   /**
-   * Generate PPTX by proxying to the Python pptx-service.
+   * Generate PPTX by proxying to the Python pptx-service (blocking, no progress).
    */
   async generatePptx(
     markdown: string,

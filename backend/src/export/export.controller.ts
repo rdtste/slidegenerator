@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Res, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Res, Sse, HttpException, HttpStatus } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { ExportRequestDto } from './export.dto';
@@ -16,6 +17,41 @@ const EXTENSIONS: Record<string, string> = {
 @Controller('export')
 export class ExportController {
   constructor(private readonly exportService: ExportService) {}
+
+  @Post('start')
+  async startExport(@Body() dto: ExportRequestDto): Promise<{ jobId: string }> {
+    const format = dto.format ?? 'pptx';
+    const templateId = dto.templateId ?? 'default';
+
+    if (format !== 'pptx') {
+      throw new HttpException(
+        { detail: 'Streaming-Export nur für PPTX verfügbar' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const jobId = await this.exportService.startPptxJob(dto.markdown, templateId);
+    return { jobId };
+  }
+
+  @Sse('progress/:jobId')
+  progress(@Param('jobId') jobId: string): Observable<MessageEvent> {
+    return this.exportService.getJobProgress(jobId);
+  }
+
+  @Get('download/:jobId')
+  async downloadJob(
+    @Param('jobId') jobId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, filename } = this.exportService.getJobFile(jobId);
+    res.set({
+      'Content-Type': CONTENT_TYPES['pptx'],
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length.toString(),
+    });
+    res.send(buffer);
+  }
 
   @Post()
   async export(@Body() dto: ExportRequestDto, @Res() res: Response): Promise<void> {
