@@ -26,6 +26,7 @@ export class ChatController {
   @UseInterceptors(FilesInterceptor('files', 5))
   async clarify(
     @Body('prompt') prompt: string,
+    @Body('conversation') conversationJson?: string,
     @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<ClarifyResponseDto> {
     if (!prompt?.trim()) {
@@ -39,11 +40,34 @@ export class ChatController {
       const documentTexts: string[] = [];
       if (files?.length) {
         for (const file of files) {
+          const ext = '.' + (file.originalname.toLowerCase().split('.').pop() ?? '');
+          if (!ALLOWED_EXTENSIONS.includes(ext)) {
+            throw new HttpException(
+              { detail: `Nicht unterstütztes Format: ${ext}. Erlaubt: ${ALLOWED_EXTENSIONS.join(', ')}` },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+          if (file.size > MAX_FILE_SIZE) {
+            throw new HttpException(
+              { detail: `Datei "${file.originalname}" zu groß (max 20 MB)` },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
           const text = await this.documentService.extractText(file);
-          documentTexts.push(text);
+          documentTexts.push(`--- Dokument: ${file.originalname} ---\n${text}`);
         }
       }
-      return await this.chatService.clarify(prompt.trim(), documentTexts);
+
+      let previousConversation: Array<{ role: string; content: string }> = [];
+      if (conversationJson) {
+        try {
+          previousConversation = JSON.parse(conversationJson);
+        } catch {
+          // ignore malformed JSON
+        }
+      }
+
+      return await this.chatService.clarify(prompt.trim(), documentTexts, previousConversation);
     } catch (error: unknown) {
       if (error instanceof HttpException) throw error;
       const message = error instanceof Error ? error.message : 'Unknown error';

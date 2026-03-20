@@ -36,7 +36,14 @@ export class ChatResponseDto {
   slides!: SlideDto[];
 }
 
+export class ConversationMessageDto {
+  role!: string;
+  content!: string;
+}
+
 export class ClarifyResponseDto {
-  needsClarification!: boolean;
-  questions!: string;
+  readyToGenerate!: boolean;
+  message!: string;
+  conversation!: ConversationMessageDto[];
+  briefing?: string;
 }

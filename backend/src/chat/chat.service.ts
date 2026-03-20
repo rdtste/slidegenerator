@@ -29,6 +29,27 @@ DEIN ARBEITSPROZESS:
 - Denke immer visuell: Wo sinnvoll, schlage Diagramme, Vergleiche oder Gegenüberstellungen \
   in den Sprechernotizen vor.
 
+DATENINTEGRITÄT (STRIKT — KEINE AUSNAHMEN):
+- Verwende NUR tatsächliche Zahlen, Fakten und Daten aus dem bereitgestellten Dokument oder Kontext.
+- ERFINDE NIEMALS Zahlen, Statistiken, Prozentwerte oder konkrete Daten.
+- Wenn keine konkreten Zahlen vorliegen, formuliere qualitativ ("steigend", "deutlich gewachsen") \
+  statt erfundene Zahlen einzusetzen.
+- Bei Diagrammen: Verwende NUR Daten, die im Quellmaterial explizit genannt werden. \
+  Wenn keine Daten vorliegen, verwende KEIN chart-Layout — nutze stattdessen content mit Bullet Points.
+- Quellenangaben in Sprechernotizen: "Quelle: [Dokument/Seite]" bei allen Datenpunkten.
+
+DESIGN-PRINZIPIEN ("Visio" — Weltklasse-Präsentationsdesign):
+1. KLARHEIT VOR DEKORATION: Jedes Element auf der Folie muss einen Zweck haben. \
+   Alles, was nicht zur Kernaussage beiträgt, wird eliminiert.
+2. VISUELLE HIERARCHIE: Führe das Auge gezielt vom Wichtigsten zum Unwichtigsten. \
+   Titel → Hauptaussage → Details. Nutze Kürze und Kontrast.
+3. EINE IDEE PRO FOLIE: Keine kognitive Überlastung. Komplexe Themen auf \
+   mehrere, leicht verdauliche Folien aufteilen. Weniger ist mehr.
+4. MARKENINTEGRITÄT: Halte dich strikt an die Template-Vorgaben (Farben, Schriften). \
+   Konsistentes Erscheinungsbild über alle Folien.
+5. DATEN ALS GESCHICHTE: Diagramme sind visuelle Erzählungen, nicht Datendumps. \
+   Hebe die zentrale Erkenntnis hervor.
+
 FORMAT-REGELN (STRIKT — KEINE AUSNAHMEN):
 - Jede Folie beginnt mit "---" als Trenner (außer die erste Folie).
 - Die erste Folie ist IMMER eine Titelfolie mit <!-- layout: title -->.
@@ -40,18 +61,72 @@ FORMAT-REGELN (STRIKT — KEINE AUSNAHMEN):
 - Max 4-5 Bullet Points pro Folie. Kürzer ist besser.
 - Bullet Points: Maximal 1-2 Zeilen. Kernaussage, kein Fließtext.
 - Antworte NUR mit dem Markdown, keine Erklärungen oder Kommentare außerhalb.
+- Wenn eine bestimmte FOLIENANZAHL gewünscht ist (z.B. "10 Folien"), erstelle EXAKT diese Anzahl. \
+  Zähle: Titelfolie + Inhaltsfolien + Abschlussfolie = gewünschte Gesamtzahl. \
+  Generiere NIEMALS weniger Folien als angefordert.
 
-BILD-REGELN (STRIKT):
+TITEL-REGELN (STRIKT):
+- Folientitel MÜSSEN einzeilig sein — MAXIMAL 50 Zeichen inklusive Leerzeichen.
+- Formuliere als prägnante Aussage: "Kakao erreicht Europa" statt "Wie Kakao den Weg nach Europa fand und dort populär wurde".
+- Kein Doppelpunkt-Titel-Trick: NICHT "Thema: Unterthema" — stattdessen den Kern benennen.
+- Bei content/image/chart: Titel transportiert die Kernbotschaft der Folie.
+- Bei section: Titel ist das Kapitelthema in 2-4 Worten.
+
+BULLET-POINT-REGELN (STRIKT):
+- Jeder Bullet Point beginnt IMMER mit "- " (Bindestrich + Leerzeichen).
+- Bullets sind STICHPUNKTE — kurz, prägnant, aktionsorientiert.
+- KEIN Fließtext als Bullet. Maximal 80 Zeichen pro Bullet.
+- Bullets bilden eine kohärente Liste: Gleiche Satzstruktur, gleiche Länge.
+- Jeder Bullet transportiert EINE Information — nicht zwei mit Komma verbunden.
+- Bullet Points sind das HERZSTÜCK jeder content-Folie — sie MÜSSEN vorhanden sein.
+
+BILD-REGELN (STRIKT — KEINE AUSNAHMEN):
 - Bilder NUR auf Folien mit <!-- layout: image --> verwenden.
 - Auf image-Folien: GENAU EIN Bild pro Folie mit der Syntax: ![Beschreibung](placeholder)
-- Das Bild steht DIREKT unter dem Titel, OHNE Bullet Points.
+- Das Bild steht DIREKT unter dem Titel.
+- NACH dem Bild MÜSSEN IMMER 2-4 Bullet Points stehen — das ist PFLICHT, KEINE Option.
+- Eine image-Folie OHNE Bullet Points ist UNGÜLTIG. Bullet Points auf Bildfolien transportieren \
+  die Kernaussagen, die das Bild unterstützt. "Klarheit vor Dekoration": Jedes Element hat einen Zweck.
 - Die Bildbeschreibung im Alt-Text muss konkret und visuell sein.
 - NIEMALS ![...](placeholder) auf content-, two_column- oder anderen Folien verwenden.
-- Maximale Struktur einer Bildfolie:
+- PFLICHT-Struktur einer Bildfolie (EXAKT diese Reihenfolge):
   <!-- layout: image -->
   # Folientitel
   ![Bildbeschreibung](placeholder)
+  - Kernaussage zum Bild
+  - Ergänzende Information
+  - Weiterer relevanter Punkt
   <!-- notes: Kontext zum Bild -->
+
+LAYOUT-VERTEILUNG (STRIKT — WICHTIG!):
+- Eine gute Präsentation verwendet VERSCHIEDENE Layout-Typen für Abwechslung.
+- NIEMALS mehr als 2 aufeinanderfolgende Folien mit demselben Layout-Typ.
+- Empfohlene Verteilung für eine 10-Folien-Präsentation:
+  * 1x title (erste Folie, immer)
+  * 1-2x section (Kapitelübergänge)
+  * 3-4x content (Hauptinhalte mit Bullet Points — DAS WICHTIGSTE)
+  * 1-2x image (visuelle Highlights)
+  * 0-1x chart (Datenvisualisierung, wenn passend)
+  * 0-1x two_column (Vergleiche)
+  * 1x closing (letzte Folie, immer)
+- Der Großteil der Folien MUSS "content" sein — dort stehen die eigentlichen Informationen.
+- "image" sparsam einsetzen: maximal 2-3 Bildfolien pro Präsentation.
+
+CLOSING-FOLIE (STRIKT):
+- Die letzte Folie ist IMMER eine Abschlussfolie mit <!-- layout: closing -->.
+- Die Closing-Folie MUSS substanziellen Inhalt haben — NIEMALS leer lassen.
+- Verwende 3-5 Bullet Points mit konkreten Handlungsempfehlungen, Fazit-Punkten oder \
+  "Nächste Schritte".
+- Die Closing-Folie fasst die Kernbotschaften der Präsentation zusammen und gibt dem Publikum \
+  klare Takeaways.
+- Maximale Struktur einer Closing-Folie:
+  <!-- layout: closing -->
+  # Fazit & Empfehlungen
+  - Kernbotschaft 1 zusammengefasst
+  - Konkreter nächster Schritt
+  - Handlungsempfehlung
+  - Call to Action
+  <!-- notes: Zusammenfassende Worte und Überleitung zur Diskussion -->
 
 DIAGRAMM-REGELN:
 - Diagramme NUR auf Folien mit <!-- layout: chart --> verwenden.
@@ -119,7 +194,12 @@ Die EBITDA-Marge profitiert von Skaleneffekten in der Cloud-Infrastruktur. Detai
 
 <!-- layout: closing -->
 # Nächste Schritte
-## Fragen & Diskussion
+- Pilotprojekt im Q2 starten
+- Ressourcen für Cloud-Migration freigeben
+- Monatliches Reporting etablieren
+- Strategie-Review im Juli ansetzen
+
+<!-- notes: Zusammenfassung der wichtigsten Handlungsfelder. Nächstes Meeting: 15. April für Detailplanung. -->
 
 ---
 
@@ -127,6 +207,9 @@ Die EBITDA-Marge profitiert von Skaleneffekten in der Cloud-Infrastruktur. Detai
 # Das Team hinter der Transformation
 
 ![Gruppenfoto des Projektteams in einem modernen Büro mit Whiteboard im Hintergrund](placeholder)
+- 25 Expert:innen aus 6 Fachbereichen
+- Agile Arbeitsweise mit 2-Wochen-Sprints
+- Standorte: Köln, Berlin, Remote
 
 <!-- notes: Foto des erweiterten Projektteams. Aufgenommen beim letzten Sprint Review im März 2026. -->
 
@@ -168,30 +251,130 @@ const AUDIENCE_PROMPTS: Record<string, string> = {
 
 const VALID_LAYOUTS = new Set(['title', 'section', 'content', 'two_column', 'image', 'chart', 'closing']);
 
+const MODERATOR_SYSTEM_PROMPT = `Du bist ein erfahrener Präsentationsberater. Du führst ein kurzes, \
+effizientes Beratungsgespräch, bevor eine Präsentation generiert wird.
+
+DEIN ZIEL:
+Verstehe genau, was der Nutzer braucht, und sammle alle nötigen Informationen für eine exzellente Präsentation.
+
+DEIN VORGEHEN:
+1. Analysiere die Anfrage und ggf. angehängte Dokumente.
+2. Wenn die Anfrage SPEZIFISCH ist (Thema + Fokus + Folienanzahl klar):
+   - Schlage eine konkrete Gliederung vor (nummerierte Liste: Folientitel + Folientyp).
+   - Frage ob der Nutzer damit einverstanden ist oder Anpassungen möchte.
+3. Wenn die Anfrage VAGE ist (z.B. "Slides zu Schokolade"):
+   - Stelle PRO NACHRICHT nur EINE gezielte Frage.
+   - Reihenfolge: 1. Fokus/Schwerpunkt → 2. Folienanzahl + Medien → 3. Gliederungsvorschlag
+   - Biete IMMER konkrete Optionen als Bullet-Liste an.
+4. Bei DOKUMENTEN als Eingabe:
+   - Fasse die 3-4 Hauptthemen des Dokuments als Bullet-Liste zusammen.
+   - Frage welcher Aspekt im Fokus stehen soll.
+
+WANN BIST DU FERTIG:
+- Wenn genug Kontext vorhanden ist UND der Nutzer die Richtung bestätigt hat.
+- Oder wenn der Nutzer explizit sagt, dass du loslegen sollst ("mach", "los", "passt", "ja", "ok", \
+  "einverstanden", "genau so", "starte", "bitte generieren", "go" etc.).
+- SPÄTESTENS nach 3 Gesprächsrunden — dann fasse zusammen und starte.
+
+WENN DU FERTIG BIST:
+Beende deine letzte Nachricht mit einer kurzen Zusammenfassung ("Perfekt! Ich erstelle jetzt ...").
+Danach füge auf einer eigenen Zeile ein:
+===READY===
+Danach auf den folgenden Zeilen der vollständige Generierungsauftrag, der ALLE gesammelten \
+Informationen enthält. Dieser Auftrag wird direkt an die KI weitergegeben, die daraus Folien erstellt.
+
+Der Generierungsauftrag MUSS enthalten:
+- Thema und Ziel der Präsentation
+- EXAKTE gewünschte Folienanzahl (z.B. "Erstelle exakt 10 Folien")
+- Kernbotschaften und Schwerpunkte
+- Gliederung (falls besprochen) mit Folientypen
+- Besondere Wünsche (Daten, Diagramme, Bilder, Vergleiche)
+- Tonfall und Zielgruppe (falls besprochen)
+
+Format des Auftrags: Fließtext, klar strukturiert, direkt als Prompt verwendbar.
+
+FORMATIERUNG (STRIKT — JEDE Nachricht muss so aussehen):
+- Halte deine Nachrichten kurz und scanbar.
+- Starte mit einem kurzen Satz (max. 1-2 Zeilen) als Kontext.
+- JEDER Bullet-Punkt MUSS mit einem passenden Emoji beginnen, gefolgt von einem **fetten Label** und einem Gedankenstrich.
+- Format: "- EMOJI **Label** — Kurze Beschreibung"
+- Pro Nachricht NUR EINE Frage stellen. Nicht mehrere Fragen auf einmal.
+- Die Frage steht klar am Ende, nach den Bullet-Optionen.
+- KEIN Fließtext-Absatz mit eingebetteten Fragen — immer: kurzer Einleitungssatz → Bullets → Frage.
+- Auch Gliederungsvorschläge mit Emojis und klarer Struktur formatieren.
+
+=== BEISPIEL: Frage nach Schwerpunkt ===
+"Schokolade ist ein tolles Thema! Welchen Schwerpunkt soll die Präsentation haben?
+
+- 🍫 **Geschichte** — Von den Maya bis zur modernen Tafel
+- 🏭 **Herstellung** — Vom Kakao zur fertigen Schokolade
+- 📊 **Markt & Trends** — Konsumdaten, Fair Trade, Zukunftstrends
+- 🧪 **Gesundheit** — Wirkung auf Körper und Wohlbefinden"
+
+=== BEISPIEL: Frage nach Folienanzahl ===
+"Verstanden, der Fokus liegt auf Markt & Trends! Wie viele Folien sollen es werden?
+
+- ⚡ **Kurz & knackig** — 5-7 Folien
+- 📋 **Standard** — 8-10 Folien
+- 📚 **Ausführlich** — 12-15 Folien"
+
+=== BEISPIEL: Gliederungsvorschlag (wird SEPARAT nach Folienanzahl gefragt) ===
+"Super, 10 Folien mit Bildern und Diagrammen! Hier mein Vorschlag:
+
+- 🎯 **Folie 1** — Titel & Einführung
+- 🌍 **Folie 2** — Der globale Schokoladenmarkt (Diagramm)
+- 📈 **Folie 3** — Wachstumstreiber & Dynamik
+- 🛒 **Folie 4** — Aktuelle Konsumtrends (Bild)
+- 🌱 **Folie 5** — Nachhaltigkeit & Fair Trade (Bild)
+- ⚠️ **Folie 6** — Herausforderungen der Branche (Diagramm)
+- 🔬 **Folie 7** — Innovationen & neue Produkte (Bild)
+- 📊 **Folie 8** — Marktprognose 2030 (Diagramm)
+- 💡 **Folie 9** — Chancen & Empfehlungen
+- 🏁 **Folie 10** — Fazit & Ausblick
+
+Passt diese Gliederung für dich?"
+
+=== BEISPIELE FÜR SCHLECHTE Nachrichten (VERMEIDE DAS) ===
+SCHLECHT: "Soll der Fokus eher auf der Geschichte, Herstellung oder den Trends liegen? Wie viele Folien? Sollen Bilder rein?"
+→ WARUM SCHLECHT: Drei Fragen auf einmal, keine Bullets, keine Emojis.
+
+SCHLECHT: "1. Titel (Titel, Kurzeinleitung) 2. Der globale Markt (Übersicht, Wachstum, Diagramm) 3. Markttreiber (Konsumverhalten)"
+→ WARUM SCHLECHT: Gliederung ohne Emojis, als Fließtext, Klammern statt Gedankenstriche.
+
+REGELN:
+- Sei freundlich, konkret und effizient — kein unnötiges Geplänkel.
+- Antworte IMMER auf Deutsch.
+- NUR EINE Frage pro Nachricht. Niemals mehrere Fragen bündeln.
+- JEDE Bullet-Liste braucht Emojis + fette Labels — KEINE Ausnahme, auch nicht bei Gliederungen.
+- Generiere NIEMALS Markdown-Folien — du berätst nur!
+- Wenn der Nutzer genug Kontext gibt, komm schnell zur Gliederung.
+- Beende JEDE Nachricht (außer der letzten mit ===READY===) mit genau einer direkten Frage.
+`;
+
+
 const IMAGE_STYLE_PROMPTS: Record<string, string> = {
   photo: `BILDSTIL: Fotografie
-- Verwende den Layout-Typ "image" für Bildfolien.
+- Verwende den Layout-Typ "image" für Bildfolien — aber MAXIMAL 2-3 pro Präsentation.
+- Jede image-Folie MUSS zusätzlich 2-4 Bullet Points unter dem Bild enthalten.
 - Beschreibe realistische, professionelle Fotos als Bildbeschreibung.
 - Setze Bildbeschreibungen als: ![Detaillierte Beschreibung des gewünschten Fotos](placeholder)
-- Mindestens 2-3 Bildfolien pro Präsentation einbauen, um visuelle Abwechslung zu schaffen.
 - Bildbeschreibungen müssen konkret und visuell sein, z.B.: "Modernes Büro mit Team am Whiteboard bei einem Workshop"
-- Nutze Bilder als emotionale Verstärker für die Kernbotschaft der jeweiligen Folie.`,
+- Der Großteil der Folien MUSS "content" sein — Bilder sind visuelle Highlights, nicht der Standardtyp.`,
 
   illustration: `BILDSTIL: Illustration & Grafiken
-- Verwende den Layout-Typ "image" für Bildfolien.
+- Verwende den Layout-Typ "image" für Bildfolien — aber MAXIMAL 2-3 pro Präsentation.
+- Jede image-Folie MUSS zusätzlich 2-4 Bullet Points unter dem Bild enthalten.
 - Beschreibe Infografiken, Diagramme, Illustrationen und schematische Darstellungen.
 - Setze Bildbeschreibungen als: ![Detaillierte Beschreibung der Illustration](placeholder)
-- Mindestens 2-3 Bildfolien pro Präsentation einbauen.
 - Bevorzuge erklärende Grafiken: Flowcharts, Prozessdiagramme, Vergleichsmatrizen, Zeitachsen.
-- Bildbeschreibungen müssen die Art der Grafik und ihren Inhalt klar benennen, z.B.: "Flowchart: Drei-Schritte-Prozess von Anfrage über Validierung bis zur Freigabe"`,
+- Der Großteil der Folien MUSS "content" sein — Bilder ergänzen den Inhalt.`,
 
   minimal: `BILDSTIL: Minimal / Icons
-- Verwende den Layout-Typ "image" sparsam, nur wenn ein Icon oder Symbol die Aussage unterstützt.
+- Verwende den Layout-Typ "image" sparsam — maximal 1-2 pro Präsentation.
+- Jede image-Folie MUSS zusätzlich 2-4 Bullet Points unter dem Bild enthalten.
 - Beschreibe abstrakte Formen, Icons oder symbolische Darstellungen.
 - Setze Bildbeschreibungen als: ![Beschreibung des Icons oder Symbols](placeholder)
-- 1-2 Bildfolien pro Präsentation maximal.
-- Bevorzuge einfache, flache Icons und geometrische Formen.
-- Bildbeschreibungen kurz halten, z.B.: "Zahnrad-Icon symbolisiert Automatisierung"`,
+- Der Großteil der Folien MUSS "content" sein — Bilder sind Akzente.`,
 
   none: `BILDSTIL: Keine Bilder
 - Verwende NIEMALS den Layout-Typ "image".
@@ -221,57 +404,79 @@ export class ChatService {
   async clarify(
     prompt: string,
     documentTexts: string[] = [],
+    previousConversation: Array<{ role: string; content: string }> = [],
   ): Promise<ClarifyResponseDto> {
-    this.logger.log(`Clarify check for: ${prompt.slice(0, 80)}...`);
+    this.logger.log(`Clarify conversation (${previousConversation.length} prior messages): ${prompt.slice(0, 80)}...`);
 
-    const hasDocuments = documentTexts.length > 0;
+    // Build the current user message, including document text if present
+    let currentUserMessage = prompt;
+    if (documentTexts.length > 0) {
+      currentUserMessage = `${prompt}\n\n---\nANGEHÄNGTE DOKUMENTE:\n${documentTexts.join('\n\n')}`;
+    }
 
-    const systemPrompt = `Du bist ein Experte für Präsentationsdesign. Deine Aufgabe: Bewerte, ob der \
-folgende Prompt EINDEUTIG GENUG ist, um eine professionelle Präsentation zu erstellen.
-
-WICHTIG — Bevorzuge KLAR:
-- Frage NUR, wenn das Thema wirklich mehrdeutig ist oder ein Fachbegriff völlig unterschiedliche \
-  Bedeutungen haben könnte (z.B. "KNX" könnte Bustechnologie oder etwas anderes sein).
-- Frage NICHT nach Zielgruppe, Umfang oder Detailtiefe — das sind Standardentscheidungen, \
-  die du als Experte selbst treffen kannst.
-- Wenn der Nutzer ein konkretes Thema mit erkennbarem Fokus nennt, ist das KLAR.
-- Beispiele für KLAR: "Präsentation über unsere Q1-Ergebnisse", "10 Folien über Cloud Migration", \
-  "Vergleich React vs Angular für unser Team"
-- Beispiele für Rückfragen: "Präsentation über KNX" (mehrdeutig), "Präsentation über das Projekt" \
-  (welches Projekt?), "Etwas über Sicherheit" (IT-Sicherheit? Arbeitssicherheit?)
-
-${hasDocuments ? 'HINWEIS: Der Nutzer hat Dokumente angehängt. Wenn Dokumente vorhanden sind, antworte IMMER mit KLAR — die Dokumente liefern den nötigen Kontext.' : ''}
-
-ANTWORT-FORMAT:
-- Wenn der Prompt klar genug ist: Antworte NUR mit dem Wort KLAR
-- Wenn das Thema wirklich unklar ist: Stelle 2-3 kurze Fragen mit "- ". Erkläre kurz, warum du fragst.`;
+    // Build the full LLM conversation
+    const llmMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: MODERATOR_SYSTEM_PROMPT },
+      ...previousConversation.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+      { role: 'user', content: currentUserMessage },
+    ];
 
     const client = await this.createClient();
 
     try {
       const response = await client.chat.completions.create({
         model: this.settings.getModel(),
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.3,
+        messages: llmMessages,
+        temperature: 0.5,
         max_tokens: 4096,
       });
 
-      const choice = response.choices[0];
-      const answer = choice?.message?.content?.trim() ?? '';
+      const answer = response.choices[0]?.message?.content?.trim() ?? '';
 
-      if (!answer || answer.toUpperCase().startsWith('KLAR')) {
-        this.logger.log('Clarify: prompt is clear, no questions needed');
-        return { needsClarification: false, questions: '' };
+      // Build updated conversation (without system message)
+      const updatedConversation = [
+        ...previousConversation,
+        { role: 'user', content: currentUserMessage },
+      ];
+
+      // Check for READY marker
+      const readyIndex = answer.indexOf('===READY===');
+
+      if (readyIndex >= 0) {
+        const message = answer.slice(0, readyIndex).trim();
+        const briefing = answer.slice(readyIndex + '===READY==='.length).trim();
+
+        updatedConversation.push({ role: 'assistant', content: message });
+        this.logger.log('Clarify: conversation complete, briefing ready');
+
+        return {
+          readyToGenerate: true,
+          message,
+          briefing,
+          conversation: updatedConversation,
+        };
       }
 
-      this.logger.log('Clarify: questions generated');
-      return { needsClarification: true, questions: answer };
+      updatedConversation.push({ role: 'assistant', content: answer });
+      this.logger.log('Clarify: continuing conversation');
+
+      return {
+        readyToGenerate: false,
+        message: answer,
+        conversation: updatedConversation,
+      };
     } catch (err) {
       this.logger.warn(`Clarify LLM call failed: ${err}`);
-      return { needsClarification: false, questions: '' };
+      // Fallback: skip moderation, let the user generate directly
+      return {
+        readyToGenerate: true,
+        message: 'Ich starte direkt mit der Erstellung.',
+        briefing: prompt,
+        conversation: previousConversation,
+      };
     }
   }
 
@@ -312,7 +517,7 @@ ${documentTexts.join('\n\n')}`;
           { role: 'user', content: userContent },
         ],
         temperature: 0.5,
-        max_tokens: 8192,
+        max_tokens: 16384,
       });
     } catch (err: unknown) {
       const status = (err as { status?: number }).status;
@@ -484,16 +689,18 @@ KORREKTUR-REGELN:
 
     const layoutLines: string[] = [];
     for (const [type, layouts] of byType) {
-      if (layouts.length === 1) {
-        const m = layouts[0];
+      for (const m of layouts) {
         const constraintStr = this.formatConstraints(m);
-        layoutLines.push(`- ${type} ("${m.layout_name}"): ${m.description}${constraintStr}\n  → ${m.recommended_usage}`);
-      } else {
-        // Multiple layouts for same type — list them
-        for (const m of layouts) {
-          const constraintStr = this.formatConstraints(m);
-          layoutLines.push(`- ${type} ("${m.layout_name}"): ${m.description}${constraintStr}\n  → ${m.recommended_usage}`);
+        let line = `- ${type} ("${m.layout_name}"): ${m.description}${constraintStr}`;
+        if (m.spatial_description) {
+          line += `\n  Aufbau: ${m.spatial_description}`;
         }
+        if (m.generation_rules) {
+          line += `\n  REGELN: ${m.generation_rules}`;
+        } else {
+          line += `\n  → ${m.recommended_usage}`;
+        }
+        layoutLines.push(line);
       }
     }
 
@@ -534,6 +741,14 @@ ${chartBlock}
 
 DESIGN-RICHTLINIEN:
 ${profile.guidelines}
+
+DESIGN-QUALITÄTSREGELN (aus Template-Analyse — STRIKT EINHALTEN):
+${profile.design_rules?.title_rules ? `- TITEL: ${profile.design_rules.title_rules}` : '- TITEL: Max. 50 Zeichen, einzeilig, als Aussage formuliert.'}
+${profile.design_rules?.bullet_rules ? `- BULLETS: ${profile.design_rules.bullet_rules}` : '- BULLETS: 3-5 Stichpunkte pro Folie, max. 80 Zeichen pro Punkt. Aufzählungszeichen verwenden.'}
+${profile.design_rules?.image_rules ? `- BILDER: ${profile.design_rules.image_rules}` : '- BILDER: Nur in PICTURE-Platzhaltern. Kein Text-Overlap.'}
+${profile.design_rules?.typography_rules ? `- TYPOGRAFIE: ${profile.design_rules.typography_rules}` : ''}
+${profile.design_rules?.spacing_rules ? `- LEERRAUM: ${profile.design_rules.spacing_rules}` : '- LEERRAUM: Keine Überlappungen. Ränder einhalten.'}
+${profile.design_rules?.color_rules ? `- FARBEN: ${profile.design_rules.color_rules}` : '- FARBEN: Hoher Kontrast für Lesbarkeit.'}
 
 REGELN FÜR TEXTLÄNGE:
 - Überschreite NIEMALS die angegebenen maximalen Bullet-Anzahlen und Zeichenlimits.
@@ -868,7 +1083,17 @@ REGELN:
       .split(/^\s*---\s*$/m)
       .filter((s) => s.trim());
 
-    return rawSlides.map((raw) => this.parseSlide(raw.trim())).filter(Boolean) as SlideDto[];
+    const slides = rawSlides.map((raw) => this.parseSlide(raw.trim())).filter(Boolean) as SlideDto[];
+
+    for (const slide of slides) {
+      if (slide.layout === 'image' && slide.bullets.length === 0) {
+        this.logger.warn(
+          `Image slide "${slide.title}" has no bullet points — violates "Klarheit vor Dekoration"`,
+        );
+      }
+    }
+
+    return slides;
   }
 
   private parseSlide(raw: string): SlideDto | null {
