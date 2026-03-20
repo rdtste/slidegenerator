@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ChatResponse, ClarifyResponse, TemplateInfo, LearnResult, LlmSettings } from '../models';
+import { ChatResponse, ClarifyResponse, TemplateInfo, TemplateProfile, LearnResult, LlmSettings } from '../models';
 import { ChatState } from './chat';
 
 @Injectable({ providedIn: 'root' })
@@ -16,9 +16,16 @@ export class ApiService {
     return new HttpHeaders({ 'x-session-id': this.state.sessionId });
   }
 
-  clarify(prompt: string, files?: File[]): Observable<ClarifyResponse> {
+  clarify(
+    prompt: string,
+    files?: File[],
+    conversation?: Array<{ role: string; content: string }>,
+  ): Observable<ClarifyResponse> {
     const formData = new FormData();
     formData.append('prompt', prompt);
+    if (conversation?.length) {
+      formData.append('conversation', JSON.stringify(conversation));
+    }
     if (files?.length) {
       for (const file of files) {
         formData.append('files', file);
@@ -57,10 +64,10 @@ export class ApiService {
     });
   }
 
-  uploadTemplate(file: File): Observable<TemplateInfo> {
+  uploadTemplate(file: File): Observable<TemplateInfo & { learned: boolean; profileSummary?: { layouts_classified: number; supported_types: string[]; design_personality: string } }> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<TemplateInfo>(`${this.baseUrl}/templates`, formData, {
+    return this.http.post<TemplateInfo & { learned: boolean; profileSummary?: { layouts_classified: number; supported_types: string[]; design_personality: string } }>(`${this.baseUrl}/templates`, formData, {
       headers: this.sessionHeaders(),
     });
   }
@@ -77,11 +84,32 @@ export class ApiService {
     return this.http.post<LearnResult>(`${this.baseUrl}/templates/${id}/learn`, {});
   }
 
+  getTemplateProfile(id: string): Observable<TemplateProfile> {
+    return this.http.get<TemplateProfile>(`${this.baseUrl}/templates/${id}/profile`);
+  }
+
   exportPresentation(markdown: string, templateId: string, format: string): Observable<HttpResponse<Blob>> {
     return this.http.post(`${this.baseUrl}/export`,
       { markdown, templateId, format },
       { responseType: 'blob', observe: 'response' },
     );
+  }
+
+  startExport(markdown: string, templateId: string, format: string): Observable<{ jobId: string }> {
+    return this.http.post<{ jobId: string }>(`${this.baseUrl}/export/start`,
+      { markdown, templateId, format },
+    );
+  }
+
+  downloadExport(jobId: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}/export/download/${encodeURIComponent(jobId)}`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
+  getExportProgressUrl(jobId: string): string {
+    return `${this.baseUrl}/export/progress/${encodeURIComponent(jobId)}`;
   }
 
   getSettings(): Observable<LlmSettings> {

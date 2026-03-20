@@ -32,14 +32,27 @@ export class TemplateManagement implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    this.status.set('Template wird hochgeladen...');
+    this.status.set('Template wird hochgeladen und analysiert…');
+    this.learning.set(true);
     this.api.uploadTemplate(file).subscribe({
-      next: (template) => {
-        this.status.set(`"${template.name}" hochgeladen. Wird automatisch gelernt...`);
+      next: (result) => {
+        this.learning.set(false);
+        if (result.learned) {
+          this.status.set(`✅ "${result.name}" hochgeladen und vollständig analysiert.`);
+          if (result.profileSummary) {
+            this.learnResult.set(
+              `${result.profileSummary.layouts_classified} Layouts klassifiziert. ` +
+              `Typen: ${result.profileSummary.supported_types.join(', ')}`,
+            );
+          }
+        } else {
+          this.status.set(`"${result.name}" hochgeladen. Analyse konnte nicht abgeschlossen werden.`);
+        }
         this.loadTemplates();
-        this.state.selectedTemplateId.set(template.id);
+        this.state.selectedTemplateId.set(result.id);
       },
       error: (err) => {
+        this.learning.set(false);
         this.status.set(`Upload-Fehler: ${err.error?.detail ?? err.message}`);
       },
     });

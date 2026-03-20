@@ -15,6 +15,29 @@
     </button>
   </div>
 
+  @if (exporting()) {
+    <div class="export-progress">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" [style.width.%]="exportProgress()"></div>
+      </div>
+      <div class="progress-message">{{ exportMessage() }}</div>
+      <div class="progress-log">
+        @for (entry of progressEntries(); track $index) {
+          <div class="progress-entry" [class.done]="entry.status === 'done'" [class.active]="entry.status === 'active'">
+            <span class="entry-icon">
+              @if (entry.status === 'done') { ✓ }
+              @else if (entry.status === 'active') {
+                <span class="entry-spinner"></span>
+              }
+              @else { {{ entry.icon }} }
+            </span>
+            <span class="entry-label">{{ entry.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
   <div class="status">{{ exportStatus() }}</div>
 
   <div class="slide-list">

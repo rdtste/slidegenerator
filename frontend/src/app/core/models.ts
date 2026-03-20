@@ -16,8 +16,10 @@ export interface ChatResponse {
 }
 
 export interface ClarifyResponse {
-  needsClarification: boolean;
-  questions: string;
+  readyToGenerate: boolean;
+  message: string;
+  conversation: Array<{ role: string; content: string }>;
+  briefing?: string;
 }
 
 export type TemplateScope = 'global' | 'session';
@@ -58,4 +60,51 @@ export interface LlmSettings {
 export interface SelectOption {
   id: string;
   name: string;
+}
+
+export interface TemplateColorDna {
+  primary: string;
+  accent1: string;
+  accent2: string;
+  accent3: string;
+  accent4: string;
+  accent5: string;
+  accent6: string;
+  background: string;
+  text: string;
+  heading: string;
+  chart_colors: string[];
+}
+
+export interface TemplateTypographyDna {
+  heading_font: string;
+  body_font: string;
+  heading_sizes_pt: number[];
+  body_sizes_pt: number[];
+}
+
+export interface TemplateLayoutCatalogEntry {
+  layout_index: number;
+  layout_name: string;
+  mapped_type: string;
+  description: string;
+  recommended_usage: string;
+  max_bullets: number;
+  max_chars_per_bullet: number;
+  title_max_chars: number;
+}
+
+export interface TemplateProfile {
+  template_id: string;
+  template_name: string;
+  description: string;
+  design_personality: string;
+  slide_width_cm: number;
+  slide_height_cm: number;
+  color_dna: TemplateColorDna;
+  typography_dna: TemplateTypographyDna;
+  layout_catalog: TemplateLayoutCatalogEntry[];
+  supported_layout_types: string[];
+  guidelines: string;
+  learned_at: string;
 }

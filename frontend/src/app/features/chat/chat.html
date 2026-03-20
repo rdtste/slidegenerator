@@ -1,20 +1,20 @@
 <div class="chat-panel">
   <div class="chat-messages">
     @for (msg of state.messages(); track $index) {
-      <div class="message" [class]="msg.role" [class.clarification]="clarifying() && msg.role === 'assistant' && $last">
+      <div class="message" [class]="msg.role" [class.clarification]="conversing() && msg.role === 'assistant' && $last">
         {{ msg.content }}
       </div>
     }
     @if (state.loading()) {
       <div class="message assistant loading">
-        {{ clarifying() ? 'Prüfe Prompt...' : 'Generiere Folien...' }}
+        {{ conversing() ? 'Einen Moment...' : 'Generiere Folien...' }}
       </div>
     }
   </div>
 
-  @if (clarifying() && !state.loading()) {
+  @if (conversing() && !state.loading()) {
     <div class="clarify-actions">
-      <button class="skip-btn" (click)="skipClarification()">Überspringen — direkt generieren</button>
+      <button class="skip-btn" (click)="skipConversation()">Überspringen — direkt generieren</button>
     </div>
   }
 
@@ -30,7 +30,7 @@
       </div>
     }
     <div class="input-row">
-      @if (!clarifying()) {
+      @if (!conversing()) {
         <label class="attach-btn" for="chatFileUpload" title="Dokument anhängen (PDF, DOCX, TXT)">
           📎
         </label>
@@ -38,17 +38,17 @@
       }
       <textarea
         [(ngModel)]="prompt"
-        [placeholder]="clarifying() ? 'Beantworte die Rückfragen...' : 'Beschreibe deine Präsentation...'"
+        [placeholder]="conversing() ? 'Deine Antwort...' : 'Beschreibe deine Präsentation...'"
         rows="3"
         (keydown)="onKeydown($event)"
       ></textarea>
       <button (click)="send()" [disabled]="state.loading() || !prompt().trim()">
         @if (state.loading()) {
           Generiere...
-        } @else if (clarifying()) {
+        } @else if (conversing()) {
           Antworten
         } @else {
-          Generieren
+          Senden
         }
       </button>
     </div>

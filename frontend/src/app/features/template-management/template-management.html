@@ -9,9 +9,16 @@
       <!-- Upload -->
       <section class="tm-section">
         <h3>Template hochladen</h3>
-        <p class="tm-hint">Lade eine .pptx oder .potx Datei hoch. Das Template wird automatisch analysiert und gelernt.</p>
-        <label class="tm-upload-btn" for="tmUpload">+ Template hochladen</label>
-        <input type="file" id="tmUpload" accept=".pptx,.potx" hidden (change)="onUpload($event)">
+        <p class="tm-hint">Lade eine .pptx oder .potx Datei hoch. Das Template wird sofort vollständig analysiert — Farben, Schriften, Layouts und Design-Persönlichkeit.</p>
+        @if (learning()) {
+          <div class="tm-learning-progress">
+            <div class="tm-learning-spinner"></div>
+            <span>Template wird analysiert — Farben, Layouts & Design werden gelernt…</span>
+          </div>
+        } @else {
+          <label class="tm-upload-btn" for="tmUpload">+ Template hochladen</label>
+          <input type="file" id="tmUpload" accept=".pptx,.potx" hidden (change)="onUpload($event)">
+        }
       </section>
 
       <!-- Template List -->

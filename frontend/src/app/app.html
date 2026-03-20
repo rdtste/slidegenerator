@@ -30,7 +30,8 @@
     <!-- Step 1: Einrichten -->
     @if (state.currentStep() === 1) {
       <div class="step-content setup-step">
-        <div class="setup-inner">
+        <div class="setup-with-preview">
+          <div class="setup-inner">
           <section class="setup-section">
             <h3>Folienmaster wählen</h3>
             <div class="template-row">
@@ -80,6 +81,98 @@
             <div></div>
             <button class="btn-next" (click)="goToStep(2)">Weiter: Erstellen →</button>
           </div>
+        </div>
+
+        <!-- Template Sneak Preview -->
+        <aside class="template-preview-aside" [class.visible]="state.selectedTemplateId() !== 'default'">
+          @if (templatePreviewLoading()) {
+            <div class="preview-loading">
+              <div class="preview-spinner"></div>
+              <span>Lade Vorschau...</span>
+            </div>
+          } @else if (templateProfile(); as profile) {
+            <!-- Mini slide mockup with real colors -->
+            <div class="slide-mockup" [style.background]="profile.color_dna.background">
+              <div class="mockup-title-bar" [style.background]="profile.color_dna.primary"></div>
+              <div class="mockup-content">
+                <div class="mockup-heading" [style.color]="profile.color_dna.heading"
+                     [style.font-family]="profile.typography_dna.heading_font">Beispielpräsentation</div>
+                <div class="mockup-bullets">
+                  <div class="mockup-bullet">
+                    <span class="mockup-bullet-dot" [style.background]="profile.color_dna.accent1"></span>
+                    <span class="mockup-bullet-line" [style.background]="profile.color_dna.text + '30'"></span>
+                  </div>
+                  <div class="mockup-bullet">
+                    <span class="mockup-bullet-dot" [style.background]="profile.color_dna.accent2"></span>
+                    <span class="mockup-bullet-line short" [style.background]="profile.color_dna.text + '30'"></span>
+                  </div>
+                  <div class="mockup-bullet">
+                    <span class="mockup-bullet-dot" [style.background]="profile.color_dna.accent1"></span>
+                    <span class="mockup-bullet-line" [style.background]="profile.color_dna.text + '30'"></span>
+                  </div>
+                </div>
+                <div class="mockup-chart-area">
+                  @for (color of profile.color_dna.chart_colors.slice(0, 4); track $index) {
+                    <div class="mockup-bar" [style.background]="color"
+                         [style.height.%]="[70, 90, 55, 80][$index]"></div>
+                  }
+                </div>
+              </div>
+              <div class="mockup-footer" [style.background]="profile.color_dna.accent3 + '15'"></div>
+            </div>
+
+            <!-- Color palette -->
+            <div class="preview-section">
+              <span class="preview-section-label">Farbpalette</span>
+              <div class="color-palette">
+                <div class="color-swatch primary" [style.background]="profile.color_dna.primary" [title]="profile.color_dna.primary"></div>
+                <div class="color-swatch" [style.background]="profile.color_dna.accent2" [title]="profile.color_dna.accent2"></div>
+                <div class="color-swatch" [style.background]="profile.color_dna.accent3" [title]="profile.color_dna.accent3"></div>
+                <div class="color-swatch" [style.background]="profile.color_dna.heading" [title]="'Heading: ' + profile.color_dna.heading"></div>
+                <div class="color-swatch" [style.background]="profile.color_dna.background"
+                     [title]="'Hintergrund: ' + profile.color_dna.background"
+                     style="border: 1px solid var(--border)"></div>
+              </div>
+            </div>
+
+            <!-- Typography -->
+            <div class="preview-section">
+              <span class="preview-section-label">Typografie</span>
+              <div class="typo-preview">
+                <span class="typo-heading" [style.font-family]="profile.typography_dna.heading_font"
+                      [style.color]="profile.color_dna.heading">
+                  {{ profile.typography_dna.heading_font }}
+                </span>
+                <span class="typo-body" [style.font-family]="profile.typography_dna.body_font"
+                      [style.color]="profile.color_dna.text">
+                  {{ profile.typography_dna.body_font }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Supported layout types -->
+            <div class="preview-section">
+              <span class="preview-section-label">Layouts</span>
+              <div class="preview-layouts">
+                @for (type of profile.supported_layout_types; track type) {
+                  <span class="layout-tag">{{ type }}</span>
+                }
+              </div>
+            </div>
+
+            <!-- Design personality excerpt -->
+            @if (profile.design_personality) {
+              <div class="preview-section">
+                <p class="preview-personality">{{ profile.design_personality.slice(0, 150) }}…</p>
+              </div>
+            }
+          } @else {
+            <div class="preview-empty">
+              <span class="preview-empty-icon">🎨</span>
+              <span>Wähle ein Template für eine Vorschau</span>
+            </div>
+          }
+        </aside>
         </div>
       </div>
     }

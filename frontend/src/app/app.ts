@@ -7,7 +7,7 @@ import { TemplateManagement } from './features/template-management/template-mana
 import { Settings } from './features/settings/settings';
 import { ChatState } from './core/services/chat';
 import { ApiService } from './core/services/api';
-import { Audience, ImageStyle } from './core/models';
+import { Audience, ImageStyle, TemplateProfile } from './core/models';
 
 @Component({
   selector: 'app-root',
@@ -24,6 +24,8 @@ export class App implements OnInit {
   readonly slideEditValue = signal('');
   readonly copied = signal(false);
   readonly showTemplateManager = signal(false);
+  readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
+  readonly templatePreviewLoading = signal(false);
 
   readonly slideSrcdoc = computed<SafeHtml | undefined>(() => {
     const html = this.state.slidePreviewHtml();
@@ -45,6 +47,28 @@ export class App implements OnInit {
   ];
 
   constructor() {
+    // Template sneak preview: fetch profile data when template selection changes
+    effect(() => {
+      const templateId = this.state.selectedTemplateId();
+      if (templateId === 'default') {
+        this.templateProfile.set(undefined);
+        return;
+      }
+      this.templatePreviewLoading.set(true);
+      untracked(() => {
+        this.api.getTemplateProfile(templateId).subscribe({
+          next: (profile) => {
+            this.templateProfile.set(profile);
+            this.templatePreviewLoading.set(false);
+          },
+          error: () => {
+            this.templateProfile.set(undefined);
+            this.templatePreviewLoading.set(false);
+          },
+        });
+      });
+    });
+
     effect(() => {
       const step = this.state.currentStep();
       this.state.selectedSlideIndex();
