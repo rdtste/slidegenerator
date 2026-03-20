@@ -1,8 +1,8 @@
 {
   "template_id": "2023_REWEdigital_Master_DE_01",
   "template_name": "Benutzerdefiniert 31",
-  "description": "Ein modernes und professionelles PowerPoint-Template, optimiert für digitale Inhalte und Geschäftspräsentationen.",
-  "design_personality": "Das Template zeichnet sich durch ein modernes, klares und professionelles Design aus. Die Kombination aus einem ruhigen Blau (#95B3FF) und einem lebhaften Gelb-Grün (#D2EB23) auf weißem Hintergrund schafft eine dynamische, aber dennoch seriöse Ästhetik, ideal für digitale und geschäftliche Inhalte.",
+  "description": "Dieses Template bietet eine klare und moderne Designgrundlage für professionelle Präsentationen. Es kombiniert eine reduzierte Farbpalette mit einer einheitlichen Typografie, um Inhalte prägnant und visuell ansprechend darzustellen.",
+  "design_personality": "Das Design ist funktional, sauber und fokussiert sich auf die Lesbarkeit. Die Verwendung von Calibri und einer begrenzten Farbpalette mit frischen Akzenten vermittelt einen professionellen und direkten Kommunikationsstil. Es ist ideal für Unternehmen, die Wert auf Klarheit und eine strukturierte Informationsvermittlung legen.",
   "slide_width_cm": 33.9,
   "slide_height_cm": 19.1,
   "color_dna": {
@@ -48,291 +48,1648 @@
       "layout_index": 0,
       "layout_name": "Titelfolie + Bild",
       "mapped_type": "title",
-      "description": "Titelfolie mit prominentem Bild und Textplatzhaltern.",
-      "recommended_usage": "Startfolie für Präsentationen, die ein visuelles Thema hervorheben.",
+      "description": "Ideal für die Eröffnungsfolie einer Präsentation, um den Titel und wichtige Informationen visuell ansprechend darzustellen.",
+      "recommended_usage": "Start einer neuen Präsentation, Projekt-Kick-off oder Event-Titelfolie.",
       "max_bullets": 1,
       "max_chars_per_bullet": 10,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Großes quadratisches Bild auf der linken Seite (ca. 50% Breite), Haupttitel und Untertitel auf der rechten Seite (ca. 50% Breite), gefolgt von kleineren Details wie Datum oder Präsentator.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation. BILD (PICTURE): Ein thematisch passendes, quadratisches Bild (1:1 Seitenverhältnis) zur visuellen Unterstützung.",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 15,
+          "left_cm": 0.79,
+          "top_cm": 0.79,
+          "width_cm": 16.14,
+          "height_cm": 15.93,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 14.11,
+          "top_cm": 4.76,
+          "width_cm": 16.92,
+          "height_cm": 9.53,
+          "font_sizes_pt": [
+            60
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 14.11,
+          "top_cm": 3.17,
+          "width_cm": 16.92,
+          "height_cm": 1.57,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 13,
+          "left_cm": 16.93,
+          "top_cm": 14.29,
+          "width_cm": 11.28,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 16.93,
+          "top_cm": 15.14,
+          "width_cm": 11.28,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 1,
       "layout_name": "Titelfolie",
       "mapped_type": "title",
-      "description": "Standard-Titelfolie mit mehreren Textplatzhaltern.",
-      "recommended_usage": "Klassische Startfolie für formelle Präsentationen.",
+      "description": "Eine klare, textfokussierte Titelfolie für Präsentationen ohne primäres Bild.",
+      "recommended_usage": "Standard-Titelfolie für interne Berichte oder wenn keine visuelle Betonung erforderlich ist.",
       "max_bullets": 1,
       "max_chars_per_bullet": 10,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Haupttitel und Untertitel linksbündig, die linke Hälfte der Folie einnehmend, gefolgt von kleineren Details.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 2.84,
+          "top_cm": 4.76,
+          "width_cm": 16.92,
+          "height_cm": 9.53,
+          "font_sizes_pt": [
+            60
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 2.84,
+          "top_cm": 3.17,
+          "width_cm": 16.92,
+          "height_cm": 1.57,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 2.83,
+          "top_cm": 14.29,
+          "width_cm": 16.92,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.83,
+          "top_cm": 15.14,
+          "width_cm": 16.92,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 2,
       "layout_name": "Agenda",
       "mapped_type": "section",
-      "description": "Folie zur Darstellung der Präsentationsstruktur.",
-      "recommended_usage": "Nach der Titelfolie, um die Gliederung vorzustellen.",
+      "description": "Strukturiertes Layout zur Präsentation der Agenda oder des Inhaltsverzeichnisses.",
+      "recommended_usage": "Übersicht über Präsentationsthemen, Besprechungsagenda oder Workshop-Struktur.",
       "max_bullets": 6,
       "max_chars_per_bullet": 35,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Haupttitel mittig oben, Agendapunkte mittig darunter, mit optionaler Nummerierung oder Icons links.",
+      "generation_rules": "TITEL (BODY): Titel der Agenda, z.B. 'Unsere Agenda'. Muss einzeilig und unter 50 Zeichen sein. AGENDA-PUNKTE (BODY): Liste der Hauptthemen als Stichpunkte. Jeder Punkt max. 80 Zeichen. Optimal 3-7 Punkte. NUMMERIERUNG/ICONS (BODY): Optional für Nummerierung oder kleine Icons neben den Agenda-Punkten.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 5.65,
+          "top_cm": 3.18,
+          "width_cm": 15.73,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            40
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 5.65,
+          "top_cm": 6.35,
+          "width_cm": 15.73,
+          "height_cm": 8.16,
+          "font_sizes_pt": [
+            16,
+            20,
+            24
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 17,
+          "left_cm": 2.84,
+          "top_cm": 6.36,
+          "width_cm": 2.1,
+          "height_cm": 8.15,
+          "font_sizes_pt": [
+            16,
+            20,
+            24
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 3,
       "layout_name": "Kapitelbeginn",
       "mapped_type": "section",
-      "description": "Einfache Folie für den Beginn eines neuen Abschnitts.",
-      "recommended_usage": "Zwischen den Hauptkapiteln zur Strukturierung.",
+      "description": "Einfaches und klares Layout zur Einführung eines neuen Abschnitts oder Kapitels.",
+      "recommended_usage": "Übergangsfolie zwischen Hauptthemen, Kapitelüberschrift.",
       "max_bullets": 0,
       "max_chars_per_bullet": 0,
-      "title_max_chars": 57
+      "title_max_chars": 57,
+      "spatial_description": "Großer, mittig platzierter Kapitel-Titel, mit einem kleinen Bezeichner oder einer Nummer links.",
+      "generation_rules": "KAPITELTITEL (BODY): Titel des neuen Abschnitts. Muss einzeilig und unter 50 Zeichen sein. KAPITELNUMMER (BODY): Optional: Nummer oder Kurzbezeichnung des Kapitels.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 5.65,
+          "top_cm": 7.94,
+          "width_cm": 25.38,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            16,
+            20,
+            24,
+            44
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 17,
+          "left_cm": 2.84,
+          "top_cm": 7.94,
+          "width_cm": 2.81,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            16,
+            20,
+            24,
+            44
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 4,
       "layout_name": "Kapitelbeginn + Inhalt",
       "mapped_type": "section",
-      "description": "Kapitelbeginn mit zusätzlichem Inhaltsbereich.",
-      "recommended_usage": "Einführung eines Kapitels mit erster Inhaltsübersicht.",
+      "description": "Abschnittsfolie, die eine kurze Übersicht oder Kernpunkte für den bevorstehenden Abschnitt bietet.",
+      "recommended_usage": "Einführung eines neuen Abschnitts mit einer kurzen Zusammenfassung oder Kernbotschaften.",
       "max_bullets": 6,
       "max_chars_per_bullet": 22,
-      "title_max_chars": 28
+      "title_max_chars": 28,
+      "spatial_description": "Abschnittstitel links, mit einem Inhaltsbereich für Stichpunkte rechts.",
+      "generation_rules": "TITEL (TITLE): Titel des neuen Abschnitts. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Optional: Kurzer Untertitel zum Abschnitt. INHALT (OBJECT): Kann 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) als Vorschau auf den Abschnitt enthalten. Kein langer Fließtext.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.84,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.84,
+          "top_cm": 4.76,
+          "width_cm": 14.09,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "left"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 6.35,
+          "width_cm": 14.09,
+          "height_cm": 3.16,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "OBJECT",
+          "index": 33,
+          "left_cm": 19.76,
+          "top_cm": 6.35,
+          "width_cm": 11.28,
+          "height_cm": 9.53,
+          "font_sizes_pt": [],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 5,
       "layout_name": "Inhalt 1-spaltig",
       "mapped_type": "content",
-      "description": "Standard-Inhaltsfolie mit einem Haupttextbereich.",
-      "recommended_usage": "Für detaillierte Bullet-Point-Listen oder längere Textabschnitte.",
+      "description": "Standard-Inhaltsfolie mit einer einzelnen, breiten Spalte für Text.",
+      "recommended_usage": "Präsentation einer Liste von Kernfakten, Merkmalen oder eines einzelnen Themas mit mehreren Stichpunkten.",
       "max_bullets": 10,
       "max_chars_per_bullet": 73,
-      "title_max_chars": 56
+      "title_max_chars": 56,
+      "spatial_description": "Mittig platzierter Titel oben, gefolgt von einem breiten, mittig platzierten Inhaltsbereich für Stichpunkte. Optionaler Fußzeilentext.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. INHALT (OBJECT): 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt). Kein langer Fließtext. FUSSZEILE (BODY): Optional: Zusätzliche Informationen oder Quellenangaben.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.83,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.83,
+          "top_cm": 1.6,
+          "width_cm": 28.2,
+          "height_cm": 1.58,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 13,
+          "left_cm": 2.83,
+          "top_cm": 4.76,
+          "width_cm": 28.2,
+          "height_cm": 11.96,
+          "font_sizes_pt": [
+            14,
+            16,
+            18
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.83,
+          "top_cm": 3.17,
+          "width_cm": 28.2,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 6,
       "layout_name": "Inhalt 2-spaltig",
       "mapped_type": "two_column",
-      "description": "Inhaltsfolie mit zwei gleichberechtigten Spalten.",
-      "recommended_usage": "Für Vergleiche, Pro/Kontra-Listen oder parallele Informationen.",
+      "description": "Layout zum Vergleich von zwei unterschiedlichen Informationssätzen nebeneinander.",
+      "recommended_usage": "Pro & Contra, Vorher & Nachher, zwei verschiedene Ansätze oder zwei verwandte Themen.",
       "max_bullets": 8,
       "max_chars_per_bullet": 26,
-      "title_max_chars": 56
+      "title_max_chars": 56,
+      "spatial_description": "Mittig platzierter Titel oben, mit zwei gleich großen Inhaltsspalten darunter. Optionaler Fußzeilentext.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. INHALT SPALTE 1 (OBJECT): 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die linke Spalte. INHALT SPALTE 2 (OBJECT): 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die rechte Spalte. FUSSZEILE (BODY): Optional: Zusätzliche Informationen oder Quellenangaben.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.83,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.83,
+          "top_cm": 1.6,
+          "width_cm": 28.2,
+          "height_cm": 1.58,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 23,
+          "left_cm": 17.67,
+          "top_cm": 4.76,
+          "width_cm": 13.36,
+          "height_cm": 11.96,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "OBJECT",
+          "index": 24,
+          "left_cm": 2.83,
+          "top_cm": 4.76,
+          "width_cm": 13.36,
+          "height_cm": 11.96,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.83,
+          "top_cm": 3.17,
+          "width_cm": 28.2,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 7,
       "layout_name": "Inhalt 3-spaltig",
       "mapped_type": "content",
-      "description": "Inhaltsfolie mit drei separaten Textbereichen.",
-      "recommended_usage": "Darstellung von drei verwandten Konzepten oder Schritten.",
+      "description": "Layout zur Präsentation von drei unterschiedlichen, aber verwandten Informationssätzen.",
+      "recommended_usage": "Drei Kernsäulen, drei Schritte in einem Prozess oder drei Produktmerkmale.",
       "max_bullets": 8,
       "max_chars_per_bullet": 17,
-      "title_max_chars": 56
+      "title_max_chars": 56,
+      "spatial_description": "Mittig platzierter Titel oben, mit drei gleich großen Inhaltsspalten darunter. Optionaler Fußzeilentext.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. INHALT SPALTE 1 (OBJECT): 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die linke Spalte. INHALT SPALTE 2 (OBJECT): 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die mittlere Spalte. INHALT SPALTE 3 (OBJECT): 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die rechte Spalte. FUSSZEILE (BODY): Optional: Zusätzliche Informationen oder Quellenangaben.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.83,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.83,
+          "top_cm": 1.6,
+          "width_cm": 28.2,
+          "height_cm": 1.58,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 24,
+          "left_cm": 2.83,
+          "top_cm": 4.76,
+          "width_cm": 8.45,
+          "height_cm": 11.96,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "OBJECT",
+          "index": 25,
+          "left_cm": 12.71,
+          "top_cm": 4.76,
+          "width_cm": 8.45,
+          "height_cm": 11.96,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 26,
+          "left_cm": 22.58,
+          "top_cm": 4.76,
+          "width_cm": 8.45,
+          "height_cm": 11.96,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.83,
+          "top_cm": 3.17,
+          "width_cm": 28.2,
+          "height_cm": 1.59,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 8,
       "layout_name": "Bild + Inhalt ",
       "mapped_type": "image",
-      "description": "Folie mit einem Bild und einem zugehörigen Inhaltsbereich.",
-      "recommended_usage": "Visualisierung eines Themas mit begleitenden Erläuterungen.",
+      "description": "Kombiniert ein prominentes Bild mit einer prägnanten Textzusammenfassung oder Stichpunkten.",
+      "recommended_usage": "Veranschaulichung eines Konzepts, Produkts oder einer Fallstudie mit begleitenden Details.",
       "max_bullets": 5,
       "max_chars_per_bullet": 22,
-      "title_max_chars": 34
+      "title_max_chars": 34,
+      "spatial_description": "Großes quadratisches Bild auf der linken Seite (ca. 50% Breite), Titel und Stichpunkte auf der rechten Seite (ca. 50% Breite).",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Optional: Kurzer Untertitel. INHALT (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) neben dem Bild enthalten. Kein langer Fließtext. BILD (PICTURE): Ein thematisch passendes, quadratisches Bild (1:1 Seitenverhältnis).",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 28,
+          "left_cm": 0.79,
+          "top_cm": 0.79,
+          "width_cm": 16.14,
+          "height_cm": 15.94,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.84,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 14.12,
+          "top_cm": 4.76,
+          "width_cm": 16.92,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "right"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 14.12,
+          "top_cm": 1.6,
+          "width_cm": 16.92,
+          "height_cm": 3.16,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "OBJECT",
+          "index": 26,
+          "left_cm": 19.76,
+          "top_cm": 7.95,
+          "width_cm": 11.28,
+          "height_cm": 7.95,
+          "font_sizes_pt": [],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 9,
       "layout_name": "Bild + Inhalt (1:2)",
       "mapped_type": "image",
-      "description": "Folie mit vertikalem Bild und zwei Inhaltsspalten.",
-      "recommended_usage": "Darstellung eines vertikalen Bildes mit begleitenden Details.",
+      "description": "Zeigt ein hohes, schmales Bild links, ergänzt durch zwei kleinere Inhaltsbereiche rechts.",
+      "recommended_usage": "Präsentation eines hochformatigen Bildes (z.B. Person, Produkt) mit zwei verwandten Stichpunktlisten.",
       "max_bullets": 6,
       "max_chars_per_bullet": 19,
-      "title_max_chars": 45
+      "title_max_chars": 45,
+      "spatial_description": "Hohes Bild links (ca. 30% Breite), mit einem Titel über zwei kleineren Inhaltsspalten rechts.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Optional: Kurzer Untertitel. INHALT SPALTE 1 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die obere rechte Spalte. INHALT SPALTE 2 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) für die untere rechte Spalte. BILD (PICTURE): Ein thematisch passendes, hochformatiges Bild (9:16 Seitenverhältnis).",
+      "placeholder_details": [
+        {
+          "type": "OBJECT",
+          "index": 13,
+          "left_cm": 12.68,
+          "top_cm": 7.95,
+          "width_cm": 8.45,
+          "height_cm": 7.94,
+          "font_sizes_pt": [
+            16,
+            18
+          ],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 22,
+          "left_cm": 22.58,
+          "top_cm": 7.95,
+          "width_cm": 8.45,
+          "height_cm": 7.94,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "PICTURE",
+          "index": 23,
+          "left_cm": 0.79,
+          "top_cm": 0.79,
+          "width_cm": 10.49,
+          "height_cm": 15.93,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.83,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 8.48,
+          "top_cm": 1.61,
+          "width_cm": 22.55,
+          "height_cm": 3.15,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 8.47,
+          "top_cm": 4.79,
+          "width_cm": 22.57,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 10,
       "layout_name": "Bild + Inhalt (2:1)",
       "mapped_type": "image",
-      "description": "Folie mit horizontalem Bild und einem Inhaltsbereich.",
-      "recommended_usage": "Präsentation eines breiten Bildes mit zugehörigen Erläuterungen.",
+      "description": "Präsentiert ein breites Bild links, mit einem Titel und einem einzelnen Inhaltsbereich rechts.",
+      "recommended_usage": "Anzeige eines querformatigen Bildes (z.B. Szene, Infografik) mit einer prägnanten textuellen Erklärung.",
       "max_bullets": 5,
       "max_chars_per_bullet": 17,
-      "title_max_chars": 28
+      "title_max_chars": 28,
+      "spatial_description": "Breites Bild links (ca. 60% Breite), mit einem Titel und einer einzelnen Inhaltsspalte rechts.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Optional: Kurzer Untertitel. INHALT (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) neben dem Bild enthalten. Kein langer Fließtext. BILD (PICTURE): Ein thematisch passendes, querformatiges Bild (4:3 Seitenverhältnis).",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 28,
+          "left_cm": 0.79,
+          "top_cm": 0.79,
+          "width_cm": 20.54,
+          "height_cm": 15.93,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.83,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 16.93,
+          "top_cm": 1.61,
+          "width_cm": 14.09,
+          "height_cm": 3.15,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 16.93,
+          "top_cm": 4.79,
+          "width_cm": 14.1,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "right"
+        },
+        {
+          "type": "OBJECT",
+          "index": 27,
+          "left_cm": 22.58,
+          "top_cm": 7.96,
+          "width_cm": 8.46,
+          "height_cm": 7.94,
+          "font_sizes_pt": [],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 11,
       "layout_name": "Bild",
-      "mapped_type": "chart",
-      "description": "Vollbild-Folie für eine einzelne, dominante Visualisierung.",
-      "recommended_usage": "Für hochauflösende Fotos, Grafiken oder generierte Diagramme ohne Text.",
+      "mapped_type": "image",
+      "description": "Eine vollflächige Bildfolie, perfekt für wirkungsvolle Visualisierungen oder große Diagramme.",
+      "recommended_usage": "Hochwirksames visuelles Element, vollflächiges Foto oder ein großes, komplexes Diagramm/Infografik.",
       "max_bullets": 0,
       "max_chars_per_bullet": 0,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Das Bild füllt den gesamten Folienbereich aus.",
+      "generation_rules": "BILD (PICTURE): Ein thematisch passendes Bild, das die gesamte Folie ausfüllt (16:9 Seitenverhältnis). KEIN TEXT.",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 10,
+          "left_cm": 0,
+          "top_cm": 0,
+          "width_cm": 33.87,
+          "height_cm": 19.05,
+          "font_sizes_pt": [],
+          "position": "full-width"
+        }
+      ]
     },
     {
       "layout_index": 12,
       "layout_name": "Bild + Box",
-      "mapped_type": "chart",
-      "description": "Vollbild-Folie mit einem überlagerten Textfeld.",
-      "recommended_usage": "Beeindruckende Visualisierung wie ein Diagramm mit kurzem Kommentar.",
+      "mapped_type": "image",
+      "description": "Vollflächiges Bild mit einem Textfeld-Overlay für eine kurze Botschaft oder ein Zitat.",
+      "recommended_usage": "Visuell beeindruckende Folie mit einer kurzen, wirkungsvollen Aussage, einem Zitat oder einem Call-to-Action.",
       "max_bullets": 5,
       "max_chars_per_bullet": 38,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Das Bild füllt die gesamte Folie aus, mit einem semi-transparenten Textfeld-Overlay links.",
+      "generation_rules": "BILD (PICTURE): Ein thematisch passendes Bild, das die gesamte Folie ausfüllt (16:9 Seitenverhältnis). TEXTBOX (BODY): Kurzer, prägnanter Text oder eine Botschaft. Optimal 1-3 Sätze oder 2-3 Stichpunkte (max. 80 Zeichen pro Punkt). Der Text muss gut lesbar auf dem Bild liegen.",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 11,
+          "left_cm": 0,
+          "top_cm": 0,
+          "width_cm": 33.87,
+          "height_cm": 19.05,
+          "font_sizes_pt": [],
+          "position": "full-width"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 0.79,
+          "top_cm": 9.53,
+          "width_cm": 18.97,
+          "height_cm": 7.94,
+          "font_sizes_pt": [],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 13,
       "layout_name": "Zitat",
       "mapped_type": "content",
-      "description": "Spezielle Folie zur Hervorhebung eines Zitats.",
-      "recommended_usage": "Präsentation von Kernaussagen, Testimonials oder wichtigen Zitaten.",
+      "description": "Spezielles Layout zur Präsentation eines prominenten Zitats mit Quellenangabe.",
+      "recommended_usage": "Hervorhebung eines Kernzitats, Testimonials oder einer wichtigen Aussage.",
       "max_bullets": 1,
       "max_chars_per_bullet": 20,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Großer, mittig platzierter Zitattext, mit einem kleineren Quellenangabetext unten rechts.",
+      "generation_rules": "ZITAT (BODY): Das Zitat selbst. Sollte prägnant sein und gut in den Bereich passen. AUTOR (BODY): Name des Autors oder der Quelle des Zitats.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 10,
+          "left_cm": 5.65,
+          "top_cm": 6.35,
+          "width_cm": 22.56,
+          "height_cm": 6.35,
+          "font_sizes_pt": [
+            40
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 20.47,
+          "top_cm": 13.52,
+          "width_cm": 7.75,
+          "height_cm": 0.77,
+          "font_sizes_pt": [],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 14,
       "layout_name": "Nur Titel 1-zeilig",
-      "mapped_type": "content",
-      "description": "Minimalistische Folie mit einem Titel und optionalem Untertitel.",
-      "recommended_usage": "Für kurze Zwischenüberschriften oder als Platzhalter für einfache Aussagen.",
+      "mapped_type": "section",
+      "description": "Minimalistische Folie, die sich ausschließlich auf einen einzeiligen Titel und einen optionalen Untertitel konzentriert.",
+      "recommended_usage": "Sehr kurze Abschnittstrenner, Betonung einer einzelnen Kernbotschaft oder als Platzhalter für eine zukünftige Inhaltsfolie.",
       "max_bullets": 0,
       "max_chars_per_bullet": 0,
-      "title_max_chars": 56
+      "title_max_chars": 56,
+      "spatial_description": "Mittig platzierter Titel, mit einem kleineren mittig platzierten Untertitel darunter.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Optional: Kurzer Untertitel oder eine prägnante Aussage.",
+      "placeholder_details": [
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 1.6,
+          "width_cm": 28.2,
+          "height_cm": 1.57,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 13,
+          "left_cm": 2.84,
+          "top_cm": 3.18,
+          "width_cm": 28.2,
+          "height_cm": 0.86,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 15,
       "layout_name": "Nur Titel 2-zeilig",
-      "mapped_type": "content",
-      "description": "Minimalistische Folie mit einem längeren Titel und optionalem Untertitel.",
-      "recommended_usage": "Für kurze Zwischenüberschriften oder als Platzhalter für einfache Aussagen.",
+      "mapped_type": "section",
+      "description": "Ähnlich wie 'Nur Titel 1-zeilig', erlaubt aber einen etwas längeren, zweizeiligen Titel.",
+      "recommended_usage": "Betonung einer etwas längeren Kernbotschaft oder eines Abschnittstitels, der mehr Platz benötigt.",
       "max_bullets": 0,
       "max_chars_per_bullet": 0,
-      "title_max_chars": 56
+      "title_max_chars": 56,
+      "spatial_description": "Mittig platzierter Titel (kann zweizeilig sein), mit einem kleineren mittig platzierten Untertitel darunter.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Kann ein- oder zweizeilig sein, muss aber unter 50 Zeichen bleiben. UNTERTITEL (BODY): Optional: Kurzer Untertitel oder eine prägnante Aussage.",
+      "placeholder_details": [
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 1.6,
+          "width_cm": 28.2,
+          "height_cm": 3.16,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 13,
+          "left_cm": 2.84,
+          "top_cm": 4.79,
+          "width_cm": 28.2,
+          "height_cm": 0.86,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 17,
       "layout_name": "Kontakt",
       "mapped_type": "closing",
-      "description": "Abschlussfolie mit Kontaktinformationen.",
-      "recommended_usage": "Am Ende der Präsentation für Kontaktdaten.",
+      "description": "Einfache Abschlussfolie für Kontaktinformationen.",
+      "recommended_usage": "Ende der Präsentation, Bereitstellung von Kontaktdaten des Präsentators oder Unternehmens.",
       "max_bullets": 4,
       "max_chars_per_bullet": 17,
-      "title_max_chars": 36
+      "title_max_chars": 36,
+      "spatial_description": "Mittig platzierter Titel oben, mit einem einzelnen Inhaltsbereich für Kontaktdaten.",
+      "generation_rules": "TITEL (TITLE): Titel der Folie, z.B. 'Kontakt' oder 'Vielen Dank'. Muss einzeilig und unter 50 Zeichen sein. KONTAKTINFORMATIONEN (OBJECT): MUSS 3-5 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Kontaktinformationen (Name, E-Mail, Telefon, Website) enthalten.",
+      "placeholder_details": [
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 6.35,
+          "width_cm": 18.16,
+          "height_cm": 1.59,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 13,
+          "left_cm": 2.84,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 18,
       "layout_name": "Kontakt Team",
       "mapped_type": "closing",
-      "description": "Abschlussfolie zur Vorstellung von Teammitgliedern.",
-      "recommended_usage": "Am Ende der Präsentation zur Vorstellung des Teams.",
+      "description": "Abschlussfolie zur Präsentation von Kontaktinformationen für bis zu drei Teammitglieder.",
+      "recommended_usage": "Ende der Präsentation, Bereitstellung von Kontaktdaten für ein kleines Team.",
       "max_bullets": 4,
       "max_chars_per_bullet": 17,
-      "title_max_chars": 36
+      "title_max_chars": 36,
+      "spatial_description": "Mittig platzierter Titel oben, mit drei Inhaltsbereichen für individuelle Kontaktdaten horizontal angeordnet.",
+      "generation_rules": "TITEL (TITLE): Titel der Folie, z.B. 'Unser Team' oder 'Kontakt'. Muss einzeilig und unter 50 Zeichen sein. KONTAKT PERSON 1 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Name, Rolle, E-Mail für die erste Person. KONTAKT PERSON 2 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Name, Rolle, E-Mail für die zweite Person. KONTAKT PERSON 3 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Name, Rolle, E-Mail für die dritte Person.",
+      "placeholder_details": [
+        {
+          "type": "OBJECT",
+          "index": 13,
+          "left_cm": 2.84,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "OBJECT",
+          "index": 15,
+          "left_cm": 22.57,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "OBJECT",
+          "index": 17,
+          "left_cm": 12.7,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 6.35,
+          "width_cm": 18.16,
+          "height_cm": 1.59,
+          "font_sizes_pt": [],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 19,
       "layout_name": "Kontakt Team + Bilder",
       "mapped_type": "closing",
-      "description": "Abschlussfolie zur Vorstellung von Teammitgliedern mit Bildern.",
-      "recommended_usage": "Am Ende der Präsentation zur visuellen Vorstellung des Teams.",
+      "description": "Abschlussfolie zur Präsentation von Kontaktinformationen für bis zu drei Teammitglieder, jeweils mit Foto.",
+      "recommended_usage": "Ende der Präsentation, Bereitstellung von Kontaktdaten und Gesichtern für ein kleines Team.",
       "max_bullets": 4,
       "max_chars_per_bullet": 17,
-      "title_max_chars": 36
+      "title_max_chars": 36,
+      "spatial_description": "Mittig platzierter Titel oben, mit drei Sets aus Bildern und Kontaktdaten horizontal angeordnet.",
+      "generation_rules": "TITEL (TITLE): Titel der Folie, z.B. 'Unser Team' oder 'Kontakt'. Muss einzeilig und unter 50 Zeichen sein. BILD PERSON 1 (PICTURE): Quadratisches Porträtbild der ersten Person. KONTAKT PERSON 1 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Name, Rolle, E-Mail für die erste Person. BILD PERSON 2 (PICTURE): Quadratisches Porträtbild der zweiten Person. KONTAKT PERSON 2 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Name, Rolle, E-Mail für die zweite Person. BILD PERSON 3 (PICTURE): Quadratisches Porträtbild der dritten Person. KONTAKT PERSON 3 (OBJECT): MUSS 2-4 prägnante Stichpunkte (max. 80 Zeichen pro Punkt) mit Name, Rolle, E-Mail für die dritte Person.",
+      "placeholder_details": [
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 1.6,
+          "width_cm": 18.16,
+          "height_cm": 1.59,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "OBJECT",
+          "index": 13,
+          "left_cm": 2.84,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "OBJECT",
+          "index": 15,
+          "left_cm": 22.57,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "OBJECT",
+          "index": 17,
+          "left_cm": 12.7,
+          "top_cm": 9.53,
+          "width_cm": 8.46,
+          "height_cm": 6.35,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "PICTURE",
+          "index": 26,
+          "left_cm": 2.84,
+          "top_cm": 3.96,
+          "width_cm": 5.64,
+          "height_cm": 4.77,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "PICTURE",
+          "index": 27,
+          "left_cm": 12.7,
+          "top_cm": 3.96,
+          "width_cm": 5.64,
+          "height_cm": 4.77,
+          "font_sizes_pt": [],
+          "position": "center"
+        },
+        {
+          "type": "PICTURE",
+          "index": 28,
+          "left_cm": 22.57,
+          "top_cm": 3.96,
+          "width_cm": 5.64,
+          "height_cm": 4.77,
+          "font_sizes_pt": [],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 20,
       "layout_name": "Farbige Titelfolie + Foto",
       "mapped_type": "title",
-      "description": "Farbige Titelfolie mit Foto und Textplatzhaltern.",
-      "recommended_usage": "Alternative Startfolie mit starker visueller Wirkung.",
+      "description": "Eine lebendige Titelfolie mit einem prominenten Bild und wichtigen Präsentationsdetails, wahrscheinlich mit einer Akzentfarbe als Hintergrund.",
+      "recommended_usage": "Start einer neuen Präsentation, Projekt-Kick-off oder Event-Titelfolie mit dynamischerer visueller Anziehungskraft.",
       "max_bullets": 1,
       "max_chars_per_bullet": 10,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Großes quadratisches Bild auf der linken Seite (ca. 50% Breite), Haupttitel und Untertitel auf der rechten Seite (ca. 50% Breite), gefolgt von kleineren Details wie Datum oder Präsentator.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation. BILD (PICTURE): Ein thematisch passendes, quadratisches Bild (1:1 Seitenverhältnis) zur visuellen Unterstützung.",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 18,
+          "left_cm": 0.79,
+          "top_cm": 0.79,
+          "width_cm": 16.14,
+          "height_cm": 15.93,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 14.11,
+          "top_cm": 4.76,
+          "width_cm": 16.92,
+          "height_cm": 9.53,
+          "font_sizes_pt": [
+            60
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 14.11,
+          "top_cm": 3.17,
+          "width_cm": 16.92,
+          "height_cm": 1.57,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 13,
+          "left_cm": 16.93,
+          "top_cm": 14.29,
+          "width_cm": 11.28,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 16.93,
+          "top_cm": 15.14,
+          "width_cm": 11.28,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 21,
       "layout_name": "Farbige Titelfolie + Foto 2",
       "mapped_type": "title",
-      "description": "Farbige Titelfolie mit Foto (anderes Format) und Textplatzhaltern.",
-      "recommended_usage": "Alternative Startfolie mit starker visueller Wirkung.",
+      "description": "Eine dynamische Titelfolie mit einem hohen Bild rechts und Textinhalt links, wahrscheinlich mit einer Akzentfarbe.",
+      "recommended_usage": "Moderne Titelfolie für Präsentationen, bei denen ein hochformatiges Bild passend ist.",
       "max_bullets": 2,
       "max_chars_per_bullet": 10,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Hohes Bild rechts (ca. 40% Breite), Haupttitel und Untertitel links (ca. 60% Breite), gefolgt von kleineren Details.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation. BILD (PICTURE): Ein thematisch passendes, hochformatiges Bild (3:4 Seitenverhältnis) zur visuellen Unterstützung.",
+      "placeholder_details": [
+        {
+          "type": "PICTURE",
+          "index": 13,
+          "left_cm": 19.76,
+          "top_cm": 0,
+          "width_cm": 14.11,
+          "height_cm": 19.05,
+          "font_sizes_pt": [],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 2.84,
+          "top_cm": 4.76,
+          "width_cm": 14.1,
+          "height_cm": 9.53,
+          "font_sizes_pt": [
+            48
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 2.84,
+          "top_cm": 3.18,
+          "width_cm": 14.1,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 2.84,
+          "top_cm": 14.29,
+          "width_cm": 14.1,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.84,
+          "top_cm": 15.14,
+          "width_cm": 14.1,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 22,
       "layout_name": "Farbige Titelfolie Linksbündig",
       "mapped_type": "title",
-      "description": "Farbige Titelfolie mit linksbündigem Text.",
-      "recommended_usage": "Moderne, asymmetrische Startfolie.",
+      "description": "Eine textfokussierte Titelfolie mit linksbündigem Inhalt, wahrscheinlich mit einer Akzentfarbe als Hintergrund.",
+      "recommended_usage": "Standard-Titelfolie mit farbigem Hintergrund für einen stärkeren Markenauftritt.",
       "max_bullets": 1,
       "max_chars_per_bullet": 10,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Haupttitel und Untertitel linksbündig, die linke Hälfte der Folie einnehmend, gefolgt von kleineren Details.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 2.84,
+          "top_cm": 4.76,
+          "width_cm": 16.92,
+          "height_cm": 9.53,
+          "font_sizes_pt": [
+            60
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 2.83,
+          "top_cm": 14.29,
+          "width_cm": 16.92,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.83,
+          "top_cm": 15.14,
+          "width_cm": 16.92,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 2.84,
+          "top_cm": 3.18,
+          "width_cm": 16.92,
+          "height_cm": 1.58,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 23,
       "layout_name": "Farbige Titelfolie Zentriert",
       "mapped_type": "title",
-      "description": "Farbige Titelfolie mit zentriertem Text.",
-      "recommended_usage": "Klassische, aber farbige Startfolie.",
+      "description": "Eine textfokussierte Titelfolie mit zentriertem Inhalt, wahrscheinlich mit einer Akzentfarbe als Hintergrund.",
+      "recommended_usage": "Standard-Titelfolie mit farbigem Hintergrund und einer starken, zentrierten Botschaft.",
       "max_bullets": 1,
       "max_chars_per_bullet": 17,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Haupttitel und Untertitel zentriert, den Großteil der Folie einnehmend, gefolgt von kleineren zentrierten Details.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 2.84,
+          "top_cm": 6.34,
+          "width_cm": 28.2,
+          "height_cm": 7.94,
+          "font_sizes_pt": [
+            60
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 2.84,
+          "top_cm": 4.75,
+          "width_cm": 28.2,
+          "height_cm": 1.57,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 2.84,
+          "top_cm": 14.29,
+          "width_cm": 28.2,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.84,
+          "top_cm": 15.14,
+          "width_cm": 28.2,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 24,
       "layout_name": "Farbige Titelfolie + GroßesBild",
       "mapped_type": "title",
-      "description": "Farbige Titelfolie mit großem, dominantem Bild.",
-      "recommended_usage": "Startfolie, die ein Thema visuell stark untermauert.",
+      "description": "Eine Titelfolie mit einem großen, vollflächigen Bild unten und Textinhalt oben, wahrscheinlich mit farbigem Hintergrund.",
+      "recommended_usage": "Titelfolie für Präsentationen, bei denen ein breites, wirkungsvolles Bild gewünscht wird, kombiniert mit klarem Text.",
       "max_bullets": 1,
       "max_chars_per_bullet": 25,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Mittig platzierter Haupttitel oben, gefolgt von einem vollflächigen Bild über die Mitte, und kleineren Details unten links.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation. BILD (PICTURE): Ein thematisch passendes, querformatiges Bild (16:9 Seitenverhältnis), das die gesamte Breite der Folie einnimmt.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 2.84,
+          "top_cm": 12.74,
+          "width_cm": 28.2,
+          "height_cm": 3.14,
+          "font_sizes_pt": [
+            40
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 2.84,
+          "top_cm": 11.13,
+          "width_cm": 16.92,
+          "height_cm": 1.53,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "left"
+        },
+        {
+          "type": "PICTURE",
+          "index": 13,
+          "left_cm": 0.01,
+          "top_cm": 0.01,
+          "width_cm": 33.86,
+          "height_cm": 10.3,
+          "font_sizes_pt": [],
+          "position": "full-width"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 2.84,
+          "top_cm": 15.88,
+          "width_cm": 14.1,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.84,
+          "top_cm": 16.73,
+          "width_cm": 14.1,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 25,
       "layout_name": "Farbige Agenda",
       "mapped_type": "section",
-      "description": "Farbige Folie zur Darstellung der Präsentationsstruktur.",
-      "recommended_usage": "Alternative Agenda-Folie mit farbiger Akzentuierung.",
+      "description": "Eine lebendige Agenda-Folie mit farbigem Hintergrund, die einen Titel und Agendapunkte enthält.",
+      "recommended_usage": "Übersicht über Präsentationsthemen, Besprechungsagenda oder Workshop-Struktur mit dynamischerer Optik.",
       "max_bullets": 7,
       "max_chars_per_bullet": 35,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Titel links, Agendapunkte mittig, mit optionaler Nummerierung oder Icons ganz links.",
+      "generation_rules": "TITEL (BODY): Titel der Agenda, z.B. 'Unsere Agenda'. Muss einzeilig und unter 50 Zeichen sein. AGENDA-PUNKTE (BODY): Liste der Hauptthemen als Stichpunkte. Jeder Punkt max. 80 Zeichen. Optimal 3-7 Punkte. NUMMERIERUNG/ICONS (BODY): Optional für Nummerierung oder kleine Icons neben den Agenda-Punkten.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 5.65,
+          "top_cm": 4.75,
+          "width_cm": 7.27,
+          "height_cm": 1.59,
+          "font_sizes_pt": [
+            28
+          ],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 5.65,
+          "top_cm": 6.35,
+          "width_cm": 15.73,
+          "height_cm": 9.52,
+          "font_sizes_pt": [
+            16,
+            20,
+            24
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 17,
+          "left_cm": 2.84,
+          "top_cm": 6.36,
+          "width_cm": 2.1,
+          "height_cm": 9.51,
+          "font_sizes_pt": [
+            16,
+            20,
+            24
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 26,
       "layout_name": "Farbiger Kapitelbeginn",
       "mapped_type": "section",
-      "description": "Farbige Folie für den Beginn eines neuen Abschnitts.",
-      "recommended_usage": "Alternative Kapitelbeginn-Folie mit farbiger Akzentuierung.",
+      "description": "Eine klare Abschnittstitelfolie mit farbigem Hintergrund.",
+      "recommended_usage": "Übergangsfolie zwischen Hauptthemen, Kapitelüberschrift mit stärkerem Markenauftritt.",
       "max_bullets": 0,
       "max_chars_per_bullet": 0,
-      "title_max_chars": 57
+      "title_max_chars": 57,
+      "spatial_description": "Großer, mittig platzierter Kapitel-Titel, mit einem kleinen Bezeichner oder einer Nummer links.",
+      "generation_rules": "KAPITELTITEL (BODY): Titel des neuen Abschnitts. Muss einzeilig und unter 50 Zeichen sein. KAPITELNUMMER (BODY): Optional: Nummer oder Kurzbezeichnung des Kapitels.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 5.65,
+          "top_cm": 7.94,
+          "width_cm": 25.38,
+          "height_cm": 1.59,
+          "font_sizes_pt": [
+            16,
+            20,
+            24,
+            44
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 17,
+          "left_cm": 2.84,
+          "top_cm": 7.94,
+          "width_cm": 2.81,
+          "height_cm": 1.59,
+          "font_sizes_pt": [
+            16,
+            20,
+            24,
+            44
+          ],
+          "position": "left"
+        }
+      ]
     },
     {
       "layout_index": 27,
       "layout_name": "Farbiges Zitat",
       "mapped_type": "content",
-      "description": "Farbige Folie zur Hervorhebung eines Zitats.",
-      "recommended_usage": "Alternative Zitat-Folie mit farbiger Akzentuierung.",
+      "description": "Eine lebendige Zitatfolie mit farbigem Hintergrund, für wirkungsvolle Aussagen.",
+      "recommended_usage": "Hervorhebung eines Kernzitats, Testimonials oder einer wichtigen Aussage mit starker visueller Präsenz.",
       "max_bullets": 1,
       "max_chars_per_bullet": 20,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Großer, mittig platzierter Zitattext, mit einem kleineren Quellenangabetext unten rechts.",
+      "generation_rules": "ZITAT (BODY): Das Zitat selbst. Sollte prägnant sein und gut in den Bereich passen. AUTOR (BODY): Name des Autors oder der Quelle des Zitats.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 10,
+          "left_cm": 5.65,
+          "top_cm": 6.35,
+          "width_cm": 22.56,
+          "height_cm": 6.35,
+          "font_sizes_pt": [
+            40
+          ],
+          "position": "center"
+        },
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 20.47,
+          "top_cm": 13.52,
+          "width_cm": 7.75,
+          "height_cm": 0.77,
+          "font_sizes_pt": [],
+          "position": "right"
+        }
+      ]
     },
     {
       "layout_index": 28,
       "layout_name": "Header + Content",
-      "mapped_type": "content",
-      "description": "Einfache Inhaltsfolie mit Header und Haupttext.",
-      "recommended_usage": "Für kurze Textabschnitte oder Aufzählungen mit klarer Überschrift.",
+      "mapped_type": "section",
+      "description": "Ein Layout mit einem prominenten linksbündigen Titel und einem optionalen Header/Untertitel. Dieses Layout dient primär als Übersichts- oder Trennfolie ohne Hauptinhaltsbereich.",
+      "recommended_usage": "Als Unterabschnittsüberschrift oder zur Betonung eines einzelnen Themas, das keine weiteren Stichpunkte auf dieser Folie benötigt.",
       "max_bullets": 0,
       "max_chars_per_bullet": 0,
-      "title_max_chars": 28
+      "title_max_chars": 28,
+      "spatial_description": "Links ausgerichteter Titel mit einem kleineren Header/Untertitel darüber. Kein Hauptinhaltsbereich für Stichpunkte vorhanden.",
+      "generation_rules": "TITEL (TITLE): Haupttitel der Folie. Muss einzeilig und unter 50 Zeichen sein. HEADER (BODY): Optional: Kurzer Header oder Kategoriebezeichnung.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 15,
+          "left_cm": 2.84,
+          "top_cm": 4.76,
+          "width_cm": 14.09,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "left"
+        },
+        {
+          "type": "TITLE",
+          "index": 0,
+          "left_cm": 2.84,
+          "top_cm": 6.35,
+          "width_cm": 14.09,
+          "height_cm": 3.16,
+          "font_sizes_pt": [],
+          "position": "left"
+        },
+        {
+          "type": "BODY",
+          "index": 18,
+          "left_cm": 2.83,
+          "top_cm": 17.08,
+          "width_cm": 22.57,
+          "height_cm": 0.38,
+          "font_sizes_pt": [
+            9
+          ],
+          "position": "center"
+        }
+      ]
     },
     {
       "layout_index": 29,
       "layout_name": "1_Farbige Titelfolie + Foto",
       "mapped_type": "title",
-      "description": "Farbige Titelfolie mit Foto und Textplatzhaltern.",
-      "recommended_usage": "Alternative Startfolie mit starker visueller Wirkung.",
+      "description": "Eine lebendige Titelfolie mit einem prominenten Bild und wichtigen Präsentationsdetails, wahrscheinlich mit einer Akzentfarbe als Hintergrund. Identisch mit Layout 0 und 20.",
+      "recommended_usage": "Start einer neuen Präsentation, Projekt-Kick-off oder Event-Titelfolie mit dynamischerer visueller Anziehungskraft.",
       "max_bullets": 1,
       "max_chars_per_bullet": 10,
-      "title_max_chars": 0
+      "title_max_chars": 0,
+      "spatial_description": "Großes quadratisches Bild auf der linken Seite (ca. 50% Breite), Haupttitel und Untertitel auf der rechten Seite (ca. 50% Breite), gefolgt von kleineren Details wie Datum oder Präsentator.",
+      "generation_rules": "TITEL (BODY): Haupttitel der Präsentation. Muss einzeilig und unter 50 Zeichen sein. UNTERTITEL (BODY): Prägnanter Untertitel oder Slogan. ZUSATZINFO 1 (BODY): Z.B. Name des Präsentators oder Abteilung. ZUSATZINFO 2 (BODY): Z.B. Datum oder Ort der Präsentation. BILD (PICTURE): Ein thematisch passendes, quadratisches Bild (1:1 Seitenverhältnis) zur visuellen Unterstützung.",
+      "placeholder_details": [
+        {
+          "type": "BODY",
+          "index": 11,
+          "left_cm": 14.11,
+          "top_cm": 4.76,
+          "width_cm": 16.92,
+          "height_cm": 9.53,
+          "font_sizes_pt": [
+            60
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 12,
+          "left_cm": 14.11,
+          "top_cm": 3.17,
+          "width_cm": 16.92,
+          "height_cm": 1.57,
+          "font_sizes_pt": [
+            20
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 13,
+          "left_cm": 16.93,
+          "top_cm": 14.29,
+          "width_cm": 11.28,
+          "height_cm": 0.85,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "right"
+        },
+        {
+          "type": "BODY",
+          "index": 14,
+          "left_cm": 16.93,
+          "top_cm": 15.14,
+          "width_cm": 11.28,
+          "height_cm": 0.74,
+          "font_sizes_pt": [
+            16
+          ],
+          "position": "right"
+        },
+        {
+          "type": "PICTURE",
+          "index": 28,
+          "left_cm": 0.79,
+          "top_cm": 0.79,
+          "width_cm": 16.14,
+          "height_cm": 15.94,
+          "font_sizes_pt": [],
+          "position": "left"
+        }
+      ]
     }
   ],
   "chart_guidelines": {
@@ -379,6 +1736,14 @@
     "title",
     "two_column"
   ],
-  "guidelines": "Nutzen Sie die Akzentfarben sparsam für Hervorhebungen. Halten Sie Texte prägnant und nutzen Sie Bullet Points. Bilder sollten hochwertig sein und zum digitalen, modernen Charakter passen. Achten Sie auf ausreichend Weißraum für eine klare Lesbarkeit.",
-  "learned_at": "2026-03-20T07:37:18.368Z"
+  "design_rules": {
+    "title_rules": "Titel müssen einzeilig sein und dürfen maximal 50 Zeichen umfassen. Sie sind als prägnante Aussage zu formulieren und verwenden die Schriftart Calibri in den dafür vorgesehenen Größen (z.B. 40-60pt für Haupttitel, 16-44pt für Abschnittstitel).",
+    "bullet_rules": "Pro Inhaltsbereich sind 3-5 prägnante Stichpunkte zu verwenden. Jeder Stichpunkt darf maximal 80 Zeichen lang sein und beginnt mit einem Aufzählungszeichen (•). Eine konsistente Satzstruktur für parallele Ideen ist zu bevorzugen.",
+    "image_rules": "Bilder dürfen ausschließlich in den dafür vorgesehenen PICTURE-Platzhaltern platziert werden. Das vorgegebene Seitenverhältnis (z.B. 1:1, 9:16, 4:3, 16:9) ist strikt einzuhalten. Text und Bilder dürfen sich niemals überlappen oder visuell kollidieren.",
+    "typography_rules": "Alle Texte verwenden die Schriftart Calibri. Überschriften sind in größeren Schriftgraden (z.B. 40-60pt) und Fließtext in kleineren, gut lesbaren Größen (z.B. 14-24pt) dargestellt. Ein hoher Kontrast zwischen Text (#000000) und Hintergrund (#FFFFFF) ist stets zu gewährleisten.",
+    "spacing_rules": "Ausreichend Leerraum zwischen allen Elementen ist zwingend erforderlich, um visuelle Überladung zu vermeiden. Elemente dürfen sich nicht überlappen. Die vordefinierten Ränder und Abstände innerhalb der Platzhalter sind einzuhalten.",
+    "color_rules": "Die Primärfarbe für Texte ist Schwarz (#000000) auf weißem Hintergrund (#FFFFFF) für maximale Lesbarkeit. Akzentfarben (#95B3FF, #D2EB23) sind sparsam für Hervorhebungen oder zur visuellen Trennung einzusetzen und nicht für primäre Textinhalte."
+  },
+  "guidelines": "Der Tonfall der Präsentation sollte direkt, prägnant und professionell sein. Vermeiden Sie lange Sätze und Absätze; bevorzugen Sie Stichpunkte und visuelle Elemente. Jeder Folientitel muss eine klare, einzeilige Botschaft vermitteln, die nicht länger als 50 Zeichen ist. Bullet Points sind auf das Wesentliche zu reduzieren und dürfen 80 Zeichen pro Punkt nicht überschreiten. Die visuelle Klarheit und Markenintegrität sind oberste Priorität. Achten Sie darauf, dass Texte niemals Bilder überlappen und alle Inhalte innerhalb der vorgesehenen Platzhalter bleiben.",
+  "learned_at": "2026-03-20T12:51:46.724Z"
 }

@@ -16,6 +16,9 @@ export interface LayoutMapping {
   max_bullets: number;
   max_chars_per_bullet: number;
   title_max_chars: number;
+  spatial_description: string;
+  generation_rules: string;
+  placeholder_details: Array<Record<string, unknown>>;
 }
 
 export interface TemplateAnalysis {
@@ -67,59 +70,127 @@ export interface TemplateProfile {
     accent_color: string;
   };
   supported_layout_types: string[];
+  design_rules: {
+    title_rules: string;
+    bullet_rules: string;
+    image_rules: string;
+    typography_rules: string;
+    spacing_rules: string;
+    color_rules: string;
+  };
   guidelines: string;
   learned_at: string;
 }
 
 // ── Extended AI prompt for deep template learning ───────────────
 
-const LEARN_PROMPT = `Du bist ein PowerPoint-Template-Experte mit tiefem Verständnis für Corporate Design.
+const LEARN_PROMPT = `Du bist "Visio" — ein Weltklasse-Präsentationsdesigner und PowerPoint-Template-Experte.
 Du analysierst Folienmastervorlagen und erstellst ein umfassendes Profil für die KI-gesteuerte Folienerstellung.
 
-EINGABE: Du erhältst:
-1. Das visuelle Profil des Templates (Farben, Schriften, Layout-Katalog mit Platzhaltertypen)
-2. Besondere Fähigkeiten des Templates (PICTURE/CHART/TABLE-Platzhalter)
+DEINE DESIGN-PHILOSOPHIE:
+- Klarheit vor Dekoration: Jedes Element muss einen Zweck haben.
+- Visuelle Hierarchie: Das Auge wird gezielt vom Wichtigsten zum Unwichtigsten geführt.
+- Eine Idee pro Folie: Keine kognitive Überlastung.
+- Markenintegrität: Strikt an Template-Vorgaben halten.
+- Titel MÜSSEN einzeilig sein (max. 50 Zeichen).
+- Bullet Points sind STICHPUNKTE — kurz, prägnant, max. 80 Zeichen pro Bullet.
+- Text und Grafiken dürfen sich NIEMALS überlappen oder visuell kollidieren.
 
-DEINE AUFGABE: Klassifiziere ALLE nutzbaren Layouts in einen der folgenden Typen:
-- title: Titelfolie (Präsentationstitel + Untertitel)
-- section: Kapitelüberschrift / Abschnittstrenner
+EINGABE: Du erhältst:
+1. Das visuelle Profil des Templates (Farben, Schriften, Layout-Katalog mit allen Platzhalterdetails)
+2. Räumliche Informationen: Position, Größe und Typ jedes Platzhalters pro Layout
+3. Besondere Fähigkeiten (PICTURE/CHART/TABLE-Platzhalter)
+
+DEINE AUFGABE:
+
+A) Klassifiziere ALLE nutzbaren Layouts in einen der folgenden Typen:
+- title: Titelfolie (Präsentationstitel + Untertitel, optional Bild)
+- section: Kapitelüberschrift / Abschnittstrenner (eventuell mit Inhaltsbereich)
 - content: Inhalt mit Bullet Points (TITLE + OBJECT/BODY)
 - two_column: Zwei-Spalten-Vergleich (2× OBJECT)
-- image: Bild + Text (PICTURE-Platzhalter)
+- image: Bild + Text (PICTURE-Platzhalter + optionaler Content-Bereich)
 - chart: Diagramm-Folie (CHART-Platzhalter oder großer PICTURE für generiertes Diagramm)
-- closing: Abschlussfolie (Danke, Kontakt)
+- closing: Abschlussfolie (Danke, Kontakt, Fazit)
+
+B) Für JEDES Layout: Erstelle spezifische "generation_rules" — das sind konkrete Anweisungen
+   für die KI, die später Folien-Inhalte generiert. Diese Regeln müssen erklären:
+   - Welche Platzhalter existieren und was hinein gehört
+   - TITEL: Max. 50 Zeichen, einzeilig, als prägnante Aussage formuliert
+   - BULLETS: Stichpunkte mit "- " Syntax, max. 80 Zeichen pro Bullet, 3-5 Bullets optimal
+   - Ob und wo ein Bild/Diagramm generiert wird
+   - Was die KI NICHT tun soll (z.B. "Kein langer Fließtext — nur 3-4 Stichpunkte")
+   - Platzhalter-Grenzen: Text DARF NICHT über den zugewiesenen Bereich hinausgehen
+
+C) Erstelle eine "spatial_description" für jedes Layout: Eine knappe Beschreibung der
+   visuellen Anordnung ("Bild links (50%), Bullet-Liste rechts (50%), Titel oben").
+
+D) Erstelle "design_rules" — übergreifende Gestaltungsregeln für das gesamte Template:
+   - Typografie-Regeln (welche Fonts, Größen, Abstände)
+   - Titel-Regeln (Maximallänge, Stil, Hierarchie)
+   - Bullet-Regeln (Formatierung, Länge, Struktur)
+   - Bild-Regeln (Seitenverhältnis, Platzierung, Kontrast zu Text)
+   - Farb-Regeln (Kontrast, Lesbarkeit, Akzente)
+   - Leerraum-Regeln (Ränder, Abstände zwischen Elementen)
 
 REGELN:
 - Klassifiziere ALLE Layouts mit mindestens einem relevanten Platzhalter (nicht nur 6!)
 - Mehrere Layouts können denselben Typ haben (z.B. 3× content mit unterschiedlicher Ästhetik)
 - Layouts mit nur meta-Platzhaltern (SLIDE_NUMBER, FOOTER, DATE) werden übersprungen
 - Ein Layout mit PICTURE-Platzhalter aber OHNE CHART kann als "chart" dienen (Diagramm als Bild)
-- Beschreibe jedes Layout so, dass die KI versteht WANN es am besten passt
 - "design_personality" soll den Corporate-Design-Stil in 2-3 Sätzen beschreiben
-- "guidelines" enthält prägnante Gestaltungshinweise passend zum Design-Stil
+- "guidelines" enthält TEMPLATE-SPEZIFISCHE Gestaltungshinweise
+
+BESONDERE ANALYSE für closing-Layouts:
+- Prüfe ob ein OBJECT-Platzhalter vorhanden ist → wenn ja, MÜSSEN Bullet Points eingefügt werden
+- Schreibe in generation_rules explizit: "Closing-Folie HAT einen Inhaltsbereich für X Bullets"
+- Closing-Folien dürfen NICHT leer sein
+
+BESONDERE ANALYSE für image-Layouts:
+- Prüfe ob neben dem PICTURE-Platzhalter auch OBJECT/BODY vorhanden ist
+- Wenn ja: "Bild + Inhalt" → generation_rules MUSS sagen: "MUSS 2-4 Bullets neben dem Bild enthalten"
+- Wenn nur PICTURE: "Reines Bildlayout" → generation_rules MUSS sagen: "Nur Bild, kein Text möglich"
+- Bild-Platzhalter und Text-Platzhalter dürfen sich NICHT räumlich überlappen
+
+BESONDERE ANALYSE für section-Layouts:
+- Prüfe ob neben TITLE auch OBJECT/BODY vorhanden ist
+- Wenn ja: "Kapitelüberschrift + Inhalt" → generation_rules MUSS sagen: "Kann 3-5 Vorschau-Bullets enthalten"
 
 AUSGABE: NUR kompaktes JSON (KEINE Codeblöcke, KEINE Erklärungen):
 {
-  "description": "Kurze Template-Beschreibung",
-  "design_personality": "Beschreibung des visuellen Stils und der Designsprache",
+  "description": "Kurze Template-Beschreibung (max 2 Sätze)",
+  "design_personality": "Beschreibung des visuellen Stils und der Designsprache (2-3 Sätze)",
+  "design_rules": {
+    "title_rules": "Titel max. 50 Zeichen, einzeilig, als Aussage formuliert. Template-Schrift: [Font] in [Größe]pt.",
+    "bullet_rules": "3-5 Stichpunkte pro Folie, max. 80 Zeichen pro Punkt. Aufzählungszeichen (•). Gleiche Satzstruktur.",
+    "image_rules": "Bilder nur in PICTURE-Platzhaltern. Seitenverhältnis beachten. Kein Text-Overlap.",
+    "typography_rules": "Überschriften: [Font] [Size]pt [Weight]. Fließtext: [Font] [Size]pt. Kontrast sicherstellen.",
+    "spacing_rules": "Ausreichend Leerraum zwischen Elementen. Keine Überlappungen. Ränder einhalten.",
+    "color_rules": "Primärfarbe für Titel, Akzentfarbe für Hervorhebungen. Textfarbe: hoher Kontrast zum Hintergrund."
+  },
   "layout_mappings": [
     {
       "layout_index": 0,
       "layout_name": "Name",
       "mapped_type": "title",
       "description": "Wofür dieses Layout am besten geeignet ist",
-      "recommended_usage": "Konkrete Einsatzempfehlung"
+      "recommended_usage": "Konkrete Einsatzempfehlung",
+      "spatial_description": "Titel oben, Untertitel darunter, Bild rechts (40%)",
+      "generation_rules": "TITEL: Kernaussage (max 50 Zeichen). UNTERTITEL: Kontext. BILD: Wird automatisch generiert."
     }
   ],
-  "guidelines": "Gestaltungshinweise für Texte und Inhalte"
+  "guidelines": "Template-spezifische Gestaltungshinweise: Tonfall, Textlänge, Besonderheiten"
 }
 
 WICHTIG:
 - KEINE Kapazitätsangaben (max_bullets etc.) — werden automatisch berechnet
-- Beschreibungen max 20 Wörter
+- "generation_rules" ist das WICHTIGSTE Feld — sei sehr spezifisch und praxisnah
+- "design_rules" sind übergreifende Qualitäts-Standards für ALLE Folien
 - Jedes Layout mit nutzbaren Platzhaltern MUSS klassifiziert werden
 - Bevorzuge spezifische Empfehlungen ("Ideal für Q3-Ergebnisse mit Balkendiagramm")
-  statt generischer ("Für Diagramme")`;
+  statt generischer ("Für Diagramme")
+- generation_rules MÜSSEN explizit sagen welche Platzhalter befüllt werden und mit was
+- JEDER Titel MUSS unter 50 Zeichen bleiben — dies in JEDER generation_rules betonen`;
+
 
 @Injectable()
 export class TemplateAnalysisService {
@@ -318,6 +389,8 @@ export class TemplateAnalysisService {
       mapped_type: string;
       description: string;
       recommended_usage: string;
+      spatial_description: string;
+      generation_rules: string;
     }>;
     guidelines: string;
   } | null> {
@@ -328,22 +401,35 @@ export class TemplateAnalysisService {
         apiKey: token,
       });
 
-      // Compact the profile for the prompt — include layout details + capabilities
+      // Compact the profile for the prompt — include layout details + capabilities + spatial info
       const catalog = (rawProfile['layout_catalog'] as Array<Record<string, unknown>>) ?? [];
       const compactLayouts = catalog
         .filter((ld) => {
           const phTypes = (ld['placeholder_types'] as string[]) ?? [];
           return phTypes.some((t) => !['SLIDE_NUMBER', 'FOOTER', 'DATE'].includes(t));
         })
-        .map((ld) => ({
-          idx: ld['index'],
-          name: ld['name'],
-          types: ld['placeholder_types'],
-          pic: ld['has_picture'] ? `${ld['picture_width_cm']}×${ld['picture_height_cm']}cm ${ld['picture_aspect_ratio']}` : undefined,
-          chart: ld['has_chart'] || undefined,
-          table: ld['has_table'] || undefined,
-          content: ld['content_width_cm'] ? `${ld['content_width_cm']}×${ld['content_height_cm']}cm` : undefined,
-        }));
+        .map((ld) => {
+          const phDetails = (ld['placeholder_details'] as Array<Record<string, unknown>>) ?? [];
+          const compactPhs = phDetails.map((ph) => ({
+            type: ph['type'],
+            pos: ph['position'],
+            w: ph['width_cm'],
+            h: ph['height_cm'],
+            fonts: (ph['font_sizes_pt'] as number[])?.length ? ph['font_sizes_pt'] : undefined,
+          }));
+
+          return {
+            idx: ld['index'],
+            name: ld['name'],
+            types: ld['placeholder_types'],
+            spatial: ld['spatial_description'] || undefined,
+            phs: compactPhs.length > 0 ? compactPhs : undefined,
+            pic: ld['has_picture'] ? `${ld['picture_width_cm']}×${ld['picture_height_cm']}cm ${ld['picture_aspect_ratio']}` : undefined,
+            chart: ld['has_chart'] || undefined,
+            table: ld['has_table'] || undefined,
+            content: ld['content_width_cm'] ? `${ld['content_width_cm']}×${ld['content_height_cm']}cm` : undefined,
+          };
+        });
 
       const colorDna = rawProfile['color_dna'] as Record<string, unknown> | undefined;
       const typoDna = rawProfile['typography_dna'] as Record<string, unknown> | undefined;
@@ -423,6 +509,8 @@ export class TemplateAnalysisService {
         mapped_type: string;
         description: string;
         recommended_usage: string;
+        spatial_description: string;
+        generation_rules: string;
       }>;
       guidelines: string;
     },
@@ -446,6 +534,9 @@ export class TemplateAnalysisService {
         max_bullets: (catalogEntry?.['max_bullets'] as number) ?? 0,
         max_chars_per_bullet: (catalogEntry?.['max_chars_per_bullet'] as number) ?? 0,
         title_max_chars: (catalogEntry?.['title_max_chars'] as number) ?? 0,
+        spatial_description: m.spatial_description ?? (catalogEntry?.['spatial_description'] as string) ?? '',
+        generation_rules: m.generation_rules ?? '',
+        placeholder_details: (catalogEntry?.['placeholder_details'] as Array<Record<string, unknown>>) ?? [],
       };
     });
 
@@ -513,6 +604,14 @@ export class TemplateAnalysisService {
         accent_color: (imageGuidelines['accent_color'] as string) ?? '#0969da',
       },
       supported_layout_types: (rawProfile['supported_layout_types'] as string[]) ?? [],
+      design_rules: {
+        title_rules: ((classified as Record<string, unknown>)['design_rules'] as Record<string, string>)?.title_rules ?? 'Titel max. 50 Zeichen, einzeilig, als Aussage formuliert.',
+        bullet_rules: ((classified as Record<string, unknown>)['design_rules'] as Record<string, string>)?.bullet_rules ?? '3-5 Stichpunkte pro Folie, max. 80 Zeichen pro Punkt.',
+        image_rules: ((classified as Record<string, unknown>)['design_rules'] as Record<string, string>)?.image_rules ?? 'Bilder nur in PICTURE-Platzhaltern. Kein Text-Overlap.',
+        typography_rules: ((classified as Record<string, unknown>)['design_rules'] as Record<string, string>)?.typography_rules ?? '',
+        spacing_rules: ((classified as Record<string, unknown>)['design_rules'] as Record<string, string>)?.spacing_rules ?? 'Ausreichend Leerraum. Keine Überlappungen.',
+        color_rules: ((classified as Record<string, unknown>)['design_rules'] as Record<string, string>)?.color_rules ?? 'Hoher Kontrast für Lesbarkeit.',
+      },
       guidelines: classified.guidelines,
       learned_at: new Date().toISOString(),
     };
@@ -546,6 +645,14 @@ export class TemplateAnalysisService {
         style_keywords: [], accent_color: '#0969da',
       },
       supported_layout_types: ['title', 'section', 'content', 'two_column', 'image', 'closing'],
+      design_rules: {
+        title_rules: 'Titel max. 50 Zeichen, einzeilig.',
+        bullet_rules: '3-5 Stichpunkte pro Folie, max. 80 Zeichen pro Punkt.',
+        image_rules: 'Bilder nur in PICTURE-Platzhaltern.',
+        typography_rules: '',
+        spacing_rules: 'Keine Überlappungen.',
+        color_rules: 'Hoher Kontrast.',
+      },
       guidelines: analysis.guidelines,
       learned_at: analysis.analyzed_at,
     };
@@ -866,6 +973,9 @@ export class TemplateAnalysisService {
       max_bullets: maxBullets,
       max_chars_per_bullet: maxCharsPerBullet,
       title_max_chars: titleMaxChars,
+      spatial_description: (mapping as Record<string, unknown>)['spatial_description'] as string ?? '',
+      generation_rules: (mapping as Record<string, unknown>)['generation_rules'] as string ?? '',
+      placeholder_details: (mapping as Record<string, unknown>)['placeholder_details'] as Array<Record<string, unknown>> ?? [],
     };
   }
 }

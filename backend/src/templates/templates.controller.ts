@@ -36,10 +36,10 @@ export class TemplatesController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  upload(
+  async upload(
     @UploadedFile() file: Express.Multer.File,
     @Headers('x-session-id') sessionId?: string,
-  ): TemplateInfoDto {
+  ): Promise<TemplateInfoDto & { learned: boolean; profileSummary?: { layouts_classified: number; supported_types: string[]; design_personality: string } }> {
     const ext = file?.originalname?.toLowerCase();
     if (!file || (!ext?.endsWith('.pptx') && !ext?.endsWith('.potx'))) {
       throw new HttpException(
@@ -56,12 +56,26 @@ export class TemplatesController {
 
     const info = this.templatesService.saveTemplate(file.originalname, file.buffer, sessionId);
 
-    // Fire-and-forget deep learning (replaces simple analysis)
-    this.analysisService.learnTemplate(info.id).catch((err) =>
-      this.logger.warn(`Background learning failed for ${info.id}: ${err}`),
-    );
+    // Deep learning runs synchronously — templates are few but must be perfectly understood
+    try {
+      const profile = await this.analysisService.learnTemplate(info.id);
+      if (profile) {
+        this.logger.log(`Template ${info.id} uploaded and learned: ${profile.layout_catalog.length} layouts`);
+        return {
+          ...info,
+          learned: true,
+          profileSummary: {
+            layouts_classified: profile.layout_catalog.length,
+            supported_types: profile.supported_layout_types,
+            design_personality: profile.design_personality,
+          },
+        };
+      }
+    } catch (err) {
+      this.logger.warn(`Learning failed for ${info.id}: ${err}`);
+    }
 
-    return info;
+    return { ...info, learned: false };
   }
 
   @Patch(':id/scope')
