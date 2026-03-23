@@ -222,7 +222,16 @@ export class ExportService {
       const prepared = this.prepareMarpMarkdown(markdown);
       fs.writeFileSync(mdPath, prepared, 'utf-8');
 
-      const { marpCli } = await (Function('return import("@marp-team/marp-cli")')() as Promise<typeof import('@marp-team/marp-cli')>);
+      // Import marp-cli dynamically
+      let marpCli: (args: string[]) => Promise<number>;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { marpCli: marpCliFunc } = require('@marp-team/marp-cli');
+        marpCli = marpCliFunc;
+      } catch (importErr) {
+        this.logger.error(`Failed to import marp-cli: ${importErr}`);
+        throw new Error('marp-cli not available. PDF export is not supported in Docker builds. Please use PPTX export instead.');
+      }
 
       const exitCode = await marpCli([mdPath, '--pdf', '-o', pdfPath, '--allow-local-files']);
 
