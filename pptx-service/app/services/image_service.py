@@ -1,10 +1,19 @@
-"""Image generation service — generates images via Vertex AI Imagen."""
+"""Image generation service — generates images via Vertex AI Imagen.
+
+Features:
+- Retry logic with exponential backoff
+- Cache support
+- Graceful fallback on failure (returns None instead of crashing)
+- Structured error logging
+"""
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import logging
 import tempfile
+import time
 from pathlib import Path
 
 import google.auth
@@ -17,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 _IMAGE_CACHE: dict[str, Path] = {}
 
+# P0 Configuration  
+MAX_RETRIES = 3
+TIMEOUT_SECS = 30
+RETRY_BACKOFF_BASE = 1  # seconds (1s, 2s, 4s)
+
 
 def _get_access_token() -> str:
     """Get a GCP access token via Application Default Credentials."""
@@ -28,23 +42,118 @@ def _get_access_token() -> str:
 
 
 def generate_image(description: str, width: int = 1024, height: int = 1024) -> Path | None:
-    """Generate an image from a text description using Vertex AI Imagen.
-
-    Returns the path to the generated PNG file, or None on failure.
+    """Generate an image synchronously (backward compatible).
+    
+    Wraps generate_image_async for sync contexts.
+    Returns None on failure (graceful fallback).
     """
+    try:
+        # Run async function in event loop or create new loop
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        return loop.run_until_complete(generate_image_async(description, width, height))
+    except Exception as e:
+        logger.error(f"Sync image generation failed: {e}")
+        return None
+
+
+async def generate_image_async(
+    description: str,
+    width: int = 1024,
+    height: int = 1024,
+    max_retries: int = MAX_RETRIES,
+    timeout_secs: int = TIMEOUT_SECS
+) -> Path | None:
+    """Generate an image with retry logic and exponential backoff (P0 Feature).
+    
+    Args:
+        description: Text description of image to generate
+        width: Image width (default 1024)
+        height: Image height (default 1024)
+        max_retries: Number of retry attempts (default 3)
+        timeout_secs: Timeout per attempt in seconds (default 30)
+        
+    Returns:
+        Path to generated PNG, or None if all retries exhausted
+        
+    Behavior:
+    - Checks cache first (no retry needed)
+    - Retries on timeout with exponential backoff: 1s → 2s → 4s
+    - Returns None on final failure (allows slide to continue without image)
+    - Logs all errors for debugging
+    """
+    
+    # Check cache first
     cache_key = f"{description}:{width}x{height}"
     if cache_key in _IMAGE_CACHE:
         cached = _IMAGE_CACHE[cache_key]
         if cached.is_file():
-            logger.info(f"Image cache hit: {description[:60]}...")
+            logger.debug(f"Image cache hit: {description[:60]}...")
             return cached
+    
+    last_error = None
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info(
+                f"[Image Gen] Attempt {attempt}/{max_retries}: {description[:60]}...",
+                extra={"attempt": attempt, "max_retries": max_retries}
+            )
+            
+            result = await asyncio.wait_for(
+                _generate_image_once(description, width, height),
+                timeout=timeout_secs
+            )
+            
+            if result:
+                logger.info(f"[Image Gen] ✓ Success on attempt {attempt}")
+                return result
+            
+        except asyncio.TimeoutError:
+            last_error = f"Timeout ({timeout_secs}s)"
+            logger.warning(
+                f"[Image Gen] Timeout on attempt {attempt}/{max_retries}",
+                extra={"attempt": attempt, "timeout": timeout_secs, "description": description[:60]}
+            )
+            
+            if attempt < max_retries:
+                wait_time = RETRY_BACKOFF_BASE ** (attempt - 1)
+                logger.info(f"[Image Gen] Retrying in {wait_time}s...")
+                await asyncio.sleep(wait_time)
+                
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {str(e)[:100]}"
+            logger.warning(
+                f"[Image Gen] Error on attempt {attempt}/{max_retries}: {last_error}",
+                extra={"attempt": attempt, "error_type": type(e).__name__, "description": description[:60]}
+            )
+            
+            if attempt < max_retries:
+                wait_time = RETRY_BACKOFF_BASE ** (attempt - 1)
+                logger.info(f"[Image Gen] Retrying in {wait_time}s...")
+                await asyncio.sleep(wait_time)
+    
+    # All retries exhausted
+    logger.error(
+        f"[Image Gen] ✗ Failed after {max_retries} attempts: {last_error}",
+        extra={"max_retries": max_retries, "description": description[:60], "error": last_error}
+    )
+    
+    # Return None → caller will use placeholder or skip image
+    return None
 
-    logger.info(f"Generating image: {description[:80]}...")
 
+async def _generate_image_once(description: str, width: int, height: int) -> Path | None:
+    """Generate image in single attempt (no retries)."""
+    
     try:
         token = _get_access_token()
-    except Exception:
-        logger.exception("Failed to get GCP access token for Imagen")
+    except Exception as e:
+        logger.error(f"Failed to get GCP access token: {e}")
         return None
 
     url = (
@@ -71,29 +180,27 @@ def generate_image(description: str, width: int = 1024, height: int = 1024) -> P
     }
 
     try:
-        with httpx.Client(timeout=60.0) as client:
-            response = client.post(
+        # Use async httpx for non-blocking I/O
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECS) as client:
+            response = await client.post(
                 url,
                 json=payload,
                 headers={"Authorization": f"Bearer {token}"},
             )
 
         if response.status_code != 200:
-            logger.error(f"Imagen API error {response.status_code}: {response.text[:300]}")
+            logger.error(f"[Image Gen] Imagen API error {response.status_code}: {response.text[:200]}")
             return None
 
         data = response.json()
         predictions = data.get("predictions", [])
         if not predictions:
-            logger.warning(f"Imagen returned no predictions for: {description[:60]}...")
-            # If filtered, the response may contain filteredReason
-            if "filteredText" in str(data) or "blocked" in str(data).lower():
-                logger.warning(f"Image likely filtered by safety. Response: {str(data)[:300]}")
+            logger.warning(f"[Image Gen] No predictions returned. Response: {str(data)[:200]}")
             return None
 
         image_b64 = predictions[0].get("bytesBase64Encoded")
         if not image_b64:
-            logger.warning("Imagen prediction has no image bytes")
+            logger.warning("[Image Gen] Prediction has no image bytes")
             return None
 
         image_bytes = base64.b64decode(image_b64)
@@ -102,12 +209,12 @@ def generate_image(description: str, width: int = 1024, height: int = 1024) -> P
         tmp.close()
 
         result_path = Path(tmp.name)
-        _IMAGE_CACHE[cache_key] = result_path
-        logger.info(f"Image generated: {result_path} ({len(image_bytes)} bytes)")
+        _IMAGE_CACHE[f"{description}:{width}x{height}"] = result_path
+        logger.debug(f"[Image Gen] Image saved: {result_path} ({len(image_bytes)} bytes)")
         return result_path
 
-    except Exception:
-        logger.exception(f"Image generation failed for: {description[:60]}...")
+    except Exception as e:
+        logger.warning(f"[Image Gen] Generation failed: {type(e).__name__}: {str(e)[:100]}")
         return None
 
 

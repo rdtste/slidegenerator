@@ -1,0 +1,41 @@
+# ──────────────────────────────────────────────────────────────
+# Production Docker Compose — GCE Deployment
+# Frontend auf Port 80 (öffentlich), Backend + pptx-service intern
+# ──────────────────────────────────────────────────────────────
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    expose:
+      - "3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - PPTX_SERVICE_URL=http://pptx-service:8000
+    volumes:
+      - templates:/app/templates
+      - presentations:/app/presentations
+    depends_on:
+      - pptx-service
+    restart: unless-stopped
+
+  pptx-service:
+    build: ./pptx-service
+    expose:
+      - "8000"
+    env_file:
+      - ./pptx-service/.env
+    volumes:
+      - templates:/app/templates
+    restart: unless-stopped
+
+volumes:
+  templates:
+  presentations:
