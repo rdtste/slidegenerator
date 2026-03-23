@@ -1,3 +1,5 @@
+// Environment config — API URL is now determined dynamically in ApiService
+// based on the current deployment context (local dev, Docker, cloud, etc.)
 export const environment = {
-  apiUrl: `${window.location.protocol}//${window.location.hostname}:${window.location.port}/api/v1`,
+  // Placeholder for future configuration
 };

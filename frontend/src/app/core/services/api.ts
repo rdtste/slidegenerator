@@ -1,16 +1,33 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { ChatResponse, ClarifyResponse, TemplateInfo, TemplateProfile, LearnResult, LlmSettings } from '../models';
 import { ChatState } from './chat';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = environment.apiUrl;
+  private readonly baseUrl = this.getApiUrl();
   private readonly state = inject(ChatState);
 
   constructor(private readonly http: HttpClient) {}
+
+  /**
+   * Determine API URL dynamically based on current deployment context.
+   * - Local dev (port 4200 with separate backend on 3000): use direct URL
+   * - Docker (nginx reverse proxy): use relative path
+   * - Cloud: use relative path
+   */
+  private getApiUrl(): string {
+    const { protocol, hostname, port } = window.location;
+    
+    // Local development: frontend on 4200, backend on 3000
+    if (hostname === 'localhost' && port === '4200') {
+      return `http://localhost:3000/api/v1`;
+    }
+    
+    // Docker container / Cloud: nginx reverse proxies /api/* → backend:3000
+    return '/api/v1';
+  }
 
   private sessionHeaders(): HttpHeaders {
     return new HttpHeaders({ 'x-session-id': this.state.sessionId });
