@@ -81,7 +81,18 @@ export class ExportController {
       res.send(buffer);
     } catch (error: unknown) {
       if (error instanceof HttpException) throw error;
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null && 'detail' in error) {
+        message = String((error as Record<string, unknown>).detail);
+      } else if (typeof error === 'string') {
+        message = error;
+      } else {
+        message = String(error) || 'Unknown error';
+      }
+      
       throw new HttpException(
         { detail: `Export-Fehler: ${message}` },
         HttpStatus.INTERNAL_SERVER_ERROR,

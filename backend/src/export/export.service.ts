@@ -45,10 +45,20 @@ export class ExportService {
     this.jobs.set(jobId, job);
 
     this.processPptxJob(jobId, markdown, templateId).catch((err) => {
-      this.logger.error(`Job ${jobId} failed: ${err.message}`);
+      let message: string;
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === 'object' && err !== null && 'detail' in err) {
+        message = String((err as Record<string, unknown>).detail);
+      } else if (typeof err === 'string') {
+        message = err;
+      } else {
+        message = String(err) || 'Unknown error';
+      }
+      this.logger.error(`Job ${jobId} failed: ${message}`);
       if (job.status === 'processing') {
         job.status = 'error';
-        job.subject.next({ data: { step: 'error', message: err.message } } as MessageEvent);
+        job.subject.next({ data: { step: 'error', detail: message, message } } as MessageEvent);
         job.subject.complete();
       }
     });
@@ -141,7 +151,11 @@ export class ExportService {
     if (job.status === 'processing') {
       job.status = 'error';
       job.subject.next({
-        data: { step: 'error', message: 'Verbindung zum Generierungs-Service unterbrochen' },
+        data: { 
+          step: 'error', 
+          detail: 'Verbindung zum Generierungs-Service unterbrochen',
+          message: 'Verbindung zum Generierungs-Service unterbrochen'
+        },
         type: 'fail',
       } as MessageEvent);
       job.subject.complete();

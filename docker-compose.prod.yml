@@ -32,6 +32,8 @@ services:
       - "8000"
     env_file:
       - ./pptx-service/.env
+    environment:
+      - TEMPLATES_DIR=/app/templates
     volumes:
       - templates:/app/templates
     restart: unless-stopped
