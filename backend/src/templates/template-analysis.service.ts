@@ -266,7 +266,7 @@ export class TemplateAnalysisService {
 
   // ── Learn (deep analysis) ────────────────────────────────────
 
-  async learnTemplate(templateId: string): Promise<TemplateProfile | null> {
+  async learnTemplate(templateId: string): Promise<TemplateProfile> {
     this.logger.log(`Starting deep learning for template: ${templateId}`);
 
     // 1. Fetch deep profile from pptx-service
@@ -274,7 +274,13 @@ export class TemplateAnalysisService {
     if (!rawProfile) {
       this.logger.warn(`Could not fetch profile for ${templateId}, falling back to legacy`);
       const legacy = await this.analyzeTemplate(templateId);
-      return legacy ? this.legacyToProfile(legacy) : null;
+      if (!legacy) {
+        throw new Error(
+          'Template-Profil konnte nicht vom PPTX-Service geladen werden. ' +
+          'Ist der PPTX-Service erreichbar? (PPTX_SERVICE_URL)',
+        );
+      }
+      return this.legacyToProfile(legacy);
     }
 
     // 2. Fetch raw structure for constraint computation
@@ -283,8 +289,11 @@ export class TemplateAnalysisService {
     // 3. Send to AI for semantic classification
     const classified = await this.classifyWithProfile(templateId, rawProfile);
     if (!classified) {
-      this.logger.warn(`AI classification failed for ${templateId}`);
-      return null;
+      throw new Error(
+        `KI-Klassifizierung fehlgeschlagen fuer Template "${templateId}". ` +
+        `Moeglicherweise ist das Modell "${this.settings.getModel()}" in der Region nicht verfuegbar. ` +
+        `Pruefe die Einstellungen oder versuche ein anderes Modell.`,
+      );
     }
 
     // 4. Merge AI classification with extracted profile data
@@ -489,9 +498,22 @@ export class TemplateAnalysisService {
 
       return JSON.parse(jsonStr);
     } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`AI learn classification error for ${templateId}: ${message}`);
-      return null;
+
+      if (status === 404) {
+        throw new Error(
+          `Modell "${this.settings.getModel()}" ist in der Region nicht verfuegbar. ` +
+          `Bitte in den Einstellungen ein anderes Modell waehlen (z.B. gemini-2.5-flash).`,
+        );
+      }
+      if (status === 403 || status === 401) {
+        throw new Error(
+          'Keine Berechtigung fuer die Gemini API. GCP-Credentials pruefen.',
+        );
+      }
+      throw new Error(`KI-Analyse fehlgeschlagen: ${message.slice(0, 150)}`);
     }
   }
 
@@ -788,10 +810,18 @@ export class TemplateAnalysisService {
         analyzed_at: new Date().toISOString(),
       };
     } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
       const message = err instanceof Error ? err.message : String(err);
       const stack = err instanceof Error ? err.stack : '';
       this.logger.error(`AI classification error for ${templateId}: ${message}`);
       if (stack) this.logger.debug(stack);
+
+      if (status === 404) {
+        throw new Error(
+          `Modell "${this.settings.getModel()}" ist in der Region nicht verfuegbar. ` +
+          `Bitte in den Einstellungen ein anderes Modell waehlen.`,
+        );
+      }
       return null;
     }
   }

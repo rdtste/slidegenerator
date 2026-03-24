@@ -72,7 +72,8 @@ export class TemplatesController {
         };
       }
     } catch (err) {
-      this.logger.warn(`Learning failed for ${info.id}: ${err}`);
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Learning failed for ${info.id}: ${message}`);
     }
 
     return { ...info, learned: false };
@@ -113,19 +114,22 @@ export class TemplatesController {
 
   @Post(':id/learn')
   async learn(@Param('id') id: string) {
-    const profile = await this.analysisService.learnTemplate(id);
-    if (!profile) {
+    try {
+      const profile = await this.analysisService.learnTemplate(id);
+      return {
+        learned: true,
+        layouts_classified: profile.layout_catalog.length,
+        supported_types: profile.supported_layout_types,
+        design_personality: profile.design_personality,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Template learning failed for ${id}: ${message}`);
       throw new HttpException(
-        { detail: 'Template-Learning fehlgeschlagen' },
+        { detail: `Template-Learning fehlgeschlagen: ${message}` },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    return {
-      learned: true,
-      layouts_classified: profile.layout_catalog.length,
-      supported_types: profile.supported_layout_types,
-      design_personality: profile.design_personality,
-    };
   }
 
   @Get(':id/analysis')
