@@ -14,18 +14,24 @@ export class ApiService {
   /**
    * Determine API URL dynamically based on current deployment context.
    * - Local dev (port 4200 with separate backend on 3000): use direct URL
-   * - Docker (nginx reverse proxy): use relative path
-   * - Cloud: use relative path
+   * - Docker Compose (nginx reverse proxy): use relative path
+   * - Cloud Run (custom domain): derive backend URL from frontend hostname
    */
   private getApiUrl(): string {
     const { protocol, hostname, port } = window.location;
-    
+
     // Local development: frontend on 4200, backend on 3000
     if (hostname === 'localhost' && port === '4200') {
       return `http://localhost:3000/api/v1`;
     }
-    
-    // Docker container / Cloud: nginx reverse proxies /api/* → backend:3000
+
+    // Cloud Run custom domain: slidegenerator.xxx → slidegenerator-backend.xxx
+    if (hostname.startsWith('slidegenerator.')) {
+      const backendHost = hostname.replace('slidegenerator.', 'slidegenerator-backend.');
+      return `${protocol}//${backendHost}/api/v1`;
+    }
+
+    // Docker Compose / fallback: nginx reverse proxies /api/* → backend:3000
     return '/api/v1';
   }
 
