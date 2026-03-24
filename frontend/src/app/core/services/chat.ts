@@ -47,4 +47,20 @@ export class ChatState {
   updateMarkdown(md: string): void {
     this.markdown.set(md);
   }
+
+  reset(): void {
+    this.currentStep.set(1);
+    this.audience.set('management');
+    this.imageStyle.set('photo');
+    this.messages.set([
+      { role: 'system', content: 'Beschreibe deine Präsentation. Zum Beispiel: "Erstelle eine 10-seitige Präsentation über unsere Q1-Ergebnisse 2026."' },
+    ]);
+    this.markdown.set('');
+    this.slides.set([]);
+    this.loading.set(false);
+    this.selectedTemplateId.set('default');
+    this.previewHtml.set('');
+    this.selectedSlideIndex.set(0);
+    this.slidePreviewHtml.set('');
+  }
 }

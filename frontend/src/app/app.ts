@@ -153,6 +153,14 @@ export class App implements OnInit {
     });
   }
 
+  startNew(): void {
+    if (this.state.hasMarkdown() && !confirm('Aktuelle Präsentation verwerfen und neu starten?')) {
+      return;
+    }
+    this.state.reset();
+    this.templateProfile.set(undefined);
+  }
+
   openTemplateManager(): void {
     this.showTemplateManager.set(true);
   }
