@@ -584,11 +584,11 @@ ${documentTexts.join('\n\n')}`;
         );
       }
 
-      // Check: image slide has bullets (shouldn't)
-      if (slide.layout === 'image' && slide.bullets.length > 0) {
+      // Check: image slide missing bullets (should have 2-4 for context)
+      if (slide.layout === 'image' && slide.bullets.length === 0) {
         issues.push(
-          `Folie ${slideNum} (image): Bild-Folien sollten KEINE Bullet Points enthalten. ` +
-          `Text gehört in die Sprechernotizen.`,
+          `Folie ${slideNum} (image): Bild-Folie hat KEINE Bullet Points. ` +
+          `Image-Folien MÜSSEN 2-4 Bullet Points mit Kernaussagen enthalten.`,
         );
       }
     }
@@ -610,8 +610,8 @@ KORREKTUR-REGELN:
 1. Bild-Markdown (![Beschreibung](placeholder)) darf NUR auf Folien mit <!-- layout: image --> stehen.
 2. Wenn ein Bild auf einer falschen Folie steht: Erstelle eine NEUE image-Folie direkt danach \
    und verschiebe das Bild dorthin. Oder entferne das Bild und verlagere die Beschreibung in die Sprechernotizen.
-3. image-Folien haben NUR: layout-Kommentar, # Titel, ![Beschreibung](placeholder), Sprechernotizen.
-   KEINE Bullet Points, KEIN Fließtext auf image-Folien.
+3. image-Folien MÜSSEN enthalten: layout-Kommentar, # Titel, ![Beschreibung](placeholder), \
+   2-4 Bullet Points mit Kernaussagen zum Bild, Sprechernotizen.
 4. Behalte alle anderen Folien UNVERÄNDERT.
 5. Behalte alle <!-- layout: TYPE --> und <!-- notes: --> Kommentare bei.
 6. Antworte NUR mit dem vollständigen korrigierten Markdown.`;

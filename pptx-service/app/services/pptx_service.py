@@ -215,7 +215,11 @@ def generate_pptx(
 
 
 def _collect_image_descriptions(data: PresentationData) -> list[str]:
-    """Collect all image descriptions that will need generation."""
+    """Collect all image descriptions that will need generation.
+
+    For image slides, enriches the description with slide title and bullet
+    context so the generated image is relevant to the actual slide content.
+    """
     descs: list[str] = []
     seen: set[str] = set()
     for slide_data in data.slides:
@@ -223,11 +227,36 @@ def _collect_image_descriptions(data: PresentationData) -> list[str]:
         if slide_data.layout == "title":
             desc = slide_data.image_description or slide_data.subtitle or slide_data.title
         elif slide_data.layout == "image":
-            desc = slide_data.image_description or slide_data.body or ""
+            # Build a rich description from all slide content for relevance
+            desc = _build_image_context(slide_data)
         if desc and desc not in seen:
             descs.append(desc)
             seen.add(desc)
     return descs
+
+
+def _build_image_context(slide_data: SlideContent) -> str:
+    """Build a contextual image description from slide title, bullets, and image_description.
+
+    Combines the explicit image alt-text with the slide's actual content
+    so the generated image matches what the audience reads on the slide.
+    """
+    parts: list[str] = []
+
+    # Start with the explicit image description if available
+    if slide_data.image_description:
+        parts.append(slide_data.image_description)
+
+    # Add title context
+    if slide_data.title and slide_data.title not in (slide_data.image_description or ""):
+        parts.append(f"Topic: {slide_data.title}")
+
+    # Add bullet context (key messages on the slide)
+    if slide_data.bullets:
+        bullet_summary = "; ".join(b[:60] for b in slide_data.bullets[:4])
+        parts.append(f"Context: {bullet_summary}")
+
+    return ". ".join(parts) if parts else slide_data.body or ""
 
 
 def _prefetch_images(descriptions: list[str]) -> dict[str, Path | None]:
@@ -682,11 +711,12 @@ def _handle_image(slide, data: SlideContent) -> None:
         title_ph.text = _truncate_title(data.title)
 
     picture_ph = _find_ph_by_type(slide, _PH_PICTURE)
-    desc = data.image_description or data.body or ""
+    # Use the same contextual description as _collect_image_descriptions for cache lookup
+    desc = _build_image_context(data)
 
     image_inserted = False
     if picture_ph and desc:
-        _report_progress("image", f"Bild wird eingefügt: {desc[:60]}")
+        _report_progress("image", f"Bild wird eingefügt: {data.title or desc[:60]}")
         ph_width = picture_ph.width
         ph_height = picture_ph.height
         width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
@@ -717,9 +747,9 @@ def _handle_image(slide, data: SlideContent) -> None:
             _fill_bullet_list(content_ph, data.bullets)
         elif data.body:
             _set_text_with_bold(content_ph, data.body)
-        elif desc:
-            logger.warning("Image slide '%s' has no bullets — using description as fallback", data.title)
-            _set_text_with_bold(content_ph, desc)
+        else:
+            # No bullets and no body — leave content empty rather than showing image description
+            logger.warning("Image slide '%s' has no text content — content area left empty", data.title)
 
 
 def _handle_closing(slide, data: SlideContent) -> None:
