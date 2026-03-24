@@ -1034,11 +1034,14 @@ def _truncate_title(text: str, max_chars: int | None = None) -> str:
     if len(text) <= resolved_limit:
         return text
     # Try to cut at a word boundary
-    truncated = text[:resolved_limit]
+    truncated = text[:resolved_limit - 1]  # -1 to leave room for ellipsis
     last_space = truncated.rfind(" ")
     if last_space > resolved_limit * 0.6:
         truncated = truncated[:last_space]
-    return truncated.rstrip(" ,:;-")
+    truncated = truncated.rstrip(" ,:;-") + "…"
+    slide_title = _current_slide_title_ctx.get("")
+    logger.warning(f"Title truncated: '{text[:60]}' → '{truncated}' (limit {resolved_limit})")
+    return truncated
 
 
 def _safe_clear_text_frame(tf):
@@ -1119,6 +1122,9 @@ def _fill_bullet_list_leveled(placeholder, items: list[tuple[int, str]]) -> None
     if tf.paragraphs:
         tf.paragraphs[-1].space_after = Pt(0)
 
+    # Enable shrink-to-fit so text auto-scales when exceeding the placeholder
+    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+
 
 def _set_paragraph_with_bold(paragraph, text: str) -> None:
     """Parse markdown bold (**text**) and create proper bold/normal runs."""
@@ -1151,3 +1157,4 @@ def _set_text_with_bold(placeholder, text: str) -> None:
     tf = placeholder.text_frame
     _safe_clear_text_frame(tf)
     _set_paragraph_with_bold(tf.paragraphs[0], text)
+    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE

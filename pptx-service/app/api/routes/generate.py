@@ -151,7 +151,7 @@ async def generate_stream(request: GenerateRequest):
         # Stream generation progress
         while True:
             try:
-                event = progress_queue.get(timeout=120)
+                event = progress_queue.get(timeout=300)
             except queue.Empty:
                 yield _sse_event("fail", {"detail": "Timeout bei der Generierung"})
                 return

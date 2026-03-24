@@ -106,8 +106,8 @@ def generate_chart(
     fig_w = width_px / dpi
     fig_h = height_px / dpi
 
-    # Style setup — larger fonts for readability in presentations
-    plt.rcParams.update({
+    # Style setup — use rc_context for thread safety (no global rcParams mutation)
+    rc_overrides = {
         "font.family": "sans-serif",
         "font.sans-serif": [font_family, "DejaVu Sans", "Arial", "Helvetica"],
         "font.size": 14,
@@ -115,63 +115,64 @@ def generate_chart(
         "text.color": text_color,
         "xtick.color": text_color,
         "ytick.color": text_color,
-    })
+    }
 
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=dpi)
+    with plt.rc_context(rc_overrides):
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=dpi)
 
-    if bg_color == "transparent":
-        fig.patch.set_alpha(0)
-        ax.patch.set_alpha(0)
-    else:
-        fig.patch.set_facecolor(bg_color)
-        ax.patch.set_facecolor(bg_color)
-
-    try:
-        if chart_type in ("pie", "donut"):
-            _draw_pie(ax, labels, datasets, colors, chart_type == "donut", show_values)
-        elif chart_type == "line":
-            _draw_line(ax, labels, datasets, colors, show_values, grid_color)
-        elif chart_type == "horizontal_bar":
-            _draw_horizontal_bar(ax, labels, datasets, colors, show_values, grid_color)
-        elif chart_type == "stacked_bar":
-            _draw_stacked_bar(ax, labels, datasets, colors, show_values, grid_color)
+        if bg_color == "transparent":
+            fig.patch.set_alpha(0)
+            ax.patch.set_alpha(0)
         else:
-            _draw_bar(ax, labels, datasets, colors, show_values, grid_color)
+            fig.patch.set_facecolor(bg_color)
+            ax.patch.set_facecolor(bg_color)
 
-        if title:
-            ax.set_title(title, fontsize=18, fontweight="bold", color=text_color, pad=20)
+        try:
+            if chart_type in ("pie", "donut"):
+                _draw_pie(ax, labels, datasets, colors, chart_type == "donut", show_values)
+            elif chart_type == "line":
+                _draw_line(ax, labels, datasets, colors, show_values, grid_color)
+            elif chart_type == "horizontal_bar":
+                _draw_horizontal_bar(ax, labels, datasets, colors, show_values, grid_color)
+            elif chart_type == "stacked_bar":
+                _draw_stacked_bar(ax, labels, datasets, colors, show_values, grid_color)
+            else:
+                _draw_bar(ax, labels, datasets, colors, show_values, grid_color)
 
-        if chart_type not in ("pie", "donut"):
-            if x_label:
-                ax.set_xlabel(x_label, fontsize=14)
-            if y_label:
-                ax.set_ylabel(y_label, fontsize=14)
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-            ax.spines["left"].set_color(grid_color)
-            ax.spines["bottom"].set_color(grid_color)
+            if title:
+                ax.set_title(title, fontsize=18, fontweight="bold", color=text_color, pad=20)
 
-        if show_legend and len(datasets) > 1 and chart_type not in ("pie", "donut"):
-            ax.legend(frameon=False, fontsize=13)
+            if chart_type not in ("pie", "donut"):
+                if x_label:
+                    ax.set_xlabel(x_label, fontsize=14)
+                if y_label:
+                    ax.set_ylabel(y_label, fontsize=14)
+                ax.spines["top"].set_visible(False)
+                ax.spines["right"].set_visible(False)
+                ax.spines["left"].set_color(grid_color)
+                ax.spines["bottom"].set_color(grid_color)
 
-        fig.tight_layout(pad=1.5)
+            if show_legend and len(datasets) > 1 and chart_type not in ("pie", "donut"):
+                ax.legend(frameon=False, fontsize=13)
 
-        output = Path(tempfile.mktemp(suffix=".png", prefix="chart_"))
-        fig.savefig(
-            str(output),
-            dpi=dpi,
-            bbox_inches="tight",
-            transparent=(bg_color == "transparent"),
-            pad_inches=0.3,
-        )
-        logger.info(f"Chart generated: {chart_type}, {len(labels)} labels -> {output}")
-        return output
+            fig.tight_layout(pad=1.5)
 
-    except Exception:
-        logger.exception("Failed to generate chart")
-        return None
-    finally:
-        plt.close(fig)
+            output = Path(tempfile.mktemp(suffix=".png", prefix="chart_"))
+            fig.savefig(
+                str(output),
+                dpi=dpi,
+                bbox_inches="tight",
+                transparent=(bg_color == "transparent"),
+                pad_inches=0.3,
+            )
+            logger.info(f"Chart generated: {chart_type}, {len(labels)} labels -> {output}")
+            return output
+
+        except Exception:
+            logger.exception("Failed to generate chart")
+            return None
+        finally:
+            plt.close(fig)
 
 
 def _draw_bar(ax, labels, datasets, colors, show_values, grid_color) -> None:

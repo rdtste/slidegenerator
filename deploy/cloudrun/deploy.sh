@@ -104,6 +104,9 @@ deploy_service() {
 
     info "Deploye ${PREFIX}-${service} nach Cloud Run..."
 
+    local min_inst="${7:-0}"
+    local concurrency="${8:-80}"
+
     local cmd=(
         gcloud run deploy "${PREFIX}-${service}"
         --image="${image}"
@@ -111,8 +114,9 @@ deploy_service() {
         --port="${port}"
         --memory="${memory}"
         --cpu="${cpu}"
-        --min-instances=0
+        --min-instances="${min_inst}"
         --max-instances=3
+        --concurrency="${concurrency}"
         --timeout=300
         --ingress=internal-and-cloud-load-balancing
         --quiet
@@ -163,7 +167,7 @@ main() {
     local pptx_env
     pptx_env=$(load_env_as_flags "${REPO_ROOT}/pptx-service/.env")
     local pptx_url
-    pptx_url=$(deploy_service "pptx-service" "8000" "${pptx_env}" "512Mi" "1" "false")
+    pptx_url=$(deploy_service "pptx-service" "8000" "${pptx_env}" "2Gi" "2" "false" "1" "1")
 
     # ── 3. Deploy backend (intern) ──
     info "── Schritt 3: backend deployen ──"

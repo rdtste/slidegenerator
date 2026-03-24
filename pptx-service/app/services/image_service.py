@@ -29,7 +29,7 @@ _IMAGE_CACHE: dict[str, Path] = {}
 # P0 Configuration  
 MAX_RETRIES = 3
 TIMEOUT_SECS = 30
-RETRY_BACKOFF_BASE = 1  # seconds (1s, 2s, 4s)
+RETRY_BACKOFF_BASE = 2  # seconds (2s, 4s, 8s)
 
 
 def _get_access_token() -> str:
