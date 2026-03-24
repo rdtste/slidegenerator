@@ -37,11 +37,12 @@ export class ExportPanel implements OnDestroy {
 
     this.exporting.set(true);
     this.exportProgress.set(0);
-    this.exportMessage.set('Export wird gestartet...');
+    const slideCount = this.state.slides().length;
+    this.exportMessage.set(`${slideCount} Folien werden als PowerPoint aufbereitet…`);
     this.exportStatus.set('');
     this.currentActiveKey = '';
     this.progressEntries.set([
-      { icon: '📄', label: 'Verbindung wird hergestellt...', status: 'active' },
+      { icon: '🚀', label: `PowerPoint-Export für ${slideCount} Folien wird vorbereitet…`, status: 'active' },
     ]);
 
     this.api.startExport(markdown, this.state.selectedTemplateId(), format).subscribe({
@@ -109,7 +110,7 @@ export class ExportPanel implements OnDestroy {
       const warningCount = typeof data.warning_count === 'number' ? data.warning_count : 0;
       this.exportProgress.set(100);
       this.finishAllEntries();
-      this.exportMessage.set('Download wird vorbereitet...');
+      this.exportMessage.set('Präsentation ist fertig — Download startet…');
       source.close();
       this.eventSource = null;
 
@@ -174,6 +175,7 @@ export class ExportPanel implements OnDestroy {
 
   private iconForStep(step: string): string {
     switch (step) {
+      case 'validating': return '🔍';
       case 'parsing': case 'parsed': return '📄';
       case 'template': case 'template_check': return '🎨';
       case 'slide': return '📑';
@@ -201,7 +203,7 @@ export class ExportPanel implements OnDestroy {
     if (!markdown) return;
 
     this.exporting.set(true);
-    this.exportStatus.set(`${format.toUpperCase()} wird generiert...`);
+    this.exportStatus.set(`${format.toUpperCase()} wird aus ${this.state.slides().length} Folien erstellt…`);
 
     this.api.exportPresentation(markdown, this.state.selectedTemplateId(), format).subscribe({
       next: (response) => {

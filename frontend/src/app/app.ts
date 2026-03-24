@@ -74,11 +74,13 @@ export class App implements OnInit {
       this.state.selectedSlideIndex();
       const md = this.state.currentSlideMarkdown();
       if (step === 3 && md) {
+        // Wrap single-slide markdown with Marp frontmatter so it renders correctly
+        const slideMd = md.includes('marp:') ? md : `---\nmarp: true\n---\n\n${md}`;
         const tid = untracked(() => {
           const t = this.state.selectedTemplateId();
           return t !== 'default' ? t : undefined;
         });
-        this.api.preview(md, tid).subscribe({
+        this.api.preview(slideMd, tid).subscribe({
           next: (html) => this.state.slidePreviewHtml.set(html),
           error: (err) => console.error('[SlidePreview] Fehler:', err),
         });

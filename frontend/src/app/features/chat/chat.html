@@ -7,7 +7,7 @@
     }
     @if (state.loading()) {
       <div class="message assistant loading">
-        {{ conversing() ? 'Einen Moment...' : 'Generiere Folien...' }}
+        {{ conversing() ? 'Einen Moment...' : (generationPhase() || 'Generiere Folien…') }}
       </div>
     }
   </div>

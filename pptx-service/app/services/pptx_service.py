@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import tempfile
@@ -18,7 +19,7 @@ from typing import Callable, Optional
 
 from app.models.schemas import PresentationData, SlideContent
 from app.services import template_service
-from app.services.image_service import create_fallback_image, generate_image
+from app.services.image_service import create_fallback_image, generate_image, generate_image_async
 from app.services.chart_service import generate_chart, parse_chart_data
 from app.services.image_fitting import fit_image_to_placeholder
 
@@ -31,6 +32,8 @@ _progress_ctx: ContextVar[Optional[ProgressCallback]] = ContextVar(
 _warnings_ctx: ContextVar[list[dict] | None] = ContextVar("_warnings_ctx", default=None)
 _current_slide_number_ctx: ContextVar[int | None] = ContextVar("_current_slide_number_ctx", default=None)
 _current_slide_title_ctx: ContextVar[str] = ContextVar("_current_slide_title_ctx", default="")
+# Pre-generated image cache: description → Path (filled before slide loop)
+_prefetched_images: ContextVar[dict[str, Path | None]] = ContextVar("_prefetched_images", default={})
 _current_title_limit_ctx: ContextVar[int | None] = ContextVar("_current_title_limit_ctx", default=None)
 
 _LAYOUT_LABELS: dict[str, str] = {
@@ -159,6 +162,7 @@ def generate_pptx(
     """Generate a PPTX file from structured presentation data."""
     token = _progress_ctx.set(progress_callback)
     warnings_token = _warnings_ctx.set(warnings_collector if warnings_collector is not None else [])
+    prefetch_token = _prefetched_images.set({})
     try:
         _report_progress("template", "Template wird geladen...", 5)
         prs = template_service.load_presentation(template_id)
@@ -169,18 +173,26 @@ def generate_pptx(
         _set_metadata(prs, data)
         _report_progress("template", "Template bereit", 10)
 
+        # --- Pre-generate all images in parallel ---
+        image_descs = _collect_image_descriptions(data)
+        if image_descs:
+            _report_progress("image", f"{len(image_descs)} Bilder werden parallel generiert…", 12)
+            prefetched = _prefetch_images(image_descs)
+            _prefetched_images.set(prefetched)
+            ok_count = sum(1 for v in prefetched.values() if v is not None)
+            _report_progress("image", f"{ok_count}/{len(image_descs)} Bilder bereit", 40)
+
         total = len(data.slides)
         for i, slide_data in enumerate(data.slides):
-            progress = 10 + int((i / total) * 80)
+            progress = 40 + int((i / total) * 50)
             label = _LAYOUT_LABELS.get(slide_data.layout, slide_data.layout)
             title_preview = f" — {slide_data.title[:40]}" if slide_data.title else ""
             _report_progress(
                 "slide", f"Folie {i + 1}/{total}: {label}{title_preview}", progress,
             )
             _add_slide(prs, slide_data, analysis_map, title_limits, i + 1)
-            # Mark slide as done
             _report_progress(
-                "slide", f"Folie {i + 1}/{total} fertig", 10 + int(((i + 1) / total) * 80),
+                "slide", f"Folie {i + 1}/{total} fertig", 40 + int(((i + 1) / total) * 50),
             )
 
         _report_progress("saving", "Präsentation wird gespeichert...", 95)
@@ -194,8 +206,61 @@ def generate_pptx(
         logger.info(f"Generated PPTX: {output_path} ({len(data.slides)} slides)")
         return output_path
     finally:
+        _prefetched_images.reset(prefetch_token)
         _warnings_ctx.reset(warnings_token)
         _progress_ctx.reset(token)
+
+
+def _collect_image_descriptions(data: PresentationData) -> list[str]:
+    """Collect all image descriptions that will need generation."""
+    descs: list[str] = []
+    seen: set[str] = set()
+    for slide_data in data.slides:
+        desc = None
+        if slide_data.layout == "title":
+            desc = slide_data.image_description or slide_data.subtitle or slide_data.title
+        elif slide_data.layout == "image":
+            desc = slide_data.image_description or slide_data.body or ""
+        if desc and desc not in seen:
+            descs.append(desc)
+            seen.add(desc)
+    return descs
+
+
+def _prefetch_images(descriptions: list[str]) -> dict[str, Path | None]:
+    """Generate all images in parallel using asyncio."""
+    async def _run():
+        tasks = [generate_image_async(desc) for desc in descriptions]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        cache: dict[str, Path | None] = {}
+        for desc, result in zip(descriptions, results):
+            if isinstance(result, Exception):
+                logger.warning(f"[Prefetch] Image failed for '{desc[:40]}': {result}")
+                cache[desc] = None
+            else:
+                cache[desc] = result
+        return cache
+
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # We're inside an async context (e.g. FastAPI) — use new loop in thread
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(asyncio.run, _run())
+                return future.result(timeout=120)
+        return loop.run_until_complete(_run())
+    except RuntimeError:
+        return asyncio.run(_run())
+
+
+def _get_prefetched_image(desc: str) -> Path | None:
+    """Get a pre-generated image from the cache, or generate on demand as fallback."""
+    cache = _prefetched_images.get({})
+    if desc in cache:
+        return cache[desc]
+    # Fallback: generate synchronously (shouldn't happen normally)
+    return generate_image(desc)
 
 
 def _remove_all_slides(prs: Presentation) -> None:
@@ -234,6 +299,22 @@ def _add_slide(
     """Add a single slide to the presentation based on its layout type."""
     layout_idx = _resolve_layout(prs, slide_data.layout, analysis_map)
     layout = prs.slide_layouts[layout_idx]
+
+    # Closing slides with substantive content need adequate space.
+    # Contact-style closing layouts often have tiny content areas (< 12cm wide).
+    # Fall back to a content layout if the closing layout is too cramped.
+    if slide_data.layout == "closing" and slide_data.bullets and len(slide_data.bullets) > 0:
+        content_width_cm = _max_content_width_cm(layout)
+        if content_width_cm < 12.0:
+            content_idx = _resolve_layout(prs, "content", analysis_map)
+            logger.info(
+                f"Closing layout [{layout_idx}] '{layout.name}' content area too narrow "
+                f"({content_width_cm:.1f}cm) for {len(slide_data.bullets)} bullets — "
+                f"using content layout [{content_idx}] instead"
+            )
+            layout_idx = content_idx
+            layout = prs.slide_layouts[layout_idx]
+
     slide = prs.slides.add_slide(layout)
 
     configured_title_limit = (title_limits or {}).get(layout_idx)
@@ -437,6 +518,17 @@ def _structure_score(layout, layout_type: str) -> int:
     return 0
 
 
+def _max_content_width_cm(layout) -> float:
+    """Return the width in cm of the widest OBJECT/BODY placeholder in a layout."""
+    max_w = 0.0
+    for ph in layout.placeholders:
+        if ph.placeholder_format.type in (_PH_OBJECT, _PH_BODY):
+            w_cm = ph.width / 914400 * 2.54
+            if w_cm > max_w:
+                max_w = w_cm
+    return max_w
+
+
 def _estimate_title_capacity(layout) -> int:
     """Estimate max title chars from title/body placeholder width when profile limits are missing."""
     candidate = None
@@ -483,12 +575,11 @@ def _handle_title(slide, data: SlideContent) -> None:
     if picture_ph:
         desc = data.image_description or data.subtitle or data.title
         if desc:
-            _report_progress("image", f"Titelbild wird generiert: {desc[:60]}")
             ph_width = picture_ph.width
             ph_height = picture_ph.height
             width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
             height_px = max(512, min(1536, int(ph_height / 914400 * 96)))
-            image_path = generate_image(desc, width=width_px, height=height_px)
+            image_path = _get_prefetched_image(desc)
             if image_path is None:
                 _report_warning(
                     "Bild konnte nicht per KI erzeugt werden - Platzhalterbild wird verwendet.",
@@ -591,18 +682,14 @@ def _handle_image(slide, data: SlideContent) -> None:
 
     image_inserted = False
     if picture_ph and desc:
-        _report_progress("image", f"Bild wird generiert: {desc[:60]}")
+        _report_progress("image", f"Bild wird eingefügt: {desc[:60]}")
         ph_width = picture_ph.width
         ph_height = picture_ph.height
         width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
         height_px = max(512, min(1536, int(ph_height / 914400 * 96)))
 
-        image_path = generate_image(desc, width=width_px, height=height_px)
+        image_path = _get_prefetched_image(desc)
         if image_path is None:
-            _report_warning(
-                "Bild konnte nicht per KI erzeugt werden - Platzhalterbild wird verwendet.",
-                code="image_generation_failed",
-            )
             image_path = create_fallback_image(desc, width=width_px, height=height_px)
         if image_path:
             try:
@@ -817,13 +904,22 @@ _BOLD_RE = _re.compile(r'\*\*(.+?)\*\*')
 
 
 def _fill_bullets(placeholder, markdown_text: str) -> None:
-    """Fill a placeholder with bullet lines parsed from Markdown."""
-    lines = [
-        line.lstrip("- ").lstrip("* ").strip()
-        for line in markdown_text.strip().split("\n")
-        if line.strip()
-    ]
-    _fill_bullet_list(placeholder, lines)
+    """Fill a placeholder with bullet lines parsed from Markdown.
+
+    Supports indented sub-bullets (level 1) via 2+ leading spaces or tabs.
+    """
+    items: list[tuple[int, str]] = []
+    for line in markdown_text.strip().split("\n"):
+        if not line.strip():
+            continue
+        # Detect indentation level: 2+ spaces or tab = sub-bullet (level 1)
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+        level = 1 if indent >= 2 else 0
+        text = stripped.lstrip("- ").lstrip("* ").strip()
+        if text:
+            items.append((level, text))
+    _fill_bullet_list_leveled(placeholder, items)
 
 
 _NS_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
@@ -919,27 +1015,57 @@ def _safe_clear_text_frame(tf):
 
 
 def _fill_bullet_list(placeholder, items: list[str]) -> None:
-    """Fill a placeholder with a list of bullet strings, rendering **bold** as actual bold.
+    """Fill a placeholder with a list of bullet strings (all level 0)."""
+    _fill_bullet_list_leveled(placeholder, [(0, item) for item in items])
 
+
+def _fill_bullet_list_leveled(placeholder, items: list[tuple[int, str]]) -> None:
+    """Fill a placeholder with leveled bullet strings, rendering **bold** as actual bold.
+
+    Each item is (level, text) where level 0 = main bullet, level 1 = sub-bullet.
     Preserves the template's lstStyle to maintain font sizes, bullet symbols and indentation.
-    Adds explicit bullet characters when the template doesn't provide them at level 0.
+    Adds explicit bullet characters when the template doesn't provide them.
+    Adds paragraph spacing for visual breathing room between bullets.
     """
     tf = placeholder.text_frame
     _safe_clear_text_frame(tf)
 
-    # Detect whether level 0 has a bullet character from the master/layout.
-    # If buNone is set or no buChar exists, we add an explicit bullet.
     needs_explicit_bullet = _needs_bullet_char(tf)
 
-    for i, item in enumerate(items):
+    # Calculate spacing based on number of items.
+    n = max(len(items), 1)
+    if n <= 3:
+        space_after_pt = Pt(14)
+    elif n <= 5:
+        space_after_pt = Pt(10)
+    elif n <= 7:
+        space_after_pt = Pt(6)
+    else:
+        space_after_pt = Pt(4)
+
+    for i, (level, text) in enumerate(items):
         if i == 0:
             p = tf.paragraphs[0]
         else:
             p = tf.add_paragraph()
-        p.level = 0
+        p.level = min(level, 1)
+        # Main bullets get full spacing; sub-bullets get tighter spacing
+        p.space_after = Pt(2) if level > 0 else space_after_pt
+        # Sub-bullets before a main bullet: reduce the main bullet's space_before
         if needs_explicit_bullet:
             _ensure_bullet_char(p)
-        _set_paragraph_with_bold(p, item)
+        _set_paragraph_with_bold(p, text)
+        # Slightly smaller font for sub-bullets to create visual hierarchy
+        if level > 0 and p.runs:
+            for run in p.runs:
+                if run.font.size is None:
+                    run.font.size = Pt(14)
+                else:
+                    run.font.size = Pt(max(10, int(run.font.size / 12700) - 2))
+
+    # Remove trailing space on last paragraph
+    if tf.paragraphs:
+        tf.paragraphs[-1].space_after = Pt(0)
 
 
 def _set_paragraph_with_bold(paragraph, text: str) -> None:

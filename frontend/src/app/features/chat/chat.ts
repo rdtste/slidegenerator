@@ -1,7 +1,15 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
+
+const GENERATION_PHASES = [
+  'KI analysiert dein Briefing…',
+  'Folienstruktur wird geplant…',
+  'Inhalte werden formuliert…',
+  'Texte und Layouts werden zugeordnet…',
+  'Feinschliff an den Formulierungen…',
+];
 
 @Component({
   selector: 'app-chat',
@@ -9,15 +17,17 @@ import { ChatState } from '../../core/services/chat';
   templateUrl: './chat.html',
   styleUrl: './chat.scss',
 })
-export class Chat {
+export class Chat implements OnDestroy {
   private readonly api = inject(ApiService);
   readonly state = inject(ChatState);
   readonly prompt = signal('');
   readonly attachedFiles = signal<File[]>([]);
   readonly conversing = signal(false);
+  readonly generationPhase = signal('');
 
   private llmConversation: Array<{ role: string; content: string }> = [];
   private firstMessageFiles: File[] = [];
+  private phaseInterval: ReturnType<typeof setInterval> | null = null;
 
   send(): void {
     const text = this.prompt().trim();
@@ -87,6 +97,7 @@ export class Chat {
     const templateId = this.state.selectedTemplateId();
     const audience = this.state.audience();
     const imageStyle = this.state.imageStyle();
+    this.startPhaseRotation();
     this.api
       .chat(
         briefing,
@@ -97,6 +108,7 @@ export class Chat {
       )
       .subscribe({
         next: (res) => {
+          this.stopPhaseRotation();
           this.state.markdown.set(res.markdown);
           this.state.slides.set(res.slides);
           this.state.addMessage({
@@ -109,12 +121,34 @@ export class Chat {
           this.state.currentStep.set(3);
         },
         error: (err) => {
+          this.stopPhaseRotation();
           const detail = err.error?.detail ?? err.message ?? 'Unbekannter Fehler';
           this.state.addMessage({ role: 'error', content: `Fehler: ${detail}` });
           this.state.loading.set(false);
           this.resetConversation();
         },
       });
+  }
+
+  ngOnDestroy(): void {
+    this.stopPhaseRotation();
+  }
+
+  private startPhaseRotation(): void {
+    let index = 0;
+    this.generationPhase.set(GENERATION_PHASES[0]);
+    this.phaseInterval = setInterval(() => {
+      index = Math.min(index + 1, GENERATION_PHASES.length - 1);
+      this.generationPhase.set(GENERATION_PHASES[index]);
+    }, 4000);
+  }
+
+  private stopPhaseRotation(): void {
+    if (this.phaseInterval) {
+      clearInterval(this.phaseInterval);
+      this.phaseInterval = null;
+    }
+    this.generationPhase.set('');
   }
 
   private resetConversation(): void {

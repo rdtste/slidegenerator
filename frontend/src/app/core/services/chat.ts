@@ -29,7 +29,9 @@ export class ChatState {
   readonly slideMarkdowns = computed(() => {
     const md = this.markdown();
     if (!md.trim()) return [];
-    return md.split(/^\s*---\s*$/m).filter((s) => s.trim());
+    // Strip Marp frontmatter (---\n...\n---) before splitting on slide separators
+    const withoutFrontmatter = md.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
+    return withoutFrontmatter.split(/^\s*---\s*$/m).filter((s) => s.trim());
   });
 
   readonly currentSlideMarkdown = computed(() => {
