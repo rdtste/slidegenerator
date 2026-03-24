@@ -174,75 +174,19 @@ main() {
     local backend_url
     backend_url=$(deploy_service "backend" "3000" "${backend_env}" "512Mi" "1")
 
-    # ── 4. Update frontend nginx.conf für Cloud Run ──
-    info "── Schritt 4: Frontend vorbereiten ──"
-    # Erstelle eine Cloud Run-spezifische nginx.conf
-    cat > "${REPO_ROOT}/frontend/nginx.cloudrun.conf" << NGINX_EOF
-server {
-    listen 8080;
-    server_name _;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass ${backend_url};
-        proxy_set_header Host ${backend_url#https://};
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_ssl_server_name on;
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
-        client_max_body_size 50m;
-
-        # SSE Support
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_set_header Connection '';
-        chunked_transfer_encoding off;
-    }
-}
-NGINX_EOF
-
-    # Erstelle Cloud Run-spezifisches Dockerfile
-    cat > "${REPO_ROOT}/frontend/Dockerfile.cloudrun" << 'DOCKER_EOF'
-FROM node:22-slim AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npx ng build --configuration production
-
-FROM nginx:alpine
-COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
-COPY nginx.cloudrun.conf /etc/nginx/conf.d/default.conf
-EXPOSE 8080
-DOCKER_EOF
-
-    # Build mit Cloud Run Dockerfile
+    # ── 4. Build & deploy frontend ──
+    info "── Schritt 4: Frontend bauen & deployen ──"
+    # Frontend nutzt Dockerfile.cloudrun (statische Dateien, kein API-Proxy)
+    # API-Aufrufe gehen direkt vom Browser zum Backend via Custom Domain
     local frontend_image="${REGISTRY}/${PREFIX}-frontend:latest"
-    info "Baue Frontend mit Cloud Run Config..."
     docker build --platform linux/amd64 \
         -t "${frontend_image}" \
         -f "${REPO_ROOT}/frontend/Dockerfile.cloudrun" \
         "${REPO_ROOT}/frontend"
     docker push "${frontend_image}"
 
-    # ── 5. Deploy frontend (öffentlich) ──
-    info "── Schritt 5: frontend deployen ──"
     local frontend_url
     frontend_url=$(deploy_service "frontend" "8080" "" "256Mi" "1")
-
-    # ── 6. Backend muss Frontend als erlaubten Origin kennen ──
-    # (Falls CORS konfiguriert ist)
-
-    # ── Aufräumen ──
-    rm -f "${REPO_ROOT}/frontend/nginx.cloudrun.conf"
-    rm -f "${REPO_ROOT}/frontend/Dockerfile.cloudrun"
 
     # ── Ergebnis ──
     echo ""
