@@ -65,6 +65,46 @@ export class TemplatesService {
   private readonly pptxServiceUrl: string;
   private themeCache = new Map<string, { theme: TemplateTheme; ts: number }>();
 
+  /**
+   * Sync a template file to the pptx-service via HTTP upload.
+   * Required on Cloud Run where services have separate filesystems.
+   */
+  async syncTemplateToPptxService(filename: string, buffer: Buffer): Promise<void> {
+    try {
+      const formData = new FormData();
+      formData.append('file', new Blob([new Uint8Array(buffer)]), filename);
+      const response = await fetch(`${this.pptxServiceUrl}/api/v1/templates`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        this.logger.warn(`Failed to sync template to pptx-service: ${response.status} ${text}`);
+      } else {
+        this.logger.log(`Template synced to pptx-service: ${filename}`);
+      }
+    } catch (err) {
+      this.logger.warn(`Could not sync template to pptx-service: ${err}`);
+    }
+  }
+
+  /**
+   * Delete a template from the pptx-service.
+   */
+  async deleteTemplateFromPptxService(templateId: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.pptxServiceUrl}/api/v1/templates/${encodeURIComponent(templateId)}`,
+        { method: 'DELETE' },
+      );
+      if (response.ok) {
+        this.logger.log(`Template deleted from pptx-service: ${templateId}`);
+      }
+    } catch (err) {
+      this.logger.warn(`Could not delete template from pptx-service: ${err}`);
+    }
+  }
+
   listTemplates(sessionId?: string): TemplateInfoDto[] {
     const files = fs.readdirSync(this.templatesDir)
       .filter((f) => f.endsWith('.pptx') || f.endsWith('.potx'))

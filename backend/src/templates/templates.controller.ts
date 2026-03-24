@@ -56,6 +56,9 @@ export class TemplatesController {
 
     const info = this.templatesService.saveTemplate(file.originalname, file.buffer, sessionId);
 
+    // Sync template file to pptx-service (required on Cloud Run where filesystems are separate)
+    await this.templatesService.syncTemplateToPptxService(file.originalname, file.buffer);
+
     // Deep learning runs synchronously — templates are few but must be perfectly understood
     try {
       const profile = await this.analysisService.learnTemplate(info.id);
@@ -157,7 +160,7 @@ export class TemplatesController {
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string): { deleted: boolean } {
+  async delete(@Param('id') id: string): Promise<{ deleted: boolean }> {
     if (id === 'default') {
       throw new HttpException(
         { detail: 'Das Standard-Template kann nicht gelöscht werden' },
@@ -172,6 +175,7 @@ export class TemplatesController {
       );
     }
     this.analysisService.deleteAnalysis(id);
+    await this.templatesService.deleteTemplateFromPptxService(id);
     return { deleted: true };
   }
 }
