@@ -60,6 +60,8 @@ export interface TemplateProfile {
   chart_guidelines: {
     color_sequence: string[];
     font_family: string;
+    text_color: string;
+    grid_color: string;
     style: string;
     available_chart_layouts: number[];
   };
@@ -616,6 +618,8 @@ export class TemplateAnalysisService {
       chart_guidelines: {
         color_sequence: (chartGuidelines['color_sequence'] as string[]) ?? [],
         font_family: (chartGuidelines['font_family'] as string) ?? 'Calibri',
+        text_color: (chartGuidelines['text_color'] as string) ?? '#333333',
+        grid_color: (chartGuidelines['grid_color'] as string) ?? '#E0E0E0',
         style: (chartGuidelines['style'] as string) ?? 'modern_flat',
         available_chart_layouts: (chartGuidelines['available_chart_layouts'] as number[]) ?? [],
       },
@@ -660,6 +664,7 @@ export class TemplateAnalysisService {
       layout_catalog: analysis.layout_mappings,
       chart_guidelines: {
         color_sequence: [], font_family: 'Calibri',
+        text_color: '#333333', grid_color: '#E0E0E0',
         style: 'modern_flat', available_chart_layouts: [],
       },
       image_guidelines: {

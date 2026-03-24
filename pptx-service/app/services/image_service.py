@@ -41,9 +41,10 @@ def _get_access_token() -> str:
     return credentials.token
 
 
-def generate_image(description: str, width: int = 1024, height: int = 1024) -> Path | None:
+def generate_image(description: str, width: int = 1024, height: int = 1024,
+                    style_keywords: list[str] | None = None) -> Path | None:
     """Generate an image synchronously (backward compatible).
-    
+
     Wraps generate_image_async for sync contexts.
     Returns None on failure (graceful fallback).
     """
@@ -54,8 +55,10 @@ def generate_image(description: str, width: int = 1024, height: int = 1024) -> P
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        
-        return loop.run_until_complete(generate_image_async(description, width, height))
+
+        return loop.run_until_complete(
+            generate_image_async(description, width, height, style_keywords=style_keywords)
+        )
     except Exception as e:
         logger.error(f"Sync image generation failed: {e}")
         return None
@@ -66,7 +69,8 @@ async def generate_image_async(
     width: int = 1024,
     height: int = 1024,
     max_retries: int = MAX_RETRIES,
-    timeout_secs: int = TIMEOUT_SECS
+    timeout_secs: int = TIMEOUT_SECS,
+    style_keywords: list[str] | None = None,
 ) -> Path | None:
     """Generate an image with retry logic and exponential backoff (P0 Feature).
     
@@ -105,7 +109,7 @@ async def generate_image_async(
             )
             
             result = await asyncio.wait_for(
-                _generate_image_once(description, width, height),
+                _generate_image_once(description, width, height, style_keywords),
                 timeout=timeout_secs
             )
             
@@ -147,9 +151,12 @@ async def generate_image_async(
     return None
 
 
-async def _generate_image_once(description: str, width: int, height: int) -> Path | None:
+async def _generate_image_once(
+    description: str, width: int, height: int,
+    style_keywords: list[str] | None = None,
+) -> Path | None:
     """Generate image in single attempt (no retries)."""
-    
+
     try:
         token = _get_access_token()
     except Exception as e:
@@ -163,9 +170,10 @@ async def _generate_image_once(description: str, width: int, height: int) -> Pat
     )
 
     # Enhance the prompt for better presentation-quality results
+    style_hint = ", ".join(style_keywords) if style_keywords else "clean, modern, corporate style"
     enhanced_prompt = (
         f"Professional presentation graphic: {description}. "
-        "Clean, modern, high-quality, corporate style. No text overlays."
+        f"High-quality, {style_hint}. No text overlays."
     )
 
     aspect = _best_aspect_ratio(width, height)

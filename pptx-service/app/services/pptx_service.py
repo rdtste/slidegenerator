@@ -35,6 +35,7 @@ _current_slide_title_ctx: ContextVar[str] = ContextVar("_current_slide_title_ctx
 # Pre-generated image cache: description → Path (filled before slide loop)
 _prefetched_images: ContextVar[dict[str, Path | None]] = ContextVar("_prefetched_images", default={})
 _current_title_limit_ctx: ContextVar[int | None] = ContextVar("_current_title_limit_ctx", default=None)
+_current_template_id_ctx: ContextVar[str] = ContextVar("_current_template_id_ctx", default="default")
 
 _LAYOUT_LABELS: dict[str, str] = {
     "title": "Titelfolie",
@@ -163,6 +164,7 @@ def generate_pptx(
     token = _progress_ctx.set(progress_callback)
     warnings_token = _warnings_ctx.set(warnings_collector if warnings_collector is not None else [])
     prefetch_token = _prefetched_images.set({})
+    template_token = _current_template_id_ctx.set(template_id)
     try:
         _report_progress("template", "Template wird geladen...", 5)
         prs = template_service.load_presentation(template_id)
@@ -206,6 +208,7 @@ def generate_pptx(
         logger.info(f"Generated PPTX: {output_path} ({len(data.slides)} slides)")
         return output_path
     finally:
+        _current_template_id_ctx.reset(template_token)
         _prefetched_images.reset(prefetch_token)
         _warnings_ctx.reset(warnings_token)
         _progress_ctx.reset(token)
@@ -229,8 +232,9 @@ def _collect_image_descriptions(data: PresentationData) -> list[str]:
 
 def _prefetch_images(descriptions: list[str]) -> dict[str, Path | None]:
     """Generate all images in parallel using asyncio."""
+    style_kw = _load_image_style_keywords() or None
     async def _run():
-        tasks = [generate_image_async(desc) for desc in descriptions]
+        tasks = [generate_image_async(desc, style_keywords=style_kw) for desc in descriptions]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         cache: dict[str, Path | None] = {}
         for desc, result in zip(descriptions, results):
@@ -767,7 +771,7 @@ def _handle_chart(slide, data: SlideContent) -> None:
         return
 
     # Load template profile for chart styling
-    chart_colors = _load_chart_colors()
+    chart_style = _load_chart_style()
 
     # Find picture or chart placeholder for the chart image
     picture_ph = _find_ph_by_type(slide, _PH_PICTURE)
@@ -784,7 +788,10 @@ def _handle_chart(slide, data: SlideContent) -> None:
 
         chart_path = generate_chart(
             chart_data=chart_data,
-            colors=chart_colors if chart_colors else None,
+            colors=chart_style.get("colors"),
+            font_family=chart_style.get("font_family", "Calibri"),
+            text_color=chart_style.get("text_color", "#333333"),
+            grid_color=chart_style.get("grid_color", "#E0E0E0"),
             width_px=width_px,
             height_px=height_px,
         )
@@ -813,23 +820,68 @@ def _handle_chart(slide, data: SlideContent) -> None:
         content_ph.text = f"[Diagramm: {chart_data.get('title', data.title)}]"
 
 
-def _load_chart_colors() -> list[str] | None:
-    """Try to load chart colors from the template profile."""
-    # Check for profile JSON in the templates directory
+def _load_template_profile() -> dict | None:
+    """Load the current template's .profile.json for chart/image styling."""
     import json
-    from app.config import settings
 
-    templates_dir = settings.templates_dir
-    for profile_path in templates_dir.glob("*.profile.json"):
-        try:
-            with open(profile_path, "r", encoding="utf-8") as f:
-                profile = json.load(f)
-            colors = profile.get("color_dna", {}).get("chart_colors", [])
-            if colors:
-                return colors
-        except Exception:
-            pass
-    return None
+    template_id = _current_template_id_ctx.get()
+    if not template_id or template_id == "default":
+        return None
+
+    template_path = template_service.get_template_path(template_id)
+    if not template_path:
+        return None
+
+    profile_path = template_path.parent / f"{template_id}.profile.json"
+    if not profile_path.is_file():
+        return None
+
+    try:
+        with open(profile_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        logger.warning(f"Failed to load profile for '{template_id}'")
+        return None
+
+
+def _load_chart_style() -> dict:
+    """Load chart styling (colors, font, text_color, grid_color) from the template profile."""
+    style: dict = {}
+    profile = _load_template_profile()
+    if not profile:
+        return style
+
+    color_dna = profile.get("color_dna", {})
+    chart_colors = color_dna.get("chart_colors", [])
+    if chart_colors:
+        style["colors"] = chart_colors
+
+    chart_guide = profile.get("chart_guidelines", {})
+    if chart_guide.get("font_family"):
+        style["font_family"] = chart_guide["font_family"]
+    if chart_guide.get("text_color"):
+        style["text_color"] = chart_guide["text_color"]
+    if chart_guide.get("grid_color"):
+        style["grid_color"] = chart_guide["grid_color"]
+
+    return style
+
+
+def _load_image_style_keywords() -> list[str]:
+    """Load image style keywords from the template profile for Imagen prompt enrichment."""
+    profile = _load_template_profile()
+    if not profile:
+        return []
+
+    image_guide = profile.get("image_guidelines", {})
+    keywords = image_guide.get("style_keywords", [])
+    accent = image_guide.get("accent_color", "")
+
+    # Add accent color as style hint
+    if accent and accent != "#0969da":
+        keywords = list(keywords) + [f"accent color {accent}"]
+
+    return keywords
 
 
 _LAYOUT_HANDLERS = {
