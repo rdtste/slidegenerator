@@ -231,3 +231,69 @@ def _best_aspect_ratio(width: int, height: int) -> str:
     ]
     best = min(options, key=lambda o: abs(o[0] - ratio))
     return best[1]
+
+
+def create_fallback_image(
+    description: str,
+    width: int = 1024,
+    height: int = 1024,
+    reason: str = "Bildgenerierung nicht verfuegbar",
+) -> Path | None:
+    """Create a simple local fallback PNG so picture placeholders are never left empty."""
+    try:
+        import matplotlib.pyplot as plt
+        from textwrap import fill
+
+        fig_w = max(4.0, width / 100.0)
+        fig_h = max(3.0, height / 100.0)
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=100)
+        ax.set_facecolor("#F2F4F8")
+        fig.patch.set_facecolor("#F2F4F8")
+        ax.axis("off")
+
+        ax.text(
+            0.5,
+            0.62,
+            "Bildplatzhalter",
+            ha="center",
+            va="center",
+            fontsize=24,
+            color="#1F2A37",
+            fontweight="bold",
+            transform=ax.transAxes,
+        )
+        ax.text(
+            0.5,
+            0.48,
+            fill(reason, width=42),
+            ha="center",
+            va="center",
+            fontsize=13,
+            color="#334155",
+            transform=ax.transAxes,
+        )
+        ax.text(
+            0.5,
+            0.30,
+            fill(description or "Ohne Beschreibung", width=52),
+            ha="center",
+            va="center",
+            fontsize=11,
+            color="#475569",
+            transform=ax.transAxes,
+        )
+
+        tmp = tempfile.NamedTemporaryFile(
+            suffix=".png", prefix="slidegen_fallback_", delete=False,
+        )
+        # Keep exact canvas dimensions so placeholder fill/crop behaves predictably.
+        fig.savefig(tmp.name, format="png")
+        plt.close(fig)
+        tmp.close()
+
+        path = Path(tmp.name)
+        logger.info(f"[Image Gen] Created fallback image: {path}")
+        return path
+    except Exception as exc:
+        logger.warning(f"[Image Gen] Fallback image creation failed: {type(exc).__name__}: {exc}")
+        return None

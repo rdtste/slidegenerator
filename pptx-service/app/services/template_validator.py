@@ -17,6 +17,9 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from app.config import settings
+from app.services.template_service import get_template_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,9 +73,10 @@ class TemplateValidator:
     and has all required layouts and resources before generation starts.
     """
 
-    def __init__(self, templates_dir: str = "/app/templates"):
-        self.templates_dir = Path(templates_dir)
-        logger.info(f"[Template Validator] Initialized with templates_dir: {templates_dir}")
+    def __init__(self, templates_dir: str | None = None):
+        resolved_dir = Path(templates_dir) if templates_dir else settings.templates_dir
+        self.templates_dir = resolved_dir
+        logger.info(f"[Template Validator] Initialized with templates_dir: {self.templates_dir}")
 
     def validate_template(self, template_id: str) -> TemplateValidationResult:
         """Pre-flight check of a template before generation.
@@ -86,23 +90,26 @@ class TemplateValidator:
         issues = []
         metadata = None
 
-        # Check 1: Template file exists
-        template_path = self.templates_dir / f"{template_id}.potx"
-        if not template_path.exists():
+        # Check 1: Template file exists (.potx or .pptx)
+        template_path = self._find_template_file(template_id)
+        if template_path is None:
             issues.append(TemplateValidationIssue(
                 issue_type="missing_layout",
-                severity="error",
-                message=f"Template file not found: {template_path}",
-                details=f"Expected .potx template at {template_path}"
+                severity="warning",
+                message=(
+                    f"Template '{template_id}' not found in {self.templates_dir}. "
+                    "Using default template fallback."
+                ),
+                details="Expected .potx or .pptx file"
             ))
             return TemplateValidationResult(
                 template_id=template_id,
-                is_valid=False,
+                is_valid=True,
                 issues=issues
             )
 
         # Check 2: Metadata file exists
-        metadata_path = self.templates_dir / f"{template_id}.meta.json"
+        metadata_path = template_path.parent / f"{template_id}.meta.json"
         if metadata_path.exists():
             try:
                 metadata = self._load_metadata(metadata_path)
@@ -227,6 +234,10 @@ class TemplateValidator:
             ))
 
         return issues
+
+    def _find_template_file(self, template_id: str) -> Optional[Path]:
+        """Find template by ID using the same search behavior as generation."""
+        return get_template_path(template_id)
 
     @staticmethod
     def _is_valid_hex_color(color: str) -> bool:

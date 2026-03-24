@@ -21,6 +21,23 @@ _POTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentation
 _PPTX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"
 
 
+def _template_dirs() -> list[Path]:
+    """Return template search directories in priority order.
+
+    Priority:
+    1. Configured PPTX service templates directory
+    2. Local backend/templates directory (dev fallback)
+    """
+    dirs: list[Path] = [settings.templates_dir]
+
+    # In local development, templates are often stored in backend/templates.
+    backend_templates = Path(__file__).resolve().parents[3] / "backend" / "templates"
+    if backend_templates.exists() and backend_templates not in dirs:
+        dirs.append(backend_templates)
+
+    return dirs
+
+
 def _load_potx_as_presentation(path: Path) -> Presentation:
     """Load a .potx file by patching the content type in-memory."""
     with open(path, "rb") as f:
@@ -45,12 +62,18 @@ def _load_potx_as_presentation(path: Path) -> Presentation:
 
 def list_templates() -> list[TemplateInfo]:
     """List all available PowerPoint templates."""
-    templates_dir = settings.templates_dir
-    templates_dir.mkdir(parents=True, exist_ok=True)
+    settings.templates_dir.mkdir(parents=True, exist_ok=True)
 
     templates: list[TemplateInfo] = []
-    for pattern in ("*.pptx", "*.potx"):
-        for path in sorted(templates_dir.glob(pattern)):
+    seen_ids: set[str] = set()
+    for directory in _template_dirs():
+        if not directory.exists():
+            continue
+        for pattern in ("*.pptx", "*.potx"):
+            for path in sorted(directory.glob(pattern)):
+                if path.stem in seen_ids:
+                    continue
+                seen_ids.add(path.stem)
             info = _inspect_template(path)
             if info:
                 templates.append(info)
@@ -63,11 +86,11 @@ def list_templates() -> list[TemplateInfo]:
 
 def get_template_path(template_id: str) -> Path | None:
     """Get the file path for a template by its ID."""
-    templates_dir = settings.templates_dir
-    for ext in (".pptx", ".potx"):
-        path = templates_dir / f"{template_id}{ext}"
-        if path.is_file():
-            return path
+    for directory in _template_dirs():
+        for ext in (".pptx", ".potx"):
+            path = directory / f"{template_id}{ext}"
+            if path.is_file():
+                return path
     return None
 
 

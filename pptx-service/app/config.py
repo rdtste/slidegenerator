@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     gcp_region: str = "europe-west1"
     imagen_model: str = "imagen-3.0-generate-002"
 
+    # Gemini model for QA Vision analysis
+    gemini_model: str = "gemini-2.5-flash"
+    qa_max_iterations: int = 2
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     def model_post_init(self, __context: object) -> None:

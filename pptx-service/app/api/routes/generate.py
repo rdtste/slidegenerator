@@ -1,12 +1,9 @@
 """Generate endpoint — creates PPTX from Markdown + template.
 
 Features:
-- P0: Content Validation (markdown structure, layout types, char limits)
-- P0: Image Error Handling (retry logic with exponential backoff)
-- P0: Visual QA (PPTX→PDF→JPEG conversion + image inspection)
-- P1: Design Validation (ColorDNA, typography, layout variety)
-- P1: Template Pre-flight (template compatibility checks)
-- P1: Design QA (post-gen design rule enforcement)
+- Content Validation (markdown structure, layout types, char limits)
+- Image Error Handling (retry logic with exponential backoff)
+- QA Loop: Gemini Vision analysis + programmatic fixes (max 2 iterations)
 """
 
 from __future__ import annotations
@@ -23,12 +20,10 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from app.models.schemas import GenerateRequest
 from app.services.markdown_service import parse_markdown
-from app.services.markdown_validator import MarkdownValidator  # P0
+from app.services.markdown_validator import MarkdownValidator
 from app.services.pptx_service import generate_pptx
-from app.services.visual_qa_service import VisualQAService  # P0
-from app.services.design_validator import DesignValidator  # P1
-from app.services.template_validator import TemplateValidator  # P1
-from app.services.design_qa import DesignQAService  # P1
+from app.services.template_validator import TemplateValidator
+from app.services.qa_loop_service import run_qa_loop
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,14 +31,8 @@ router = APIRouter()
 # In-memory store for generated files awaiting download
 _generated_files: dict[str, str] = {}
 
-# P0 Services
 _validator = MarkdownValidator()
-_visual_qa = VisualQAService()
-
-# P1 Services
-_design_validator = DesignValidator()
 _template_validator = TemplateValidator()
-_design_qa = DesignQAService()
 
 
 def _sse_event(event_type: str, data: dict) -> str:
@@ -84,14 +73,13 @@ async def generate_stream(request: GenerateRequest):
         progress_queue.put({"step": step, "message": message, "progress": progress})
 
     async def event_generator():
-        # P0: Content Validation (BEFORE parsing)
+        # --- Phase 1: Validation ---
         yield _sse_event("progress", {
-            "step": "validating", "message": "LLM-Output wird validiert...", "progress": 1,
+            "step": "validating", "message": "Inhalte werden validiert...", "progress": 1,
         })
-        
+
         validation_result = _validator.validate(request.markdown)
         if not validation_result.is_valid:
-            error_details = [f"{i.message} ({i.slide_index})" for i in validation_result.issues[:3]]
             yield _sse_event("validation_failed", {
                 "detail": "Inhaltsvalidierung fehlgeschlagen",
                 "issues": [
@@ -100,9 +88,8 @@ async def generate_stream(request: GenerateRequest):
                 ],
                 "error_count": len([i for i in validation_result.issues if i.severity == "error"])
             })
-            logger.warning(f"Content validation failed: {len(validation_result.issues)} issues")
             return
-        
+
         yield _sse_event("progress", {
             "step": "parsing", "message": "Markdown wird analysiert...", "progress": 5,
         })
@@ -119,19 +106,14 @@ async def generate_stream(request: GenerateRequest):
             return
 
         yield _sse_event("progress", {
-            "step": "parsed", "message": f"{total} Folien erkannt", "progress": 10,
+            "step": "parsed", "message": f"{total} Folien erkannt", "progress": 8,
         })
 
-        # P1: Template Pre-flight Validation
-        yield _sse_event("progress", {
-            "step": "template_check", "message": "Template wird validiert...", "progress": 12,
-        })
-        
+        # Template pre-flight
         template_check = _template_validator.validate_template(request.template_id)
         if not template_check.is_valid:
             template_errors = [i for i in template_check.issues if i.severity == "error"]
             if template_errors:
-                logger.error(f"Template validation failed: {len(template_errors)} errors")
                 yield _sse_event("template_validation_failed", {
                     "detail": "Template-Validierung fehlgeschlagen",
                     "issues": [
@@ -141,61 +123,32 @@ async def generate_stream(request: GenerateRequest):
                 })
                 return
 
-        result_holder: dict = {"path": None, "error": None, "qa_report": None, "design_qa_report": None}
+        # --- Phase 2: PPTX Generation (in thread) ---
+        result_holder: dict = {
+            "path": None,
+            "error": None,
+            "generation_warnings": [],
+        }
 
         def run_generation():
             try:
+                generation_warnings: list[dict] = []
                 result_holder["path"] = generate_pptx(
-                    presentation, request.template_id, progress_callback=progress_callback,
+                    presentation,
+                    request.template_id,
+                    progress_callback=progress_callback,
+                    warnings_collector=generation_warnings,
                 )
-                
-                # P0: Visual QA (AFTER PPTX generation - SYNC)
-                if result_holder["path"]:
-                    progress_queue.put({"step": "visual_qa", "message": "Visuelle Validierung läuft...", "progress": 85})
-                    try:
-                        qa_report = _visual_qa.run_visual_qa_sync(str(result_holder["path"]))
-                        result_holder["qa_report"] = qa_report
-                        logger.info(f"Visual QA complete: {qa_report.total_slides} slides")
-                    except Exception as qa_error:
-                        logger.error(f"Visual QA exception: {qa_error}")
-                        result_holder["qa_report"] = None
-                    
-                    # P1: Design QA (AFTER Visual QA - SYNC)
-                    progress_queue.put({"step": "design_qa", "message": "Design-Regeln überprüfen...", "progress": 90})
-                    try:
-                        # Extract slide data from presentation for design validation
-                        slides_data = []
-                        if hasattr(presentation, 'slides'):
-                            for i, slide in enumerate(presentation.slides):
-                                slide_data = {
-                                    "layout_type": getattr(slide, 'layout_name', 'default'),
-                                    "title": {"text": getattr(slide, 'title', ''), "size_pt": 40},
-                                    "body": {"text": getattr(slide, 'body', ''), "size_pt": 14},
-                                }
-                                slides_data.append(slide_data)
-                        
-                        design_qa_report = _design_qa.run_design_qa_sync(
-                            str(result_holder["path"]),
-                            request.template_id,
-                            slides_data
-                        )
-                        result_holder["design_qa_report"] = design_qa_report
-                        logger.info(
-                            f"Design QA complete: score={design_qa_report.design_score:.1f}, "
-                            f"errors={design_qa_report.error_count}, warnings={design_qa_report.warning_count}"
-                        )
-                    except Exception as design_error:
-                        logger.error(f"Design QA exception: {design_error}")
-                        result_holder["design_qa_report"] = None
-                        
+                result_holder["generation_warnings"] = generation_warnings
             except Exception as exc:
                 result_holder["error"] = str(exc)
             finally:
-                progress_queue.put({"_done": True})
+                progress_queue.put({"_gen_done": True})
 
         thread = threading.Thread(target=run_generation, daemon=True)
         thread.start()
 
+        # Stream generation progress
         while True:
             try:
                 event = progress_queue.get(timeout=120)
@@ -203,12 +156,10 @@ async def generate_stream(request: GenerateRequest):
                 yield _sse_event("fail", {"detail": "Timeout bei der Generierung"})
                 return
 
-            if event.get("_done"):
+            if event.get("_gen_done"):
                 break
-            
-            # Only yield non-internal events (skip raw progress, they're handled in thread)
-            if not event.get("_done"):
-                yield _sse_event("progress", event)
+
+            yield _sse_event("progress", event)
 
         thread.join(timeout=10)
 
@@ -216,88 +167,83 @@ async def generate_stream(request: GenerateRequest):
             yield _sse_event("fail", {
                 "detail": f"PPTX-Generierung fehlgeschlagen: {result_holder['error']}",
             })
-        elif result_holder["path"]:
-            # P0: Visual QA Report (if available)
-            pptx_path = result_holder["path"]
-            qa_report = result_holder.get("qa_report")
-            design_qa_report = result_holder.get("design_qa_report")
-            
-            if qa_report:
-                if qa_report.error:
-                    logger.warning(f"Visual QA errored: {qa_report.error}")
-                    yield _sse_event("progress", {
-                        "step": "visual_qa_error",
-                        "message": f"Visual QA fehlgeschlagen: {qa_report.error[:100]}",
-                        "progress": 90,
-                    })
-                elif not qa_report.is_valid:
-                    error_count = len([i for i in qa_report.issues if i.severity == "error"])
-                    warning_count = len([i for i in qa_report.issues if i.severity == "warning"])
-                    logger.warning(f"Visual QA issues: {error_count} errors, {warning_count} warnings")
-                    yield _sse_event("visual_qa_issues", {
-                        "detail": "Visuelle Probleme gefunden",
-                        "errors": error_count,
-                        "warnings": warning_count,
-                        "issues": [
-                            {
-                                "slide": i.slide_number,
-                                "type": i.issue_type,
-                                "message": i.description,
-                                "severity": i.severity
-                            }
-                            for i in qa_report.issues[:10]  # Top 10 issues
-                        ]
-                    })
-                else:
-                    logger.info("Visual QA passed")
-            
-            # P1: Design QA Report (if available)
-            if design_qa_report:
-                if design_qa_report.error:
-                    logger.warning(f"Design QA errored: {design_qa_report.error}")
-                    yield _sse_event("progress", {
-                        "step": "design_qa_error",
-                        "message": f"Design QA fehlgeschlagen: {design_qa_report.error[:100]}",
-                        "progress": 95,
-                    })
-                elif not design_qa_report.is_valid:
-                    logger.warning(
-                        f"Design QA issues: {design_qa_report.error_count} errors, "
-                        f"{design_qa_report.warning_count} warnings, score={design_qa_report.design_score:.1f}"
-                    )
-                    yield _sse_event("design_qa_issues", {
-                        "detail": "Design-Regel Verletzungen gefunden",
-                        "score": round(design_qa_report.design_score, 1),
-                        "color_compliance": round(design_qa_report.color_compliance, 1),
-                        "typography_compliance": round(design_qa_report.typography_compliance, 1),
-                        "layout_variety": round(design_qa_report.layout_variety, 1),
-                        "errors": design_qa_report.error_count,
-                        "warnings": design_qa_report.warning_count,
-                        "issues": [
-                            {
-                                "slide": i.slide_number,
-                                "category": i.category,
-                                "title": i.title,
-                                "description": i.description,
-                                "severity": i.severity,
-                                "remediation": i.remediation
-                            }
-                            for i in design_qa_report.issues[:8]  # Top 8 issues
-                        ]
-                    })
-                else:
-                    logger.info(f"Design QA passed: score={design_qa_report.design_score:.1f}")
-            
-            file_id = str(uuid.uuid4())
-            _generated_files[file_id] = str(pptx_path)
-            yield _sse_event("complete", {
-                "fileId": file_id,
-                "filename": pptx_path.name,
-                "progress": 100,
-                "message": "Präsentation erstellt und validiert!",
-            })
-        else:
+            return
+
+        if not result_holder["path"]:
             yield _sse_event("fail", {"detail": "Unbekannter Fehler bei der Generierung"})
+            return
+
+        pptx_path = result_holder["path"]
+        generation_warnings = result_holder.get("generation_warnings") or []
+
+        # Report generation warnings (images that failed)
+        if generation_warnings:
+            yield _sse_event("generation_warnings", {
+                "detail": "Einige Bilder konnten nicht KI-generiert werden.",
+                "count": len(generation_warnings),
+                "warnings": generation_warnings[:12],
+            })
+
+        # --- Phase 3: QA Loop (async) ---
+        yield _sse_event("progress", {
+            "step": "qa_start",
+            "message": "Qualitaetspruefung wird gestartet...",
+            "progress": 82,
+        })
+
+        qa_events: list[dict] = []
+
+        def qa_progress(step: str, message: str, progress: int | None) -> None:
+            qa_events.append({"step": step, "message": message, "progress": progress})
+
+        try:
+            qa_result = await run_qa_loop(
+                str(pptx_path),
+                progress_callback=qa_progress,
+            )
+
+            # Flush QA progress events to SSE
+            for ev in qa_events:
+                yield _sse_event("progress", ev)
+
+            # Report QA result
+            if qa_result.passed:
+                yield _sse_event("qa_result", {
+                    "status": "passed",
+                    "message": f"Qualitaetspruefung bestanden"
+                        + (f" ({qa_result.total_fixes_applied} Korrektur(en))" if qa_result.total_fixes_applied > 0 else ""),
+                    "iterations": qa_result.iterations_run,
+                    "fixes_applied": qa_result.total_fixes_applied,
+                })
+            else:
+                remaining = qa_result.remaining_issues
+                yield _sse_event("qa_result", {
+                    "status": "issues_remaining",
+                    "message": f"{len([i for i in remaining if i.severity == 'error'])} Problem(e) verbleibend",
+                    "iterations": qa_result.iterations_run,
+                    "fixes_applied": qa_result.total_fixes_applied,
+                    "issues": [i.to_dict() for i in remaining[:8]],
+                })
+
+        except Exception as qa_error:
+            logger.error(f"QA Loop exception: {qa_error}")
+            yield _sse_event("progress", {
+                "step": "qa_skipped",
+                "message": f"Qualitaetspruefung uebersprungen: {str(qa_error)[:80]}",
+                "progress": 95,
+            })
+
+        # --- Phase 4: Ready for download ---
+        file_id = str(uuid.uuid4())
+        _generated_files[file_id] = str(pptx_path)
+        yield _sse_event("complete", {
+            "fileId": file_id,
+            "filename": pptx_path.name,
+            "progress": 100,
+            "message": "Praesentation erstellt und geprueft!",
+            "warning_count": len(generation_warnings),
+            "warnings": generation_warnings[:12],
+        })
 
     return StreamingResponse(
         event_generator(),
@@ -317,7 +263,7 @@ async def download_file(file_id: str):
 
     path = Path(file_path)
     if not path.is_file():
-        raise HTTPException(status_code=404, detail="Datei nicht mehr verfügbar")
+        raise HTTPException(status_code=404, detail="Datei nicht mehr verfuegbar")
 
     return FileResponse(
         path=file_path,

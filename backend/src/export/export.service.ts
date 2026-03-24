@@ -137,13 +137,25 @@ export class ExportService {
           job.subject.next({ data: parsed, type: 'complete' } as MessageEvent);
           job.subject.complete();
           this.logger.log(`Job ${jobId} complete: ${job.filename}`);
+        } else if (eventType === 'qa_result') {
+          job.subject.next({ data: parsed, type: 'qa_result' } as MessageEvent);
         } else if (eventType === 'fail') {
           job.status = 'error';
           job.subject.next({ data: parsed, type: 'fail' } as MessageEvent);
           job.subject.complete();
           this.logger.warn(`Job ${jobId} failed: ${parsed['detail']}`);
+        } else if (eventType.endsWith('_failed')) {
+          const detail =
+            typeof parsed['detail'] === 'string'
+              ? parsed['detail']
+              : `Export fehlgeschlagen (${eventType})`;
+          job.status = 'error';
+          job.subject.next({ data: { ...parsed, detail }, type: 'fail' } as MessageEvent);
+          job.subject.complete();
+          this.logger.warn(`Job ${jobId} failed (${eventType}): ${detail}`);
         } else {
-          job.subject.next({ data: parsed, type: 'progress' } as MessageEvent);
+          const forwardedType = eventType || 'progress';
+          job.subject.next({ data: parsed, type: forwardedType } as MessageEvent);
         }
       }
     }

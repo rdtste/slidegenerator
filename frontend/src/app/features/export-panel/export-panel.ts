@@ -73,11 +73,40 @@ export class ExportPanel implements OnDestroy {
         this.exportProgress.set(data.progress);
       }
       this.handleProgressEvent(data.step, data.message ?? '');
+      if (data.step === 'warning' && data.message) {
+        this.exportStatus.set(`Warnung: ${data.message}`);
+      }
+      this.cdr.markForCheck();
+    });
+
+    source.addEventListener('qa_result', (e: Event) => {
+      const data = JSON.parse((e as MessageEvent).data);
+      const status = data.status === 'passed' ? 'done' : 'active';
+      const icon = data.status === 'passed' ? '\u2705' : '\u26A0\uFE0F';
+      const label = data.message || 'QA abgeschlossen';
+      const entries = this.progressEntries().map(entry =>
+        entry.status === 'active' ? { ...entry, status: 'done' as const } : entry,
+      );
+      entries.push({ icon, label, status: status === 'done' ? 'done' : 'active' });
+      this.progressEntries.set(entries);
+      this.exportMessage.set(label);
+      this.cdr.markForCheck();
+    });
+
+    source.addEventListener('generation_warnings', (e: Event) => {
+      const data = JSON.parse((e as MessageEvent).data);
+      const count = typeof data.count === 'number' ? data.count : 0;
+      const detail = typeof data.detail === 'string' ? data.detail : 'Es wurden Warnungen erkannt.';
+      this.handleProgressEvent('warning', detail);
+      if (count > 0) {
+        this.exportStatus.set(`Warnung: ${count} Problem(e) bei Bildgenerierung.`);
+      }
       this.cdr.markForCheck();
     });
 
     source.addEventListener('complete', (e: Event) => {
       const data = JSON.parse((e as MessageEvent).data);
+      const warningCount = typeof data.warning_count === 'number' ? data.warning_count : 0;
       this.exportProgress.set(100);
       this.finishAllEntries();
       this.exportMessage.set('Download wird vorbereitet...');
@@ -90,7 +119,11 @@ export class ExportPanel implements OnDestroy {
           const blob = response.body;
           if (!blob) return;
           this.triggerDownload(blob, data.filename || 'presentation.pptx');
-          this.exportStatus.set('PPTX heruntergeladen.');
+          if (warningCount > 0) {
+            this.exportStatus.set(`PPTX heruntergeladen (${warningCount} Warnung(en) bei Bild/Layout-Generierung).`);
+          } else {
+            this.exportStatus.set('PPTX heruntergeladen.');
+          }
           this.exporting.set(false);
         },
         error: () => {
@@ -142,11 +175,17 @@ export class ExportPanel implements OnDestroy {
   private iconForStep(step: string): string {
     switch (step) {
       case 'parsing': case 'parsed': return '📄';
-      case 'template': return '🎨';
+      case 'template': case 'template_check': return '🎨';
       case 'slide': return '📑';
       case 'image': return '🖼️';
+      case 'warning': return '⚠️';
       case 'chart': return '📊';
       case 'saving': return '💾';
+      case 'qa_start': case 'qa_convert': return '🔍';
+      case 'qa_check': return '🔎';
+      case 'qa_fixing': return '🔧';
+      case 'qa_pass': return '✅';
+      case 'qa_done': case 'qa_skipped': return '📋';
       default: return '⚙️';
     }
   }

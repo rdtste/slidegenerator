@@ -18,8 +18,9 @@ from typing import Callable, Optional
 
 from app.models.schemas import PresentationData, SlideContent
 from app.services import template_service
-from app.services.image_service import generate_image
+from app.services.image_service import create_fallback_image, generate_image
 from app.services.chart_service import generate_chart, parse_chart_data
+from app.services.image_fitting import fit_image_to_placeholder
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,10 @@ ProgressCallback = Callable[[str, str, Optional[int]], None]
 _progress_ctx: ContextVar[Optional[ProgressCallback]] = ContextVar(
     "_progress_ctx", default=None
 )
+_warnings_ctx: ContextVar[list[dict] | None] = ContextVar("_warnings_ctx", default=None)
+_current_slide_number_ctx: ContextVar[int | None] = ContextVar("_current_slide_number_ctx", default=None)
+_current_slide_title_ctx: ContextVar[str] = ContextVar("_current_slide_title_ctx", default="")
+_current_title_limit_ctx: ContextVar[int | None] = ContextVar("_current_title_limit_ctx", default=None)
 
 _LAYOUT_LABELS: dict[str, str] = {
     "title": "Titelfolie",
@@ -43,6 +48,29 @@ def _report_progress(step: str, message: str, progress: int | None = None) -> No
     cb = _progress_ctx.get(None)
     if cb is not None:
         cb(step, message, progress)
+
+
+def _report_warning(message: str, code: str = "generation_warning") -> None:
+    """Send a visible generation warning to SSE and optionally collect it for response payloads."""
+    slide_number = _current_slide_number_ctx.get(None)
+    slide_title = _current_slide_title_ctx.get("")
+    payload = {
+        "code": code,
+        "message": message,
+        "slide": slide_number,
+        "title": slide_title,
+    }
+    warnings = _warnings_ctx.get(None)
+    if warnings is not None:
+        warnings.append(payload)
+    logger.warning(
+        "Generation warning slide=%s title=%s code=%s message=%s",
+        slide_number,
+        slide_title,
+        code,
+        message,
+    )
+    _report_progress("warning", message, None)
 
 # Placeholder type constants from the OOXML spec
 _PH_TITLE = 1       # TITLE
@@ -126,14 +154,17 @@ def generate_pptx(
     data: PresentationData,
     template_id: str = "default",
     progress_callback: ProgressCallback | None = None,
+    warnings_collector: list[dict] | None = None,
 ) -> Path:
     """Generate a PPTX file from structured presentation data."""
     token = _progress_ctx.set(progress_callback)
+    warnings_token = _warnings_ctx.set(warnings_collector if warnings_collector is not None else [])
     try:
         _report_progress("template", "Template wird geladen...", 5)
         prs = template_service.load_presentation(template_id)
 
         analysis_map = _load_analysis_map(template_id)
+        title_limits = _load_title_limits(template_id)
         _remove_all_slides(prs)
         _set_metadata(prs, data)
         _report_progress("template", "Template bereit", 10)
@@ -146,7 +177,7 @@ def generate_pptx(
             _report_progress(
                 "slide", f"Folie {i + 1}/{total}: {label}{title_preview}", progress,
             )
-            _add_slide(prs, slide_data, analysis_map)
+            _add_slide(prs, slide_data, analysis_map, title_limits, i + 1)
             # Mark slide as done
             _report_progress(
                 "slide", f"Folie {i + 1}/{total} fertig", 10 + int(((i + 1) / total) * 80),
@@ -163,6 +194,7 @@ def generate_pptx(
         logger.info(f"Generated PPTX: {output_path} ({len(data.slides)} slides)")
         return output_path
     finally:
+        _warnings_ctx.reset(warnings_token)
         _progress_ctx.reset(token)
 
 
@@ -192,23 +224,43 @@ def _set_metadata(prs: Presentation, data: PresentationData) -> None:
         prs.core_properties.author = data.author
 
 
-def _add_slide(prs: Presentation, slide_data: SlideContent, analysis_map: dict[str, int] | None = None) -> None:
+def _add_slide(
+    prs: Presentation,
+    slide_data: SlideContent,
+    analysis_map: dict[str, int] | None = None,
+    title_limits: dict[int, int] | None = None,
+    slide_number: int | None = None,
+) -> None:
     """Add a single slide to the presentation based on its layout type."""
     layout_idx = _resolve_layout(prs, slide_data.layout, analysis_map)
     layout = prs.slide_layouts[layout_idx]
     slide = prs.slides.add_slide(layout)
 
+    configured_title_limit = (title_limits or {}).get(layout_idx)
+    estimated_title_limit = _estimate_title_capacity(layout)
+    effective_title_limit = configured_title_limit if (configured_title_limit and configured_title_limit > 0) else estimated_title_limit
+
+    token_slide_num = _current_slide_number_ctx.set(slide_number)
+    token_slide_title = _current_slide_title_ctx.set(slide_data.title)
+    token_title_limit = _current_title_limit_ctx.set(effective_title_limit)
+
     logger.debug(
         f"Added slide: layout={slide_data.layout} -> "
         f"idx={layout_idx} ({layout.name}), "
+        f"title_limit={effective_title_limit}, "
         f"placeholders={[ph.placeholder_format.idx for ph in slide.placeholders]}"
     )
 
-    if slide_data.notes:
-        slide.notes_slide.notes_text_frame.text = slide_data.notes
+    try:
+        if slide_data.notes:
+            slide.notes_slide.notes_text_frame.text = slide_data.notes
 
-    handler = _LAYOUT_HANDLERS.get(slide_data.layout, _handle_content)
-    handler(slide, slide_data)
+        handler = _LAYOUT_HANDLERS.get(slide_data.layout, _handle_content)
+        handler(slide, slide_data)
+    finally:
+        _current_title_limit_ctx.reset(token_title_limit)
+        _current_slide_title_ctx.reset(token_slide_title)
+        _current_slide_number_ctx.reset(token_slide_num)
 
 
 def _load_analysis_map(template_id: str) -> dict[str, int] | None:
@@ -241,6 +293,40 @@ def _load_analysis_map(template_id: str) -> dict[str, int] | None:
         return None
 
 
+def _load_title_limits(template_id: str) -> dict[int, int]:
+    """Load per-layout title character limits from profile/analysis metadata."""
+    template_path = template_service.get_template_path(template_id)
+    if not template_path:
+        return {}
+
+    candidates = [
+        template_path.parent / f"{template_id}.analysis.json",
+        template_path.parent / f"{template_id}.profile.json",
+    ]
+
+    for path in candidates:
+        if not path.is_file():
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            mappings = data.get("layout_mappings") or data.get("layout_catalog") or []
+            limits: dict[int, int] = {}
+            for m in mappings:
+                idx = m.get("layout_index")
+                max_chars = m.get("title_max_chars")
+                if isinstance(idx, int) and isinstance(max_chars, int) and max_chars > 0:
+                    limits[idx] = max_chars
+            if limits:
+                logger.info(f"Loaded title limits from {path.name}: {limits}")
+            return limits
+        except Exception:
+            logger.warning(f"Failed to parse title limits from {path.name}")
+
+    return {}
+
+
 def _resolve_layout(prs: Presentation, layout_type: str, analysis_map: dict[str, int] | None = None) -> int:
     """Resolve layout type to a template slide layout index.
 
@@ -249,12 +335,16 @@ def _resolve_layout(prs: Presentation, layout_type: str, analysis_map: dict[str,
     # 1. Try AI analysis mapping
     if analysis_map and layout_type in analysis_map:
         idx = analysis_map[layout_type]
-        if 0 <= idx < len(prs.slide_layouts):
+        if 0 <= idx < len(prs.slide_layouts) and _layout_supports_type(prs.slide_layouts[idx], layout_type):
             logger.info(
                 f"Layout '{layout_type}' -> [{idx}] "
                 f'"{prs.slide_layouts[idx].name}" (AI analysis)'
             )
             return idx
+        logger.warning(
+            f"Layout '{layout_type}' mapped to [{idx}] by analysis, "
+            "but placeholder structure does not match. Falling back to scoring."
+        )
 
     # 2. Fall back to scored keyword matching
     score_rules = _LAYOUT_SCORES.get(layout_type)
@@ -263,20 +353,24 @@ def _resolve_layout(prs: Presentation, layout_type: str, analysis_map: dict[str,
         return min(fallback, len(prs.slide_layouts) - 1)
 
     best_idx = -1
-    best_score = 0
+    best_score = -10_000
 
     for idx, layout in enumerate(prs.slide_layouts):
         name_lower = layout.name.lower()
+        structure_bonus = _structure_score(layout, layout_type)
+        layout_score = structure_bonus
         for pattern, score, negatives in score_rules:
             if pattern in name_lower:
                 if any(neg in name_lower for neg in negatives):
                     continue
-                if score > best_score:
-                    best_score = score
-                    best_idx = idx
+                layout_score += score
                 break  # first matching pattern wins for this layout
 
-    if best_idx >= 0:
+        if layout_score > best_score:
+            best_score = layout_score
+            best_idx = idx
+
+    if best_idx >= 0 and best_score > -100:
         logger.info(
             f"Layout '{layout_type}' -> [{best_idx}] "
             f'"{prs.slide_layouts[best_idx].name}" (score={best_score})'
@@ -289,6 +383,82 @@ def _resolve_layout(prs: Presentation, layout_type: str, analysis_map: dict[str,
     return result
 
 
+def _placeholder_type_counts(layout) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for ph in layout.placeholders:
+        t = ph.placeholder_format.type
+        counts[t] = counts.get(t, 0) + 1
+    return counts
+
+
+def _layout_supports_type(layout, layout_type: str) -> bool:
+    counts = _placeholder_type_counts(layout)
+    content_like = counts.get(_PH_OBJECT, 0) + counts.get(_PH_BODY, 0)
+
+    if layout_type == "image":
+        return counts.get(_PH_PICTURE, 0) > 0
+    if layout_type == "chart":
+        return counts.get(_PH_PICTURE, 0) > 0 or content_like > 0
+    if layout_type == "two_column":
+        return content_like >= 2
+    if layout_type == "title":
+        return counts.get(_PH_TITLE, 0) > 0 or content_like > 0
+    if layout_type in {"content", "section", "closing"}:
+        return content_like > 0 or counts.get(_PH_TITLE, 0) > 0
+    return True
+
+
+def _structure_score(layout, layout_type: str) -> int:
+    counts = _placeholder_type_counts(layout)
+    content_like = counts.get(_PH_OBJECT, 0) + counts.get(_PH_BODY, 0)
+    has_picture = counts.get(_PH_PICTURE, 0) > 0
+
+    if layout_type == "image":
+        score = 160 if has_picture else -120
+        if content_like > 0:
+            score += 40
+        return score
+    if layout_type == "chart":
+        score = 120 if has_picture else 0
+        if content_like > 0:
+            score += 60
+        return score
+    if layout_type == "two_column":
+        return 90 if content_like >= 2 else -60
+    if layout_type == "content":
+        score = 70 if content_like > 0 else -40
+        if has_picture:
+            score -= 20
+        return score
+    if layout_type == "title":
+        return 60 if (counts.get(_PH_TITLE, 0) > 0 or content_like > 0) else -40
+    if layout_type in {"section", "closing"}:
+        return 40 if (counts.get(_PH_TITLE, 0) > 0 or content_like > 0) else -30
+    return 0
+
+
+def _estimate_title_capacity(layout) -> int:
+    """Estimate max title chars from title/body placeholder width when profile limits are missing."""
+    candidate = None
+    for ph in layout.placeholders:
+        if ph.placeholder_format.type == _PH_TITLE:
+            candidate = ph
+            break
+
+    if candidate is None:
+        for ph in layout.placeholders:
+            if ph.placeholder_format.type in (_PH_BODY, _PH_OBJECT):
+                candidate = ph
+                break
+
+    if candidate is None:
+        return 60
+
+    width_in = max(1.0, candidate.width / 914400)
+    estimated = int(width_in * 8.5)
+    return max(40, min(120, estimated))
+
+
 # --- Layout handlers ---
 # All handlers use _find_ph_by_type() to locate placeholders by their
 # semantic type rather than by hardcoded index.
@@ -299,12 +469,12 @@ def _handle_title(slide, data: SlideContent) -> None:
     body_phs = _find_all_ph_by_types(slide, [_PH_BODY, _PH_SUBTITLE, _PH_OBJECT])
 
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
         if data.subtitle and body_phs:
             body_phs[0].text = data.subtitle
     elif body_phs:
         # No TITLE placeholder (e.g. REWE template): use first BODY for title, second for subtitle
-        body_phs[0].text = data.title
+        body_phs[0].text = _truncate_title(data.title)
         if data.subtitle and len(body_phs) > 1:
             body_phs[1].text = data.subtitle
 
@@ -319,9 +489,16 @@ def _handle_title(slide, data: SlideContent) -> None:
             width_px = max(512, min(1536, int(ph_width / 914400 * 96)))
             height_px = max(512, min(1536, int(ph_height / 914400 * 96)))
             image_path = generate_image(desc, width=width_px, height=height_px)
+            if image_path is None:
+                _report_warning(
+                    "Bild konnte nicht per KI erzeugt werden - Platzhalterbild wird verwendet.",
+                    code="image_generation_failed",
+                )
+                image_path = create_fallback_image(desc, width=width_px, height=height_px)
             if image_path:
                 try:
-                    picture_ph.insert_picture(str(image_path))
+                    fitted = fit_image_to_placeholder(image_path, ph_width, ph_height)
+                    picture_ph.insert_picture(str(fitted))
                     logger.info(f"Inserted title image: {desc[:60]}...")
                 except Exception:
                     logger.exception("Failed to insert title image")
@@ -334,11 +511,11 @@ def _handle_section(slide, data: SlideContent) -> None:
     content_ph = _find_content_placeholder(slide)
 
     if title_ph:
-        title_ph.text = data.title
+        title_ph.text = _truncate_title(data.title)
         if data.subtitle and body_phs:
             body_phs[0].text = data.subtitle
     elif body_phs:
-        body_phs[0].text = data.title
+        body_phs[0].text = _truncate_title(data.title)
         if data.subtitle and len(body_phs) > 1:
             body_phs[1].text = data.subtitle
 
@@ -421,13 +598,25 @@ def _handle_image(slide, data: SlideContent) -> None:
         height_px = max(512, min(1536, int(ph_height / 914400 * 96)))
 
         image_path = generate_image(desc, width=width_px, height=height_px)
+        if image_path is None:
+            _report_warning(
+                "Bild konnte nicht per KI erzeugt werden - Platzhalterbild wird verwendet.",
+                code="image_generation_failed",
+            )
+            image_path = create_fallback_image(desc, width=width_px, height=height_px)
         if image_path:
             try:
-                picture_ph.insert_picture(str(image_path))
+                fitted = fit_image_to_placeholder(image_path, ph_width, ph_height)
+                picture_ph.insert_picture(str(fitted))
                 logger.info(f"Inserted generated image into picture placeholder: {desc[:60]}...")
                 image_inserted = True
             except Exception:
                 logger.exception("Failed to insert image into picture placeholder")
+    elif desc:
+        _report_warning(
+            "Layout hat keinen Bild-Platzhalter - Bild konnte nicht eingebettet werden.",
+            code="missing_picture_placeholder",
+        )
 
     # Fill the content placeholder with bullets/body text (for "Bild + Inhalt" layouts)
     # Design-Prinzip "Klarheit vor Dekoration": Jedes Element muss einen Zweck haben.
@@ -515,13 +704,14 @@ def _handle_chart(slide, data: SlideContent) -> None:
 
         if chart_path:
             try:
+                fitted = fit_image_to_placeholder(chart_path, ph_width, ph_height)
                 if hasattr(picture_ph, 'insert_picture'):
-                    picture_ph.insert_picture(str(chart_path))
+                    picture_ph.insert_picture(str(fitted))
                 else:
                     # OBJECT placeholder: add picture as a shape
                     from pptx.util import Emu
                     slide.shapes.add_picture(
-                        str(chart_path),
+                        str(fitted),
                         picture_ph.left, picture_ph.top,
                         picture_ph.width, picture_ph.height,
                     )
@@ -684,14 +874,21 @@ def _ensure_bullet_char(paragraph) -> None:
         buChar.set("char", _DEFAULT_BULLET_CHAR)
 
 
-def _truncate_title(text: str, max_chars: int = 50) -> str:
+def _truncate_title(text: str, max_chars: int | None = None) -> str:
     """Truncate a title to fit within the maximum character limit."""
-    if len(text) <= max_chars:
+    if not text:
+        return text
+
+    resolved_limit = max_chars if max_chars and max_chars > 0 else _current_title_limit_ctx.get(None)
+    if not resolved_limit or resolved_limit <= 0:
+        resolved_limit = 50
+
+    if len(text) <= resolved_limit:
         return text
     # Try to cut at a word boundary
-    truncated = text[:max_chars]
+    truncated = text[:resolved_limit]
     last_space = truncated.rfind(" ")
-    if last_space > max_chars * 0.6:
+    if last_space > resolved_limit * 0.6:
         truncated = truncated[:last_space]
     return truncated.rstrip(" ,:;-")
 
