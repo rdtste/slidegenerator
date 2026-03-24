@@ -11,6 +11,8 @@ REGION="europe-west1"
 REPO="cloud-run-images"
 REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}"
 PREFIX="slidegenerator"
+# Internal custom domain base (used for service-to-service communication)
+INTERNAL_DOMAIN="${INTERNAL_DOMAIN:-${PROJECT_ID}.internal.run.rewe.cloud}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -169,8 +171,9 @@ main() {
     info "── Schritt 3: backend deployen ──"
     local backend_env
     backend_env=$(load_env_as_flags "${REPO_ROOT}/backend/.env")
-    # Override PPTX_SERVICE_URL mit der Cloud Run URL
-    backend_env="${backend_env},PPTX_SERVICE_URL=${pptx_url}"
+    # PPTX_SERVICE_URL muss die interne Custom Domain nutzen,
+    # da Cloud Run-zu-Cloud Run Calls über die öffentliche URL als extern gelten
+    backend_env="${backend_env},PPTX_SERVICE_URL=https://${PREFIX}-pptx-service.${INTERNAL_DOMAIN}"
     local backend_url
     backend_url=$(deploy_service "backend" "3000" "${backend_env}" "512Mi" "1")
 
