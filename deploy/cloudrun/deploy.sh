@@ -100,12 +100,11 @@ deploy_service() {
     local extra_env="${3:-}"
     local memory="${4:-512Mi}"
     local cpu="${5:-1}"
-    local allow_unauth="${6:-true}"
 
     info "Deploye ${PREFIX}-${service} nach Cloud Run..."
 
-    local min_inst="${7:-0}"
-    local concurrency="${8:-80}"
+    local min_inst="${6:-0}"
+    local concurrency="${7:-80}"
 
     local cmd=(
         gcloud run deploy "${PREFIX}-${service}"
@@ -126,12 +125,9 @@ deploy_service() {
         cmd+=(--set-env-vars="${extra_env}")
     fi
 
-    # Org-Policy erlaubt kein "all" ingress — nutze IAM-disabled für öffentlichen Zugang
-    if [[ "${allow_unauth}" == "true" ]]; then
-        cmd+=(--no-invoker-iam-check)
-    else
-        cmd+=(--no-allow-unauthenticated)
-    fi
+    # Ingress ist auf internal-and-cloud-load-balancing beschränkt,
+    # daher IAM-Check deaktivieren damit Services untereinander kommunizieren können
+    cmd+=(--no-invoker-iam-check)
 
     "${cmd[@]}"
 
@@ -167,7 +163,7 @@ main() {
     local pptx_env
     pptx_env=$(load_env_as_flags "${REPO_ROOT}/pptx-service/.env")
     local pptx_url
-    pptx_url=$(deploy_service "pptx-service" "8000" "${pptx_env}" "2Gi" "2" "false" "1" "1")
+    pptx_url=$(deploy_service "pptx-service" "8000" "${pptx_env}" "2Gi" "2" "1" "1")
 
     # ── 3. Deploy backend (intern) ──
     info "── Schritt 3: backend deployen ──"
@@ -176,7 +172,7 @@ main() {
     # Override PPTX_SERVICE_URL mit der Cloud Run URL
     backend_env="${backend_env},PPTX_SERVICE_URL=${pptx_url}"
     local backend_url
-    backend_url=$(deploy_service "backend" "3000" "${backend_env}" "512Mi" "1" "false")
+    backend_url=$(deploy_service "backend" "3000" "${backend_env}" "512Mi" "1")
 
     # ── 4. Update frontend nginx.conf für Cloud Run ──
     info "── Schritt 4: Frontend vorbereiten ──"
@@ -239,7 +235,7 @@ DOCKER_EOF
     # ── 5. Deploy frontend (öffentlich) ──
     info "── Schritt 5: frontend deployen ──"
     local frontend_url
-    frontend_url=$(deploy_service "frontend" "8080" "" "256Mi" "1" "true")
+    frontend_url=$(deploy_service "frontend" "8080" "" "256Mi" "1")
 
     # ── 6. Backend muss Frontend als erlaubten Origin kennen ──
     # (Falls CORS konfiguriert ist)
