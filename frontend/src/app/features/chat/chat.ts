@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnDestroy, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
+import { Component, inject, signal, OnDestroy, ElementRef, ViewChild, afterEveryRender } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
@@ -31,19 +31,20 @@ export class Chat implements OnDestroy {
   private firstMessageFiles: File[] = [];
   private phaseInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor() {
-    effect(() => {
-      this.state.messages();
-      this.state.loading();
-      this.scrollToBottom();
-    });
-  }
+  private lastMessageCount = 0;
+  private lastLoading = false;
 
-  private scrollToBottom(): void {
-    setTimeout(() => {
-      const el = this.messagesContainer?.nativeElement;
-      if (el) {
-        el.scrollTop = el.scrollHeight;
+  constructor() {
+    afterEveryRender(() => {
+      const count = this.state.messages().length;
+      const loading = this.state.loading();
+      if (count !== this.lastMessageCount || loading !== this.lastLoading) {
+        this.lastMessageCount = count;
+        this.lastLoading = loading;
+        const el = this.messagesContainer?.nativeElement;
+        if (el) {
+          el.scrollTop = el.scrollHeight;
+        }
       }
     });
   }
