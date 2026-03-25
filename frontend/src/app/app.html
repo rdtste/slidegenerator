@@ -218,8 +218,8 @@
           <div class="slide-content-split">
             <!-- Preview -->
             <div class="slide-preview-pane">
-              @if (slideSrcdoc()) {
-                <iframe class="slide-iframe" [srcdoc]="slideSrcdoc()"></iframe>
+              @if (slideIframeSrc()) {
+                <iframe class="slide-iframe" [src]="slideIframeSrc()"></iframe>
               } @else {
                 <div class="slide-placeholder">Vorschau wird geladen...</div>
               }

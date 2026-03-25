@@ -21,6 +21,7 @@ export class Settings implements OnInit {
   readonly model = signal('');
   readonly availableRegions = signal<SelectOption[]>([]);
   readonly availableModels = signal<SelectOption[]>([]);
+  readonly presentationCount = signal(0);
 
   ngOnInit(): void {
     this.loadSettings();
@@ -41,6 +42,7 @@ export class Settings implements OnInit {
         this.model.set(settings.model);
         this.availableRegions.set(settings.availableRegions);
         this.availableModels.set(settings.availableModels);
+        this.presentationCount.set(settings.presentationCount ?? 0);
       },
       error: () => this.status.set('Einstellungen konnten nicht geladen werden.'),
     });

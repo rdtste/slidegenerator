@@ -10,7 +10,10 @@ spec:
     metadata:
       annotations:
         autoscaling.knative.dev/maxScale: "3"
+        autoscaling.knative.dev/minScale: "1"
         run.googleapis.com/startup-cpu-boost: "true"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/execution-environment: gen2
         # Multi-container: backend is the ingress container, pptx-service is a sidecar
         run.googleapis.com/container-dependencies: '{"backend":["pptx-service"]}'
     spec:
@@ -18,9 +21,10 @@ spec:
       timeoutSeconds: 300
       volumes:
         - name: shared-templates
-          emptyDir:
-            medium: Memory
-            sizeLimit: 500Mi
+          csi:
+            driver: gcsfuse.run.googleapis.com
+            volumeAttributes:
+              bucketName: slidegenerator-templates-rd-cmpd
       containers:
         # ── Primary: NestJS Backend (ingress container) ──
         - name: backend

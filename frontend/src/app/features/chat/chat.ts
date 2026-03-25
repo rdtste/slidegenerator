@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnDestroy, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
@@ -25,9 +25,28 @@ export class Chat implements OnDestroy {
   readonly conversing = signal(false);
   readonly generationPhase = signal('');
 
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef<HTMLDivElement>;
+
   private llmConversation: Array<{ role: string; content: string }> = [];
   private firstMessageFiles: File[] = [];
   private phaseInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    effect(() => {
+      this.state.messages();
+      this.state.loading();
+      this.scrollToBottom();
+    });
+  }
+
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      const el = this.messagesContainer?.nativeElement;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+  }
 
   send(): void {
     const text = this.prompt().trim();

@@ -104,3 +104,25 @@
   font-size: 0.8rem;
   color: var(--accent);
 }
+
+.stats-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.stats-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stats-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}

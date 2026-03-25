@@ -547,6 +547,7 @@ ${documentTexts.join('\n\n')}`;
     }
 
     this.logger.log(`Generated ${slides.length} slides`);
+    this.settings.incrementPresentationCount();
     return { markdown, slides };
   }
 

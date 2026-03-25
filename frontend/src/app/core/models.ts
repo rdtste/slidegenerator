@@ -55,6 +55,7 @@ export interface LlmSettings {
   model: string;
   availableRegions: SelectOption[];
   availableModels: SelectOption[];
+  presentationCount: number;
 }
 
 export interface SelectOption {

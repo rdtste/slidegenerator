@@ -137,8 +137,7 @@ export class TemplatesService {
 
     const id = path.parse(safeName).name;
     const meta: TemplateMeta = {
-      scope: 'session',
-      sessionId,
+      scope: 'global',
       uploadedAt: new Date().toISOString(),
     };
     this.saveMeta(id, meta);

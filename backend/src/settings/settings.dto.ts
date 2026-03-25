@@ -20,6 +20,7 @@ export class SettingsResponseDto {
   model!: string;
   availableRegions!: RegionOption[];
   availableModels!: ModelOption[];
+  presentationCount!: number;
 }
 
 export class RegionOption {

@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal, effect, computed, untracked } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, effect, computed, untracked, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Chat } from './features/chat/chat';
 import { ExportPanel } from './features/export-panel/export-panel';
 import { TemplateManagement } from './features/template-management/template-management';
@@ -15,10 +15,11 @@ import { Audience, ImageStyle, TemplateProfile } from './core/models';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   readonly state = inject(ChatState);
   private readonly api = inject(ApiService);
   private readonly sanitizer = inject(DomSanitizer);
+  private slideBlobUrl: string | null = null;
 
   readonly editingSlide = signal(false);
   readonly slideEditValue = signal('');
@@ -27,11 +28,7 @@ export class App implements OnInit {
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
 
-  readonly slideSrcdoc = computed<SafeHtml | undefined>(() => {
-    const html = this.state.slidePreviewHtml();
-    if (!html) return undefined;
-    return this.sanitizer.bypassSecurityTrustHtml(html);
-  });
+  readonly slideIframeSrc = signal<SafeResourceUrl | undefined>(undefined);
 
   readonly audienceOptions: Array<{ id: Audience; icon: string; title: string; desc: string }> = [
     { id: 'team', icon: '👥', title: 'Team', desc: 'Intern, pragmatisch, handlungsorientiert' },
@@ -74,7 +71,6 @@ export class App implements OnInit {
       this.state.selectedSlideIndex();
       const md = this.state.currentSlideMarkdown();
       if (step === 3 && md) {
-        // Wrap single-slide markdown with Marp frontmatter so it renders correctly
         const slideMd = md.includes('marp:') ? md : `---\nmarp: true\n---\n\n${md}`;
         const tid = untracked(() => {
           const t = this.state.selectedTemplateId();
@@ -85,6 +81,24 @@ export class App implements OnInit {
           error: (err) => console.error('[SlidePreview] Fehler:', err),
         });
       }
+    });
+
+    // Create blob URL for slide preview iframe
+    effect(() => {
+      const html = this.state.slidePreviewHtml();
+      if (this.slideBlobUrl) {
+        URL.revokeObjectURL(this.slideBlobUrl);
+        this.slideBlobUrl = null;
+      }
+      if (!html) {
+        this.slideIframeSrc.set(undefined);
+        return;
+      }
+      const blob = new Blob([html], { type: 'text/html' });
+      this.slideBlobUrl = URL.createObjectURL(blob);
+      this.slideIframeSrc.set(
+        this.sanitizer.bypassSecurityTrustResourceUrl(this.slideBlobUrl),
+      );
     });
   }
 
@@ -172,6 +186,12 @@ export class App implements OnInit {
   private commitSlideEdit(): void {
     if (this.editingSlide()) {
       this.saveSlideEdit();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.slideBlobUrl) {
+      URL.revokeObjectURL(this.slideBlobUrl);
     }
   }
 

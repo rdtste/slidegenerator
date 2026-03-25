@@ -1,5 +1,5 @@
 <div class="chat-panel">
-  <div class="chat-messages">
+  <div class="chat-messages" #messagesContainer>
     @for (msg of state.messages(); track $index) {
       <div class="message" [class]="msg.role" [class.clarification]="conversing() && msg.role === 'assistant' && $last">
         {{ msg.content }}

@@ -38,5 +38,10 @@
     @if (status()) {
       <span class="status-msg">{{ status() }}</span>
     }
+
+    <div class="stats-section">
+      <span class="stats-label">Generierte Präsentationen</span>
+      <span class="stats-count">{{ presentationCount() }}</span>
+    </div>
   </div>
 }

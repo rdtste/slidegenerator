@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleAuth } from 'google-auth-library';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   SettingsResponseDto,
   RegionOption,
@@ -35,6 +37,7 @@ export class SettingsService {
   private gcpProjectId: string;
   private gcpRegion: string;
   private model: string;
+  private readonly statsPath: string;
 
   constructor(private readonly config: ConfigService) {
     this.gcpProjectId = this.config.get<string>(
@@ -43,6 +46,12 @@ export class SettingsService {
     );
     this.gcpRegion = this.config.get<string>('GCP_REGION', 'europe-west1');
     this.model = this.config.get<string>('GCP_MODEL', 'google/gemini-2.5-pro');
+
+    const templatesDir = this.config.get<string>(
+      'TEMPLATES_DIR',
+      path.resolve(__dirname, '../../templates'),
+    );
+    this.statsPath = path.join(templatesDir, 'stats.json');
 
     this.auth = new GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
@@ -56,7 +65,29 @@ export class SettingsService {
       model: this.model,
       availableRegions: REGIONS,
       availableModels: MODELS,
+      presentationCount: this.loadStats().presentationCount,
     };
+  }
+
+  incrementPresentationCount(): void {
+    const stats = this.loadStats();
+    stats.presentationCount++;
+    try {
+      fs.writeFileSync(this.statsPath, JSON.stringify(stats, null, 2));
+    } catch (err) {
+      this.logger.warn(`Could not write stats: ${err}`);
+    }
+  }
+
+  private loadStats(): { presentationCount: number } {
+    try {
+      if (fs.existsSync(this.statsPath)) {
+        return JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
+      }
+    } catch {
+      this.logger.warn('Corrupt stats file, resetting');
+    }
+    return { presentationCount: 0 };
   }
 
   updateSettings(partial: {

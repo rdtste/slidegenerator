@@ -47,13 +47,14 @@ export class PreviewService {
   <style>${css}</style>
   ${templateStyle}
   <style>
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1d27; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; background: #1a1d27; }
     body { display: flex; align-items: center; justify-content: center; }
-    /* Single slide: fill viewport. Multiple slides: scroll vertically. */
     body.multi { flex-direction: column; align-items: center; gap: 16px; padding: 16px; overflow-y: auto; height: auto; }
-    svg[data-marpit-svg] { max-width: 100%; max-height: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.5); border-radius: 4px; }
+    svg[data-marpit-svg] { max-width: 100%; max-height: 100vh; box-shadow: 0 4px 24px rgba(0,0,0,0.5); border-radius: 4px; display: block; }
     body.multi svg[data-marpit-svg] { max-height: none; width: 100%; height: auto; }
     svg[data-marpit-svg].active-slide { outline: 3px solid #3b82f6; outline-offset: 2px; }
+    /* Ensure sections are visible even before Marp polyfill runs */
+    div.marpit > svg > foreignObject > section { transform: none !important; }
   </style>
 </head>
 <body>
