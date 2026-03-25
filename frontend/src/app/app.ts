@@ -37,10 +37,21 @@ export class App implements OnInit, OnDestroy {
   ];
 
   readonly fontOptions = [
-    'Inter', 'Arial', 'Helvetica', 'Roboto', 'Open Sans', 'Lato',
-    'Montserrat', 'Poppins', 'Raleway', 'Georgia', 'Playfair Display',
-    'Merriweather', 'Source Sans Pro', 'Nunito', 'Work Sans',
+    'Arial', 'Calibri', 'Helvetica', 'Georgia', 'Verdana', 'Roboto', 'Open Sans',
   ];
+
+  readonly colorPresets: Array<{ name: string; color: string }> = [
+    { name: 'Blau', color: '#7BA7D9' },
+    { name: 'Grün', color: '#8CC5A2' },
+    { name: 'Korall', color: '#E8998D' },
+    { name: 'Lila', color: '#B8A9D4' },
+    { name: 'Gold', color: '#D4C07A' },
+    { name: 'Türkis', color: '#7EC8C8' },
+    { name: 'Rose', color: '#D4A0B9' },
+    { name: 'Grau', color: '#A0ADB8' },
+  ];
+
+  readonly showCustomColor = signal(false);
 
   readonly imageStyleOptions: Array<{ id: ImageStyle; icon: string; title: string; desc: string }> = [
     { id: 'photo', icon: '📸', title: 'Fotografie', desc: 'Realistische Fotos und Aufnahmen' },

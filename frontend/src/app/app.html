@@ -46,14 +46,35 @@
             </div>
 
             @if (state.selectedTemplateId() === 'default') {
-              <div class="custom-design-row">
+              <div class="custom-design-options">
                 <div class="custom-design-field">
                   <label>Akzentfarbe</label>
-                  <div class="color-input-wrap">
-                    <input type="color" [(ngModel)]="state.customColor" class="color-input" />
-                    <span class="color-hex">{{ state.customColor() }}</span>
+                  <div class="color-presets">
+                    @for (p of colorPresets; track p.color) {
+                      <button
+                        class="color-preset"
+                        [class.active]="state.customColor() === p.color"
+                        [style.background]="p.color"
+                        [title]="p.name"
+                        (click)="state.customColor.set(p.color); showCustomColor.set(false)">
+                      </button>
+                    }
+                    <button
+                      class="color-preset custom-trigger"
+                      [class.active]="showCustomColor()"
+                      title="Eigene Farbe (RGB)"
+                      (click)="showCustomColor.update(v => !v)">
+                      #
+                    </button>
                   </div>
+                  @if (showCustomColor()) {
+                    <div class="color-custom-input">
+                      <input type="color" [(ngModel)]="state.customColor" class="color-input" />
+                      <input type="text" [ngModel]="state.customColor()" (ngModelChange)="state.customColor.set($event)" class="color-hex-input" maxlength="7" placeholder="#RRGGBB" />
+                    </div>
+                  }
                 </div>
+
                 <div class="custom-design-field">
                   <label>Schriftart</label>
                   <select [(ngModel)]="state.customFont" class="font-select">
@@ -62,6 +83,7 @@
                     }
                   </select>
                 </div>
+
                 <div class="custom-design-preview" [style.border-color]="state.customColor()">
                   <span class="preview-title" [style.color]="state.customColor()" [style.font-family]="state.customFont()">Beispiel-Titel</span>
                   <span class="preview-body" [style.font-family]="state.customFont()">Bullet Point Vorschau</span>
