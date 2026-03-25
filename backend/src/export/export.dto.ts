@@ -13,4 +13,42 @@ export class ExportRequestDto {
   @IsOptional()
   @IsIn(['pptx', 'pdf'])
   format?: string = 'pptx';
+
+  @IsString()
+  @IsOptional()
+  customColor?: string;
+
+  @IsString()
+  @IsOptional()
+  customFont?: string;
+}
+
+export class ExportV2RequestDto {
+  @IsString()
+  @IsNotEmpty()
+  prompt!: string;
+
+  @IsString()
+  @IsOptional()
+  documentText?: string;
+
+  @IsString()
+  @IsOptional()
+  audience?: string = 'management';
+
+  @IsString()
+  @IsOptional()
+  imageStyle?: string = 'minimal';
+
+  @IsString()
+  @IsOptional()
+  accentColor?: string = '#2563EB';
+
+  @IsString()
+  @IsOptional()
+  fontFamily?: string = 'Calibri';
+
+  @IsString()
+  @IsOptional()
+  templateId?: string;
 }

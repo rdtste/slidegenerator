@@ -8,7 +8,7 @@
     <app-settings />
   </header>
 
-  <nav class="stepper">
+  <nav class="stepper" role="navigation" aria-label="Wizard-Schritte">
     @for (s of [{n:1,label:'Einrichten'},{n:2,label:'Erstellen'},{n:3,label:'Prüfen'},{n:4,label:'Exportieren'}]; track s.n) {
       @if (s.n > 1) {
         <div class="step-connector" [class.done]="state.currentStep() >= s.n"></div>
@@ -56,6 +56,7 @@
                         [class.active]="state.customColor() === p.color"
                         [style.background]="p.color"
                         [title]="p.name"
+                        [attr.aria-label]="p.name + ' (' + p.color + ')'"
                         (click)="state.customColor.set(p.color); showCustomColor.set(false)">
                       </button>
                     }
@@ -256,18 +257,20 @@
         <div class="slide-viewer">
           <!-- Navigation bar -->
           <div class="slide-nav-bar">
-            <button class="btn-slide-nav" (click)="prevSlide()" [disabled]="state.selectedSlideIndex() === 0">←</button>
+            <button class="btn-slide-nav" (click)="prevSlide()" [disabled]="state.selectedSlideIndex() === 0" aria-label="Vorherige Folie">←</button>
             <span class="slide-indicator">Folie {{ state.selectedSlideIndex() + 1 }} / {{ state.slideCount() }}</span>
-            <button class="btn-slide-nav" (click)="nextSlide()" [disabled]="state.selectedSlideIndex() >= state.slideCount() - 1">→</button>
+            <button class="btn-slide-nav" (click)="nextSlide()" [disabled]="state.selectedSlideIndex() >= state.slideCount() - 1" aria-label="Nächste Folie">→</button>
           </div>
 
           <div class="slide-content-split">
             <!-- Preview -->
             <div class="slide-preview-pane">
-              @if (slideIframeSrc()) {
-                <iframe class="slide-iframe" [src]="slideIframeSrc()"></iframe>
-              } @else {
+              <iframe class="slide-iframe" #slideIframe></iframe>
+              @if (previewLoading()) {
                 <div class="slide-placeholder">Vorschau wird geladen...</div>
+              }
+              @if (previewError()) {
+                <div class="slide-placeholder error">{{ previewError() }}</div>
               }
             </div>
 
@@ -299,14 +302,18 @@
 
     <!-- Step 4: Exportieren -->
     @if (state.currentStep() === 4) {
-      <div class="step-content export-step-single">
-        <app-export-panel />
-        <div class="markdown-copy-section">
-          <h3>Markdown</h3>
-          <button class="btn-copy" (click)="copyAllMarkdown()">
-            {{ copied() ? '✓ Kopiert!' : '📋 Gesamtes Markdown kopieren' }}
-          </button>
-          <pre class="full-markdown-view">{{ state.markdown() }}</pre>
+      <div class="step-content export-step-centered">
+        <div class="export-dashboard">
+          <app-export-panel />
+          <details class="markdown-details">
+            <summary class="markdown-summary">Markdown anzeigen / kopieren</summary>
+            <div class="markdown-copy-section">
+              <button class="btn-copy" (click)="copyAllMarkdown()">
+                {{ copied() ? '✓ Kopiert!' : 'Gesamtes Markdown kopieren' }}
+              </button>
+              <pre class="full-markdown-view">{{ state.markdown() }}</pre>
+            </div>
+          </details>
         </div>
       </div>
       <div class="step-nav pad fixed-nav">

@@ -7,7 +7,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import templates, generate
+from app.api.routes import templates, generate, generate_v2
 from app.config import settings
 
 logging.basicConfig(
@@ -31,6 +31,7 @@ app.add_middleware(
 
 app.include_router(templates.router, prefix="/api/v1", tags=["Templates"])
 app.include_router(generate.router, prefix="/api/v1", tags=["Generate"])
+app.include_router(generate_v2.router, prefix="/api/v1", tags=["Generate V2"])
 
 
 @app.get("/api/v1/health")

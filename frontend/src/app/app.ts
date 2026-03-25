@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, OnDestroy, signal, effect, computed, untracked, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, effect, untracked, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Subscription } from 'rxjs';
 import { Chat } from './features/chat/chat';
 import { ExportPanel } from './features/export-panel/export-panel';
 import { TemplateManagement } from './features/template-management/template-management';
@@ -18,8 +18,6 @@ import { Audience, ImageStyle, TemplateProfile } from './core/models';
 export class App implements OnInit, OnDestroy {
   readonly state = inject(ChatState);
   private readonly api = inject(ApiService);
-  private readonly sanitizer = inject(DomSanitizer);
-  private slideBlobUrl: string | null = null;
 
   readonly editingSlide = signal(false);
   readonly slideEditValue = signal('');
@@ -27,13 +25,17 @@ export class App implements OnInit, OnDestroy {
   readonly showTemplateManager = signal(false);
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
+  readonly previewLoading = signal(false);
+  readonly previewError = signal('');
 
-  readonly slideIframeSrc = signal<SafeResourceUrl | undefined>(undefined);
+  @ViewChild('slideIframe') private slideIframeRef?: ElementRef<HTMLIFrameElement>;
+  private previewSub?: Subscription;
 
   readonly audienceOptions: Array<{ id: Audience; icon: string; title: string; desc: string }> = [
-    { id: 'team', icon: '👥', title: 'Team', desc: 'Intern, pragmatisch, handlungsorientiert' },
-    { id: 'management', icon: '📊', title: 'Management', desc: 'Strategisch, KPI-fokussiert, entscheidungsorientiert' },
-    { id: 'casual', icon: '💬', title: 'Casual', desc: 'Locker, visuell, für Meetings & Workshops' },
+    { id: 'team', icon: '👥', title: 'Team', desc: 'Intern, klar, handlungsorientiert' },
+    { id: 'management', icon: '📊', title: 'Management', desc: 'Executive, verdichtet, entscheidungsorientiert' },
+    { id: 'customer', icon: '🤝', title: 'Kunde / Extern', desc: 'Hochwertig, überzeugend, professionell' },
+    { id: 'workshop', icon: '💡', title: 'Workshop', desc: 'Offen, visuell, kollaborativ' },
   ];
 
   readonly fontOptions = [
@@ -54,10 +56,11 @@ export class App implements OnInit, OnDestroy {
   readonly showCustomColor = signal(false);
 
   readonly imageStyleOptions: Array<{ id: ImageStyle; icon: string; title: string; desc: string }> = [
-    { id: 'photo', icon: '📸', title: 'Fotografie', desc: 'Realistische Fotos und Aufnahmen' },
-    { id: 'illustration', icon: '🎨', title: 'Illustration', desc: 'Grafiken, Diagramme und Zeichnungen' },
-    { id: 'minimal', icon: '◻️', title: 'Minimal', desc: 'Icons und abstrakte Formen' },
-    { id: 'none', icon: '🚫', title: 'Keine Bilder', desc: 'Nur Text, keine Bildfolien' },
+    { id: 'photo', icon: '📸', title: 'Fotografie', desc: 'Realistisch, hochwertig, emotional' },
+    { id: 'illustration', icon: '🎨', title: 'Illustration', desc: 'Erklärend, konzeptionell, editorial' },
+    { id: 'minimal', icon: '◻️', title: 'Minimal', desc: 'Reduzierte Formen, Icons, typografisch' },
+    { id: 'data_visual', icon: '📊', title: 'Data Visual', desc: 'Diagramme, KPI, Timeline, Prozesse' },
+    { id: 'none', icon: '🚫', title: 'Keine Bilder', desc: 'Reine Typografie und Layoutstruktur' },
   ];
 
   constructor() {
@@ -83,41 +86,15 @@ export class App implements OnInit, OnDestroy {
       });
     });
 
+    // Trigger slide preview when step 3 is active (handles direct signal writes from chat component)
     effect(() => {
       const step = this.state.currentStep();
+      // Track slide index so preview refreshes when navigating slides
       this.state.selectedSlideIndex();
       const md = this.state.currentSlideMarkdown();
       if (step === 3 && md) {
-        const slideMd = md.includes('marp:') ? md : `---\nmarp: true\n---\n\n${md}`;
-        const [tid, cColor, cFont] = untracked(() => {
-          const t = this.state.selectedTemplateId();
-          return t !== 'default'
-            ? [t, undefined, undefined] as const
-            : [undefined, this.state.customColor(), this.state.customFont()] as const;
-        });
-        this.api.preview(slideMd, tid, cColor, cFont).subscribe({
-          next: (html) => this.state.slidePreviewHtml.set(html),
-          error: (err) => console.error('[SlidePreview] Fehler:', err),
-        });
+        untracked(() => this.loadSlidePreview());
       }
-    });
-
-    // Create blob URL for slide preview iframe
-    effect(() => {
-      const html = this.state.slidePreviewHtml();
-      if (this.slideBlobUrl) {
-        URL.revokeObjectURL(this.slideBlobUrl);
-        this.slideBlobUrl = null;
-      }
-      if (!html) {
-        this.slideIframeSrc.set(undefined);
-        return;
-      }
-      const blob = new Blob([html], { type: 'text/html' });
-      this.slideBlobUrl = URL.createObjectURL(blob);
-      this.slideIframeSrc.set(
-        this.sanitizer.bypassSecurityTrustResourceUrl(this.slideBlobUrl),
-      );
     });
   }
 
@@ -171,8 +148,7 @@ export class App implements OnInit, OnDestroy {
     chunks[idx] = this.slideEditValue();
     this.state.updateMarkdown(chunks.join('\n\n---\n\n'));
     this.editingSlide.set(false);
-    // Re-parse slides from updated markdown
-    this.refreshFullPreview();
+    // Effect will trigger loadSlidePreview since currentSlideMarkdown changed
   }
 
   cancelSlideEdit(): void {
@@ -209,23 +185,63 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.slideBlobUrl) {
-      URL.revokeObjectURL(this.slideBlobUrl);
-    }
+    this.previewSub?.unsubscribe();
   }
 
-  private refreshFullPreview(): void {
-    const md = this.state.markdown();
+  loadSlidePreview(): void {
+    const md = this.state.currentSlideMarkdown();
     if (!md) return;
+
+    const slideMd = md.includes('marp:') ? md : `---\nmarp: true\n---\n\n${md}`;
     const templateId = this.state.selectedTemplateId();
     const isDefault = templateId === 'default';
-    this.api.preview(
-      md,
+
+    this.previewLoading.set(true);
+    this.previewError.set('');
+    this.previewSub?.unsubscribe();
+
+    this.previewSub = this.api.preview(
+      slideMd,
       isDefault ? undefined : templateId,
       isDefault ? this.state.customColor() : undefined,
       isDefault ? this.state.customFont() : undefined,
     ).subscribe({
-      next: (html) => this.state.previewHtml.set(html),
+      next: (html) => {
+        this.previewLoading.set(false);
+        this.writeToIframe(html);
+      },
+      error: (err) => {
+        this.previewLoading.set(false);
+        this.previewError.set(`Vorschau-Fehler: ${err.message || 'Unbekannt'}`);
+        console.error('[SlidePreview] Fehler:', err);
+      },
     });
+  }
+
+  private writeToIframe(html: string): void {
+    // Use requestAnimationFrame to ensure the iframe element exists in the DOM
+    requestAnimationFrame(() => {
+      const iframe = this.slideIframeRef?.nativeElement;
+      if (!iframe) {
+        // Retry once more after another frame (iframe may not be rendered yet)
+        requestAnimationFrame(() => {
+          const retryIframe = this.slideIframeRef?.nativeElement;
+          if (retryIframe) {
+            this.setIframeContent(retryIframe, html);
+          }
+        });
+        return;
+      }
+      this.setIframeContent(iframe, html);
+    });
+  }
+
+  private setIframeContent(iframe: HTMLIFrameElement, html: string): void {
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+    }
   }
 }

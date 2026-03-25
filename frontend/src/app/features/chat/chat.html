@@ -1,8 +1,11 @@
 <div class="chat-panel">
-  <div class="chat-messages" #messagesContainer>
+  <div class="chat-messages" #messagesContainer aria-live="polite">
     @for (msg of state.messages(); track $index) {
       <div class="message" [class]="msg.role" [class.clarification]="conversing() && msg.role === 'assistant' && $last">
         {{ msg.content }}
+        @if (msg.role === 'error' && $last && !state.loading()) {
+          <button class="retry-btn" (click)="retry()">Erneut versuchen</button>
+        }
       </div>
     }
     @if (state.loading()) {
@@ -29,9 +32,12 @@
         }
       </div>
     }
+    @if (!conversing() && !state.hasMarkdown() && state.messages().length <= 1) {
+      <div class="input-hint">Du kannst auch ein PDF, DOCX oder Textdokument als Grundlage anhängen.</div>
+    }
     <div class="input-row">
       @if (!conversing()) {
-        <label class="attach-btn" for="chatFileUpload" title="Dokument anhängen (PDF, DOCX, TXT)">
+        <label class="attach-btn" for="chatFileUpload" title="Dokument anhängen (PDF, DOCX, TXT)" aria-label="Dokument anhängen">
           📎
         </label>
         <input type="file" id="chatFileUpload" accept=".pdf,.docx,.txt,.md" multiple hidden (change)="onFileSelect($event)" />

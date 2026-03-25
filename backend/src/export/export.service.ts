@@ -34,7 +34,164 @@ export class ExportService {
     );
   }
 
-  async startPptxJob(markdown: string, templateId: string): Promise<string> {
+  async startV2Job(
+    prompt: string,
+    documentText?: string,
+    audience?: string,
+    imageStyle?: string,
+    accentColor?: string,
+    fontFamily?: string,
+    templateId?: string,
+  ): Promise<string> {
+    const jobId = randomUUID();
+    const job: ExportJob = {
+      status: 'processing',
+      subject: new ReplaySubject<MessageEvent>(),
+      filename: 'presentation_v2.pptx',
+      createdAt: Date.now(),
+    };
+    this.jobs.set(jobId, job);
+
+    this.processV2Job(jobId, prompt, documentText, audience, imageStyle, accentColor, fontFamily, templateId).catch((err) => {
+      let message: string;
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === 'object' && err !== null && 'detail' in err) {
+        message = String((err as Record<string, unknown>).detail);
+      } else {
+        message = String(err) || 'Unknown error';
+      }
+      this.logger.error(`V2 Job ${jobId} failed: ${message}`);
+      if (job.status === 'processing') {
+        job.status = 'error';
+        job.subject.next({ data: { step: 'error', detail: message, message }, type: 'fail' } as MessageEvent);
+        job.subject.complete();
+      }
+    });
+
+    return jobId;
+  }
+
+  private async processV2Job(
+    jobId: string,
+    prompt: string,
+    documentText?: string,
+    audience?: string,
+    imageStyle?: string,
+    accentColor?: string,
+    fontFamily?: string,
+    templateId?: string,
+  ): Promise<void> {
+    const job = this.jobs.get(jobId);
+    if (!job) return;
+
+    this.logger.log(`Starting V2 pipeline generation for job ${jobId}`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 540_000);
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `${this.pptxServiceUrl}/api/v1/generate-v2`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            document_text: documentText || '',
+            audience: audience || 'management',
+            image_style: imageStyle || 'minimal',
+            accent_color: accentColor || '#2563EB',
+            font_family: fontFamily || 'Calibri',
+            template_id: templateId || null,
+          }),
+          signal: controller.signal,
+        },
+      );
+    } catch (fetchErr: unknown) {
+      clearTimeout(timeout);
+      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+      throw new Error(`PPTX-Service V2 nicht erreichbar: ${msg}`);
+    }
+
+    if (!response.ok || !response.body) {
+      clearTimeout(timeout);
+      const body = await response.text().catch(() => 'unknown');
+      throw new Error(`PPTX service V2 returned ${response.status}: ${body}`);
+    }
+
+    // Process SSE stream — same structure as V1
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop()!;
+
+      for (const part of parts) {
+        if (!part.trim()) continue;
+
+        let eventType = 'message';
+        let data = '';
+
+        for (const line of part.split('\n')) {
+          if (line.startsWith('event: ')) eventType = line.slice(7);
+          else if (line.startsWith('data: ')) data = line.slice(6);
+        }
+        if (!data) continue;
+
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          continue;
+        }
+
+        if (eventType === 'complete') {
+          const fileId = parsed['fileId'] as string;
+          job.filename = (parsed['filename'] as string) || 'presentation_v2.pptx';
+
+          const fileResponse = await fetch(
+            `${this.pptxServiceUrl}/api/v1/download-v2/${fileId}`,
+          );
+          if (!fileResponse.ok) {
+            throw new Error('Failed to download V2 generated file from pptx-service');
+          }
+          job.buffer = Buffer.from(await fileResponse.arrayBuffer());
+          job.status = 'complete';
+          job.subject.next({ data: parsed, type: 'complete' } as MessageEvent);
+          job.subject.complete();
+          this.logger.log(`V2 Job ${jobId} complete: ${job.filename}`);
+        } else if (eventType === 'fail') {
+          job.status = 'error';
+          job.subject.next({ data: parsed, type: 'fail' } as MessageEvent);
+          job.subject.complete();
+          this.logger.warn(`V2 Job ${jobId} failed: ${parsed['detail']}`);
+        } else {
+          job.subject.next({ data: parsed, type: eventType || 'progress' } as MessageEvent);
+        }
+      }
+    }
+
+    clearTimeout(timeout);
+
+    if (job.status === 'processing') {
+      job.status = 'error';
+      job.subject.next({
+        data: { step: 'error', detail: 'V2 Pipeline Verbindung unterbrochen', message: 'V2 Pipeline Verbindung unterbrochen' },
+        type: 'fail',
+      } as MessageEvent);
+      job.subject.complete();
+    }
+  }
+
+  async startPptxJob(markdown: string, templateId: string, customColor?: string, customFont?: string): Promise<string> {
     const jobId = randomUUID();
     const job: ExportJob = {
       status: 'processing',
@@ -44,7 +201,7 @@ export class ExportService {
     };
     this.jobs.set(jobId, job);
 
-    this.processPptxJob(jobId, markdown, templateId).catch((err) => {
+    this.processPptxJob(jobId, markdown, templateId, customColor, customFont).catch((err) => {
       let message: string;
       if (err instanceof Error) {
         message = err.message;
@@ -58,7 +215,7 @@ export class ExportService {
       this.logger.error(`Job ${jobId} failed: ${message}`);
       if (job.status === 'processing') {
         job.status = 'error';
-        job.subject.next({ data: { step: 'error', detail: message, message } } as MessageEvent);
+        job.subject.next({ data: { step: 'error', detail: message, message }, type: 'fail' } as MessageEvent);
         job.subject.complete();
       }
     });
@@ -70,22 +227,46 @@ export class ExportService {
     jobId: string,
     markdown: string,
     templateId: string,
+    customColor?: string,
+    customFont?: string,
   ): Promise<void> {
     const job = this.jobs.get(jobId);
     if (!job) return;
 
     this.logger.log(`Starting streaming PPTX generation for job ${jobId}`);
+    this.logger.log(`PPTX service URL: ${this.pptxServiceUrl}/api/v1/generate-stream`);
 
-    const response = await fetch(
-      `${this.pptxServiceUrl}/api/v1/generate-stream`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdown, template_id: templateId }),
-      },
-    );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 540_000); // 9 min timeout
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `${this.pptxServiceUrl}/api/v1/generate-stream`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+          markdown,
+          template_id: templateId,
+          custom_color: customColor || undefined,
+          custom_font: customFont || undefined,
+        }),
+          signal: controller.signal,
+        },
+      );
+    } catch (fetchErr: unknown) {
+      clearTimeout(timeout);
+      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+      const cause = fetchErr instanceof Error && (fetchErr as NodeJS.ErrnoException).cause
+        ? String((fetchErr as NodeJS.ErrnoException).cause)
+        : '';
+      this.logger.error(`Failed to connect to pptx-service: ${msg} | cause: ${cause}`);
+      throw new Error(`PPTX-Service nicht erreichbar: ${msg}${cause ? ` (${cause})` : ''}`);
+    }
 
     if (!response.ok || !response.body) {
+      clearTimeout(timeout);
       const body = await response.text().catch(() => 'unknown');
       throw new Error(`PPTX service returned ${response.status}: ${body}`);
     }
@@ -160,11 +341,13 @@ export class ExportService {
       }
     }
 
+    clearTimeout(timeout);
+
     if (job.status === 'processing') {
       job.status = 'error';
       job.subject.next({
-        data: { 
-          step: 'error', 
+        data: {
+          step: 'error',
           detail: 'Verbindung zum Generierungs-Service unterbrochen',
           message: 'Verbindung zum Generierungs-Service unterbrochen'
         },

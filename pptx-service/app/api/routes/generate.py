@@ -52,7 +52,9 @@ async def generate(request: GenerateRequest):
         raise HTTPException(status_code=400, detail="Keine Folien im Markdown gefunden")
 
     try:
-        output_path = generate_pptx(presentation, request.template_id)
+        output_path = generate_pptx(presentation, request.template_id,
+                                     custom_color=request.custom_color,
+                                     custom_font=request.custom_font)
     except Exception as exc:
         logger.exception("PPTX generation failed")
         raise HTTPException(status_code=500, detail=f"PPTX-Generierung fehlgeschlagen: {exc}") from exc
@@ -138,6 +140,8 @@ async def generate_stream(request: GenerateRequest):
                     request.template_id,
                     progress_callback=progress_callback,
                     warnings_collector=generation_warnings,
+                    custom_color=request.custom_color,
+                    custom_font=request.custom_font,
                 )
                 result_holder["generation_warnings"] = generation_warnings
             except Exception as exc:

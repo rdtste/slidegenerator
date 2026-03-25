@@ -9,6 +9,7 @@ from io import BytesIO
 from pathlib import Path
 
 from pptx import Presentation
+from pptx.util import Inches
 
 from app.config import settings
 from app.models.schemas import TemplateInfo
@@ -103,8 +104,11 @@ def load_presentation(template_id: str) -> Presentation:
             return _load_potx_as_presentation(path)
         return Presentation(str(path))
 
-    logger.info("No template found, using blank presentation")
-    return Presentation()
+    logger.info("No template found, using blank 16:9 presentation")
+    prs = Presentation()
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+    return prs
 
 
 def get_layout_names(prs: Presentation) -> list[str]:

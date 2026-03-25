@@ -168,6 +168,30 @@
   }
 }
 
+.retry-btn {
+  display: inline-block;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--danger, #ef4444);
+  color: var(--danger, #ef4444);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+.input-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 4px;
+  opacity: 0.7;
+}
+
 .message.clarification {
   border-left: 3px solid var(--primary);
   white-space: pre-line;

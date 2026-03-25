@@ -19,8 +19,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # ── Farben ────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
-info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
+info()  { echo -e "${GREEN}[INFO]${NC} $1" >&2; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
 error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 
 # ── Pre-Flight ────────────────────────────────────────────────
@@ -171,11 +171,16 @@ main() {
     info "── Schritt 3: backend deployen ──"
     local backend_env
     backend_env=$(load_env_as_flags "${REPO_ROOT}/backend/.env")
-    # PPTX_SERVICE_URL muss die interne Custom Domain nutzen,
-    # da Cloud Run-zu-Cloud Run Calls über die öffentliche URL als extern gelten
-    backend_env="${backend_env},PPTX_SERVICE_URL=https://${PREFIX}-pptx-service.${INTERNAL_DOMAIN}"
+    # pptx-service runs as sidecar in the backend pod → localhost
+    backend_env="${backend_env},PPTX_SERVICE_URL=http://localhost:8000"
     local backend_url
+    # Backend needs VPC connector to reach pptx-service (internal ingress)
     backend_url=$(deploy_service "backend" "3000" "${backend_env}" "512Mi" "1")
+    gcloud run services update "${PREFIX}-backend" \
+        --region="${REGION}" \
+        --vpc-connector=vpc-access-connector \
+        --vpc-egress=all-traffic \
+        --quiet >&2
 
     # ── 4. Build & deploy frontend ──
     info "── Schritt 4: Frontend bauen & deployen ──"

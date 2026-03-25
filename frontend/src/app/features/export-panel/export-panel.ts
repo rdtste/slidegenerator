@@ -28,6 +28,43 @@ export class ExportPanel implements OnDestroy {
   private reconnectAttempts = 0;
   private currentJobId = '';
 
+  downloadV2(): void {
+    const briefing = this.state.briefing();
+    if (!briefing) {
+      this.exportStatus.set('Fehler: Kein Briefing vorhanden. Bitte zuerst eine Praesentation generieren.');
+      return;
+    }
+
+    this.exporting.set(true);
+    this.exportProgress.set(0);
+    this.exportMessage.set('V2 AI-Pipeline wird gestartet…');
+    this.exportStatus.set('');
+    this.currentActiveKey = '';
+    this.progressEntries.set([]);
+    this.reconnectAttempts = 0;
+
+    const templateId = this.state.selectedTemplateId();
+    const isDefault = templateId === 'default';
+
+    this.api.startV2Export(
+      briefing,
+      this.state.audience(),
+      this.state.imageStyle(),
+      isDefault ? this.state.customColor() : undefined,
+      isDefault ? this.state.customFont() : undefined,
+      isDefault ? undefined : templateId,
+    ).subscribe({
+      next: ({ jobId }) => {
+        this.currentJobId = jobId;
+        this.connectProgress(jobId);
+      },
+      error: (err) => {
+        this.exportStatus.set(`Fehler: ${err.error?.detail ?? err.message}`);
+        this.exporting.set(false);
+      },
+    });
+  }
+
   download(format: string): void {
     const markdown = this.state.markdown();
     if (!markdown) return;
@@ -48,7 +85,13 @@ export class ExportPanel implements OnDestroy {
     ]);
 
     this.reconnectAttempts = 0;
-    this.api.startExport(markdown, this.state.selectedTemplateId(), format).subscribe({
+    const templateId = this.state.selectedTemplateId();
+    const isDefault = templateId === 'default';
+    this.api.startExport(
+      markdown, templateId, format,
+      isDefault ? this.state.customColor() : undefined,
+      isDefault ? this.state.customFont() : undefined,
+    ).subscribe({
       next: ({ jobId }) => {
         this.currentJobId = jobId;
         this.connectProgress(jobId);
@@ -60,8 +103,23 @@ export class ExportPanel implements OnDestroy {
     });
   }
 
-  selectSlide(index: number): void {
-    this.state.selectedSlideIndex.set(index);
+  getTemplateName(): string {
+    const id = this.state.selectedTemplateId();
+    if (id === 'default') return 'Standard-Design';
+    return this.state.templates().find(t => t.id === id)?.name ?? id;
+  }
+
+  isSuccess(): boolean {
+    const s = this.exportStatus();
+    return s.includes('heruntergeladen') && !s.includes('Warnung') && !s.includes('Fehler');
+  }
+
+  isWarning(): boolean {
+    return this.exportStatus().includes('Warnung');
+  }
+
+  isError(): boolean {
+    return this.exportStatus().startsWith('Fehler');
   }
 
   ngOnDestroy(): void {
@@ -208,6 +266,17 @@ export class ExportPanel implements OnDestroy {
       case 'qa_fixing': return '🔧';
       case 'qa_pass': return '✅';
       case 'qa_done': case 'qa_skipped': return '📋';
+      // V2 pipeline stages
+      case 'stage_1': return '🔍';
+      case 'stage_2': return '📖';
+      case 'stage_3': return '📐';
+      case 'stage_4': return '✅';
+      case 'stage_5': return '✍️';
+      case 'stage_6': return '📏';
+      case 'stage_7': case 'rendering': return '🎨';
+      case 'stage_8': return '🔎';
+      case 'quality': return '📊';
+      case 'done': return '🎉';
       default: return '⚙️';
     }
   }

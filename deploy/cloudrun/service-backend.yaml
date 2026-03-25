@@ -28,7 +28,7 @@ spec:
       containers:
         # ── Primary: NestJS Backend (ingress container) ──
         - name: backend
-          image: BACKEND_IMAGE
+          image: europe-west1-docker.pkg.dev/rd-cmpd-prod513-psl-mate-dev/cloud-run-images/slidegenerator-backend:latest
           ports:
             - containerPort: 3000
               name: http1
@@ -59,7 +59,7 @@ spec:
 
         # ── Sidecar: FastAPI PPTX Service ──
         - name: pptx-service
-          image: PPTX_SERVICE_IMAGE
+          image: europe-west1-docker.pkg.dev/rd-cmpd-prod513-psl-mate-dev/cloud-run-images/slidegenerator-pptx-service:latest
           env:
             - name: HOST
               value: "0.0.0.0"

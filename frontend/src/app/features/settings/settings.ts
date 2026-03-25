@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api';
 import { SelectOption } from '../../core/models';
@@ -9,8 +9,9 @@ import { SelectOption } from '../../core/models';
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })
-export class Settings implements OnInit {
+export class Settings implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly el = inject(ElementRef);
 
   readonly open = signal(false);
   readonly saving = signal(false);
@@ -23,8 +24,24 @@ export class Settings implements OnInit {
   readonly availableModels = signal<SelectOption[]>([]);
   readonly presentationCount = signal(0);
 
+  private clickOutsideHandler = (e: MouseEvent) => {
+    if (this.open() && !this.el.nativeElement.contains(e.target)) {
+      this.open.set(false);
+    }
+  };
+
   ngOnInit(): void {
     this.loadSettings();
+    document.addEventListener('click', this.clickOutsideHandler, true);
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('click', this.clickOutsideHandler, true);
+  }
+
+  @HostListener('keydown.escape')
+  onEscape(): void {
+    if (this.open()) this.open.set(false);
   }
 
   toggle(): void {

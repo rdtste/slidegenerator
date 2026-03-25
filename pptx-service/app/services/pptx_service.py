@@ -11,6 +11,7 @@ from pathlib import Path
 from lxml import etree
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
+from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -159,6 +160,8 @@ def generate_pptx(
     template_id: str = "default",
     progress_callback: ProgressCallback | None = None,
     warnings_collector: list[dict] | None = None,
+    custom_color: str | None = None,
+    custom_font: str | None = None,
 ) -> Path:
     """Generate a PPTX file from structured presentation data."""
     token = _progress_ctx.set(progress_callback)
@@ -197,6 +200,10 @@ def generate_pptx(
                 "slide", f"Folie {i + 1}/{total} fertig", 40 + int(((i + 1) / total) * 50),
             )
 
+        # Apply custom design (color/font) for default template
+        if (not template_id or template_id == "default") and (custom_color or custom_font):
+            _apply_custom_design(prs, custom_color, custom_font)
+
         _report_progress("saving", "Präsentation wird gespeichert...", 95)
         output_dir = Path(tempfile.mkdtemp(prefix="slidegen_"))
         safe_title = "".join(
@@ -212,6 +219,33 @@ def generate_pptx(
         _prefetched_images.reset(prefetch_token)
         _warnings_ctx.reset(warnings_token)
         _progress_ctx.reset(token)
+
+
+def _apply_custom_design(prs: Presentation, custom_color: str | None, custom_font: str | None) -> None:
+    """Apply custom accent color and font to all slides (default template only)."""
+    color = None
+    if custom_color:
+        try:
+            hex_val = custom_color.lstrip("#")
+            color = RGBColor(int(hex_val[:2], 16), int(hex_val[2:4], 16), int(hex_val[4:6], 16))
+        except (ValueError, IndexError):
+            logger.warning(f"Invalid custom color: {custom_color}")
+
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            for paragraph in shape.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    if custom_font:
+                        run.font.name = custom_font
+                    # Apply accent color to titles (placeholder types 0=title, 1=center_title, 13=title)
+                    if color and hasattr(shape, "placeholder_format") and shape.placeholder_format is not None:
+                        ph_idx = shape.placeholder_format.idx
+                        if ph_idx in (0, 1, 13):  # Title placeholders
+                            run.font.color.rgb = color
+
+    logger.info(f"Applied custom design: color={custom_color}, font={custom_font}")
 
 
 def _collect_image_descriptions(data: PresentationData) -> list[str]:

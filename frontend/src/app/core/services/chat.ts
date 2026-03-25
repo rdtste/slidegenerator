@@ -23,7 +23,7 @@ export class ChatState {
   readonly customFont = signal('Calibri');
   readonly previewHtml = signal('');
   readonly selectedSlideIndex = signal(0);
-  readonly slidePreviewHtml = signal('');
+  readonly briefing = signal('');
 
   readonly slideCount = computed(() => this.slides().length);
   readonly hasMarkdown = computed(() => this.markdown().trim().length > 0);
@@ -65,6 +65,6 @@ export class ChatState {
     this.customFont.set('Calibri');
     this.previewHtml.set('');
     this.selectedSlideIndex.set(0);
-    this.slidePreviewHtml.set('');
+    this.briefing.set('');
   }
 }

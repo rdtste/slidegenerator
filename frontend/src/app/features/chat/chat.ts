@@ -30,6 +30,7 @@ export class Chat implements OnDestroy {
   private llmConversation: Array<{ role: string; content: string }> = [];
   private firstMessageFiles: File[] = [];
   private phaseInterval: ReturnType<typeof setInterval> | null = null;
+  private lastPrompt = '';
 
   private lastMessageCount = 0;
   private lastLoading = false;
@@ -59,6 +60,7 @@ export class Chat implements OnDestroy {
     const msgText = fileNames.length ? `${text}\n\n📎 ${fileNames.join(', ')}` : text;
 
     this.state.addMessage({ role: 'user', content: msgText });
+    this.lastPrompt = text;
     this.prompt.set('');
     this.state.loading.set(true);
 
@@ -103,6 +105,17 @@ export class Chat implements OnDestroy {
       });
   }
 
+  retry(): void {
+    // Remove the last error message and re-populate the prompt
+    const msgs = this.state.messages();
+    if (msgs.length && msgs[msgs.length - 1].role === 'error') {
+      this.state.messages.set(msgs.slice(0, -1));
+    }
+    if (this.lastPrompt) {
+      this.prompt.set(this.lastPrompt);
+    }
+  }
+
   skipConversation(): void {
     if (this.state.loading()) return;
     this.conversing.set(false);
@@ -114,6 +127,7 @@ export class Chat implements OnDestroy {
   }
 
   private generateSlides(briefing: string, files?: File[]): void {
+    this.state.briefing.set(briefing);
     const templateId = this.state.selectedTemplateId();
     const audience = this.state.audience();
     const imageStyle = this.state.imageStyle();

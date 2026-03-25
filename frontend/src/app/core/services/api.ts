@@ -25,7 +25,7 @@ export class ApiService {
       return `http://localhost:3000/api/v1`;
     }
 
-    // Cloud Run custom domain: slidegenerator.xxx → slidegenerator-backend.xxx
+    // Custom domain (internal or external): slidegenerator.xxx → slidegenerator-backend.xxx
     if (hostname.startsWith('slidegenerator.')) {
       const backendHost = hostname.replace('slidegenerator.', 'slidegenerator-backend.');
       return `${protocol}//${backendHost}/api/v1`;
@@ -124,10 +124,30 @@ export class ApiService {
     );
   }
 
-  startExport(markdown: string, templateId: string, format: string): Observable<{ jobId: string }> {
+  startExport(markdown: string, templateId: string, format: string, customColor?: string, customFont?: string): Observable<{ jobId: string }> {
     return this.http.post<{ jobId: string }>(`${this.baseUrl}/export/start`,
-      { markdown, templateId, format },
+      { markdown, templateId, format, customColor, customFont },
     );
+  }
+
+  startV2Export(
+    prompt: string,
+    audience: string,
+    imageStyle: string,
+    accentColor?: string,
+    fontFamily?: string,
+    templateId?: string,
+    documentText?: string,
+  ): Observable<{ jobId: string }> {
+    return this.http.post<{ jobId: string }>(`${this.baseUrl}/export/start-v2`, {
+      prompt,
+      documentText: documentText || '',
+      audience,
+      imageStyle,
+      accentColor: accentColor || '#2563EB',
+      fontFamily: fontFamily || 'Calibri',
+      templateId,
+    });
   }
 
   downloadExport(jobId: string): Observable<HttpResponse<Blob>> {

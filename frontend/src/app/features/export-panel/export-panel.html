@@ -1,12 +1,21 @@
 <div class="export-panel">
   <h2>Export</h2>
 
-  <div class="selected-template">
-    <span class="template-label">Template:</span>
-    <span class="template-value">{{ state.selectedTemplateId() === 'default' ? 'Standard-Design' : state.selectedTemplateId() }}</span>
+  <div class="export-summary">
+    <div class="summary-item">
+      <span class="summary-label">Template</span>
+      <span class="summary-value">{{ getTemplateName() }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Folien</span>
+      <span class="summary-value">{{ state.slides().length }}</span>
+    </div>
   </div>
 
   <div class="export-actions">
+    <button class="btn-primary v2-btn" (click)="downloadV2()" [disabled]="!state.hasMarkdown() || exporting()">
+      PowerPoint V2 (AI-Pipeline)
+    </button>
     <button class="btn-primary" (click)="download('pptx')" [disabled]="!state.hasMarkdown() || exporting()">
       PowerPoint (.pptx)
     </button>
@@ -38,16 +47,5 @@
     </div>
   }
 
-  <div class="status">{{ exportStatus() }}</div>
-
-  <div class="slide-list">
-    <h3>Folienübersicht</h3>
-    @for (slide of state.slides(); track $index) {
-      <div class="slide-item" [class.active]="state.selectedSlideIndex() === $index" (click)="selectSlide($index)">
-        <span class="slide-num">{{ $index + 1 }}</span>
-        <span class="slide-title">{{ slide.title || '(Ohne Titel)' }}</span>
-        <span class="slide-layout">{{ slide.layout }}</span>
-      </div>
-    }
-  </div>
+  <div class="status" [class.success]="isSuccess()" [class.warning]="isWarning()" [class.error]="isError()">{{ exportStatus() }}</div>
 </div>

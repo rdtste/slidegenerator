@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, Res, Sse, HttpException, HttpStatus
 import { Observable, merge, interval, map, takeUntil, Subject } from 'rxjs';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
-import { ExportRequestDto } from './export.dto';
+import { ExportRequestDto, ExportV2RequestDto } from './export.dto';
 
 const CONTENT_TYPES: Record<string, string> = {
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -18,6 +18,20 @@ const EXTENSIONS: Record<string, string> = {
 export class ExportController {
   constructor(private readonly exportService: ExportService) {}
 
+  @Post('start-v2')
+  async startV2Export(@Body() dto: ExportV2RequestDto): Promise<{ jobId: string }> {
+    const jobId = await this.exportService.startV2Job(
+      dto.prompt,
+      dto.documentText,
+      dto.audience,
+      dto.imageStyle,
+      dto.accentColor,
+      dto.fontFamily,
+      dto.templateId,
+    );
+    return { jobId };
+  }
+
   @Post('start')
   async startExport(@Body() dto: ExportRequestDto): Promise<{ jobId: string }> {
     const format = dto.format ?? 'pptx';
@@ -30,7 +44,7 @@ export class ExportController {
       );
     }
 
-    const jobId = await this.exportService.startPptxJob(dto.markdown, templateId);
+    const jobId = await this.exportService.startPptxJob(dto.markdown, templateId, dto.customColor, dto.customFont);
     return { jobId };
   }
 

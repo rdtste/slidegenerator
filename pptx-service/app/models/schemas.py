@@ -29,6 +29,8 @@ class PresentationData(BaseModel):
 class GenerateRequest(BaseModel):
     markdown: str = Field(..., min_length=1, description="Marp-style Markdown")
     template_id: str = Field("default", description="Template to use")
+    custom_color: str | None = Field(None, description="Accent color hex (e.g. #7BA7D9)")
+    custom_font: str | None = Field(None, description="Font family (e.g. Calibri)")
 
 
 class GenerateResponse(BaseModel):

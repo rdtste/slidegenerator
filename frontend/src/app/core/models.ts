@@ -24,9 +24,9 @@ export interface ClarifyResponse {
 
 export type TemplateScope = 'global' | 'session';
 
-export type Audience = 'team' | 'management' | 'casual';
+export type Audience = 'team' | 'management' | 'customer' | 'workshop';
 
-export type ImageStyle = 'photo' | 'illustration' | 'minimal' | 'none';
+export type ImageStyle = 'photo' | 'illustration' | 'minimal' | 'data_visual' | 'none';
 
 export interface TemplateInfo {
   id: string;
