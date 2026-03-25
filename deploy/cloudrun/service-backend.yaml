@@ -1,0 +1,84 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: slidegenerator-backend
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/invoker-iam-disabled: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/startup-cpu-boost: "true"
+        # Multi-container: backend is the ingress container, pptx-service is a sidecar
+        run.googleapis.com/container-dependencies: '{"backend":["pptx-service"]}'
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 300
+      volumes:
+        - name: shared-templates
+          emptyDir:
+            medium: Memory
+            sizeLimit: 500Mi
+      containers:
+        # ── Primary: NestJS Backend (ingress container) ──
+        - name: backend
+          image: BACKEND_IMAGE
+          ports:
+            - containerPort: 3000
+              name: http1
+          env:
+            - name: GCP_PROJECT_ID
+              value: "rd-cmpd-prod513-psl-mate-dev"
+            - name: GCP_REGION
+              value: "europe-west3"
+            - name: GCP_MODEL
+              value: "google/gemini-2.5-flash"
+            - name: PPTX_SERVICE_URL
+              value: "http://localhost:8000"
+            - name: TEMPLATES_DIR
+              value: "/shared/templates"
+          resources:
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: shared-templates
+              mountPath: /shared/templates
+          startupProbe:
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 240
+            periodSeconds: 240
+            failureThreshold: 1
+
+        # ── Sidecar: FastAPI PPTX Service ──
+        - name: pptx-service
+          image: PPTX_SERVICE_IMAGE
+          env:
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8000"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: TEMPLATES_DIR
+              value: "/shared/templates"
+            - name: GCP_PROJECT_ID
+              value: "rd-cmpd-prod513-psl-mate-dev"
+            - name: GCP_REGION
+              value: "europe-west1"
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: shared-templates
+              mountPath: /shared/templates
+          startupProbe:
+            tcpSocket:
+              port: 8000
+            timeoutSeconds: 240
+            periodSeconds: 240
+            failureThreshold: 1
