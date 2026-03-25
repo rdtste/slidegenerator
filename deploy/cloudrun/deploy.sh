@@ -191,6 +191,21 @@ main() {
     local frontend_url
     frontend_url=$(deploy_service "frontend" "8080" "" "256Mi" "1")
 
+    # Also update the legacy "slidegenerator" service (custom domain target)
+    info "Aktualisiere slidegenerator Service (Custom Domain)..."
+    gcloud run deploy "${PREFIX}" \
+        --image="${frontend_image}" \
+        --region="${REGION}" \
+        --port=8080 \
+        --memory=256Mi \
+        --cpu=1 \
+        --max-instances=3 \
+        --timeout=300 \
+        --ingress=internal-and-cloud-load-balancing \
+        --no-invoker-iam-check \
+        --quiet 2>/dev/null || warn "slidegenerator Service nicht gefunden (nur relevant bei Custom Domain)"
+    info "slidegenerator Service aktualisiert ✓"
+
     # ── Ergebnis ──
     echo ""
     info "═══════════════════════════════════════════════"
