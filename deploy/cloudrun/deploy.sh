@@ -188,23 +188,26 @@ main() {
         "${REPO_ROOT}/frontend"
     docker push "${frontend_image}"
 
-    local frontend_url
-    frontend_url=$(deploy_service "frontend" "8080" "" "256Mi" "1")
-
-    # Also update the legacy "slidegenerator" service (custom domain target)
-    info "Aktualisiere slidegenerator Service (Custom Domain)..."
+    # Deploy frontend as "slidegenerator" (not "slidegenerator-frontend")
+    info "Deploye ${PREFIX} (Frontend) nach Cloud Run..."
     gcloud run deploy "${PREFIX}" \
         --image="${frontend_image}" \
         --region="${REGION}" \
         --port=8080 \
         --memory=256Mi \
         --cpu=1 \
+        --min-instances=0 \
         --max-instances=3 \
         --timeout=300 \
         --ingress=internal-and-cloud-load-balancing \
         --no-invoker-iam-check \
-        --quiet 2>/dev/null || warn "slidegenerator Service nicht gefunden (nur relevant bei Custom Domain)"
-    info "slidegenerator Service aktualisiert ✓"
+        --quiet
+
+    local frontend_url
+    frontend_url=$(gcloud run services describe "${PREFIX}" \
+        --region="${REGION}" \
+        --format='value(status.url)')
+    info "${PREFIX} → ${frontend_url} ✓"
 
     # ── Ergebnis ──
     echo ""
