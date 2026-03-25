@@ -74,9 +74,9 @@ def list_templates() -> list[TemplateInfo]:
                 if path.stem in seen_ids:
                     continue
                 seen_ids.add(path.stem)
-            info = _inspect_template(path)
-            if info:
-                templates.append(info)
+                info = _inspect_template(path)
+                if info:
+                    templates.append(info)
 
     if not templates:
         templates.append(_get_default_template_info())
