@@ -118,7 +118,7 @@ deploy_service() {
         --min-instances="${min_inst}"
         --max-instances=3
         --concurrency="${concurrency}"
-        --timeout=300
+        --timeout=600
         --ingress=internal-and-cloud-load-balancing
         --quiet
     )
@@ -198,7 +198,7 @@ main() {
         --cpu=1 \
         --min-instances=0 \
         --max-instances=3 \
-        --timeout=300 \
+        --timeout=600 \
         --ingress=internal-and-cloud-load-balancing \
         --no-invoker-iam-check \
         --quiet

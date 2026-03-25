@@ -25,6 +25,8 @@ export class ExportPanel implements OnDestroy {
 
   private eventSource: EventSource | null = null;
   private currentActiveKey = '';
+  private reconnectAttempts = 0;
+  private currentJobId = '';
 
   download(format: string): void {
     const markdown = this.state.markdown();
@@ -45,8 +47,12 @@ export class ExportPanel implements OnDestroy {
       { icon: '🚀', label: `PowerPoint-Export für ${slideCount} Folien wird vorbereitet…`, status: 'active' },
     ]);
 
+    this.reconnectAttempts = 0;
     this.api.startExport(markdown, this.state.selectedTemplateId(), format).subscribe({
-      next: ({ jobId }) => this.connectProgress(jobId),
+      next: ({ jobId }) => {
+        this.currentJobId = jobId;
+        this.connectProgress(jobId);
+      },
       error: (err) => {
         this.exportStatus.set(`Fehler: ${err.error?.detail ?? err.message}`);
         this.exporting.set(false);
@@ -144,13 +150,22 @@ export class ExportPanel implements OnDestroy {
     });
 
     source.onerror = () => {
-      if (this.exporting()) {
-        this.exportStatus.set('Verbindung zum Server verloren.');
-        this.exporting.set(false);
-      }
       source.close();
       this.eventSource = null;
-      this.cdr.markForCheck();
+      if (this.exporting() && this.reconnectAttempts < 3) {
+        this.reconnectAttempts++;
+        this.exportMessage.set(`Verbindung unterbrochen — Wiederverbindung (${this.reconnectAttempts}/3)…`);
+        this.cdr.markForCheck();
+        setTimeout(() => {
+          if (this.exporting()) {
+            this.connectProgress(this.currentJobId);
+          }
+        }, 2000);
+      } else if (this.exporting()) {
+        this.exportStatus.set('Verbindung zum Server verloren. Bitte erneut versuchen.');
+        this.exporting.set(false);
+        this.cdr.markForCheck();
+      }
     };
   }
 
