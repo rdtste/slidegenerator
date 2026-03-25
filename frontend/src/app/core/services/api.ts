@@ -57,7 +57,7 @@ export class ApiService {
     return this.http.post<ClarifyResponse>(`${this.baseUrl}/chat/clarify`, formData);
   }
 
-  chat(prompt: string, files?: File[], templateId?: string, audience?: string, imageStyle?: string): Observable<ChatResponse> {
+  chat(prompt: string, files?: File[], templateId?: string, audience?: string, imageStyle?: string, customColor?: string, customFont?: string): Observable<ChatResponse> {
     const formData = new FormData();
     formData.append('prompt', prompt);
     if (templateId) {
@@ -69,6 +69,12 @@ export class ApiService {
     if (imageStyle) {
       formData.append('imageStyle', imageStyle);
     }
+    if (customColor) {
+      formData.append('customColor', customColor);
+    }
+    if (customFont) {
+      formData.append('customFont', customFont);
+    }
     if (files?.length) {
       for (const file of files) {
         formData.append('files', file);
@@ -77,8 +83,8 @@ export class ApiService {
     return this.http.post<ChatResponse>(`${this.baseUrl}/chat`, formData);
   }
 
-  preview(markdown: string, templateId?: string): Observable<string> {
-    return this.http.post(`${this.baseUrl}/preview`, { markdown, templateId }, { responseType: 'text' });
+  preview(markdown: string, templateId?: string, customColor?: string, customFont?: string): Observable<string> {
+    return this.http.post(`${this.baseUrl}/preview`, { markdown, templateId, customColor, customFont }, { responseType: 'text' });
   }
 
   getTemplates(): Observable<TemplateInfo[]> {

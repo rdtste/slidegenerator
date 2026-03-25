@@ -37,13 +37,37 @@
             <h3>Folienmaster wählen</h3>
             <div class="template-row">
               <select [(ngModel)]="state.selectedTemplateId" class="template-select">
-                <option value="default">Kein Template (Standard-Design)</option>
+                <option value="default">Kein Template (eigenes Design)</option>
                 @for (t of state.templates(); track t.id) {
                   <option [value]="t.id">{{ t.name }}</option>
                 }
               </select>
               <button class="btn-upload" (click)="openTemplateManager()">Verwalten</button>
             </div>
+
+            @if (state.selectedTemplateId() === 'default') {
+              <div class="custom-design-row">
+                <div class="custom-design-field">
+                  <label>Akzentfarbe</label>
+                  <div class="color-input-wrap">
+                    <input type="color" [(ngModel)]="state.customColor" class="color-input" />
+                    <span class="color-hex">{{ state.customColor() }}</span>
+                  </div>
+                </div>
+                <div class="custom-design-field">
+                  <label>Schriftart</label>
+                  <select [(ngModel)]="state.customFont" class="font-select">
+                    @for (f of fontOptions; track f) {
+                      <option [value]="f" [style.font-family]="f">{{ f }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="custom-design-preview" [style.border-color]="state.customColor()">
+                  <span class="preview-title" [style.color]="state.customColor()" [style.font-family]="state.customFont()">Beispiel-Titel</span>
+                  <span class="preview-body" [style.font-family]="state.customFont()">Bullet Point Vorschau</span>
+                </div>
+              </div>
+            }
           </section>
 
           <section class="setup-section">

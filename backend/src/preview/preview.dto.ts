@@ -12,4 +12,12 @@ export class PreviewRequestDto {
   @IsString()
   @IsOptional()
   templateId?: string;
+
+  @IsString()
+  @IsOptional()
+  customColor?: string;
+
+  @IsString()
+  @IsOptional()
+  customFont?: string;
 }

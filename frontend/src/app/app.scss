@@ -461,6 +461,84 @@
   }
 }
 
+// ── Custom Design (no template) ────────────────────────
+.custom-design-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-top: 12px;
+}
+
+.custom-design-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+}
+
+.color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-input {
+  width: 40px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  padding: 2px;
+
+  &::-webkit-color-swatch-wrapper { padding: 2px; }
+  &::-webkit-color-swatch { border: none; border-radius: 4px; }
+}
+
+.color-hex {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.font-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  min-width: 160px;
+  outline: none;
+
+  &:focus { border-color: var(--primary); }
+}
+
+.custom-design-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 14px;
+  border-left: 3px solid;
+  background: var(--bg);
+  border-radius: 0 8px 8px 0;
+}
+
+.preview-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.preview-body {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .audience-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

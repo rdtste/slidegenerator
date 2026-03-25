@@ -486,6 +486,8 @@ export class ChatService {
     templateId?: string,
     audience?: string,
     imageStyle?: string,
+    customColor?: string,
+    customFont?: string,
   ): Promise<ChatResponseDto> {
     this.logger.log(`Generating slides for: ${prompt.slice(0, 80)}... [audience=${audience ?? 'default'}, imageStyle=${imageStyle ?? 'default'}]`);
 
@@ -503,7 +505,7 @@ ${documentTexts.join('\n\n')}`;
 
     const theme = templateId ? await this.templates.getTheme(templateId) : null;
     const aiAnalysis = templateId ? await this.analysis.getAnalysis(templateId) : null;
-    const systemPrompt = await this.buildSystemPrompt(templateId, audience, imageStyle);
+    const systemPrompt = await this.buildSystemPrompt(templateId, audience, imageStyle, customColor, customFont);
 
     const client = await this.createClient();
     const model = this.settings.getModel();
@@ -643,7 +645,7 @@ KORREKTUR-REGELN:
     return { markdown, slides };
   }
 
-  private async buildSystemPrompt(templateId?: string, audience?: string, imageStyle?: string): Promise<string> {
+  private async buildSystemPrompt(templateId?: string, audience?: string, imageStyle?: string, customColor?: string, customFont?: string): Promise<string> {
     const audienceBlock = audience && AUDIENCE_PROMPTS[audience]
       ? `\n${AUDIENCE_PROMPTS[audience]}\n`
       : '';
@@ -653,7 +655,17 @@ KORREKTUR-REGELN:
       : '';
 
     if (!templateId || templateId === 'default') {
-      return `${BASE_SYSTEM_PROMPT}${audienceBlock}${imageBlock}`;
+      let customBlock = '';
+      if (customColor || customFont) {
+        customBlock = `
+CUSTOM-DESIGN (vom Nutzer gewählt):
+- Akzentfarbe: ${customColor ?? '#2563eb'} — verwende diese Farbe für Überschriften, Hervorhebungen und Akzente
+- Schriftart: ${customFont ?? 'Inter'} — verwende diese Schriftart konsistent
+- Format: 16:9 (Widescreen)
+- Stil: Modern, clean, professionell mit der gewählten Akzentfarbe als Leitfarbe
+- Bilder sollen farblich zur Akzentfarbe passen`;
+      }
+      return `${BASE_SYSTEM_PROMPT}${audienceBlock}${imageBlock}${customBlock}`;
     }
 
     // Try rich profile first (from deep learning)

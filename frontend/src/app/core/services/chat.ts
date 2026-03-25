@@ -19,6 +19,8 @@ export class ChatState {
   readonly loading = signal(false);
   readonly templates = signal<TemplateInfo[]>([]);
   readonly selectedTemplateId = signal('default');
+  readonly customColor = signal('#2563eb');
+  readonly customFont = signal('Inter');
   readonly previewHtml = signal('');
   readonly selectedSlideIndex = signal(0);
   readonly slidePreviewHtml = signal('');
@@ -59,6 +61,8 @@ export class ChatState {
     this.slides.set([]);
     this.loading.set(false);
     this.selectedTemplateId.set('default');
+    this.customColor.set('#2563eb');
+    this.customFont.set('Inter');
     this.previewHtml.set('');
     this.selectedSlideIndex.set(0);
     this.slidePreviewHtml.set('');

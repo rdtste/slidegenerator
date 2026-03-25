@@ -117,14 +117,17 @@ export class Chat implements OnDestroy {
     const templateId = this.state.selectedTemplateId();
     const audience = this.state.audience();
     const imageStyle = this.state.imageStyle();
+    const isDefault = templateId === 'default';
     this.startPhaseRotation();
     this.api
       .chat(
         briefing,
         files?.length ? files : undefined,
-        templateId !== 'default' ? templateId : undefined,
+        isDefault ? undefined : templateId,
         audience,
         imageStyle,
+        isDefault ? this.state.customColor() : undefined,
+        isDefault ? this.state.customFont() : undefined,
       )
       .subscribe({
         next: (res) => {
@@ -198,7 +201,13 @@ export class Chat implements OnDestroy {
 
   private refreshPreview(markdown: string): void {
     const templateId = this.state.selectedTemplateId();
-    this.api.preview(markdown, templateId !== 'default' ? templateId : undefined).subscribe({
+    const isDefault = templateId === 'default';
+    this.api.preview(
+      markdown,
+      isDefault ? undefined : templateId,
+      isDefault ? this.state.customColor() : undefined,
+      isDefault ? this.state.customFont() : undefined,
+    ).subscribe({
       next: (html) => {
         this.state.previewHtml.set(html);
       },

@@ -25,6 +25,16 @@ export class PreviewController {
         slideHeight = theme.slide_height_cm;
       }
     }
+    // Generate custom CSS from user's color/font choices when no template
+    if (!themeCss && (dto.customColor || dto.customFont)) {
+      const color = dto.customColor ?? '#2563eb';
+      const font = dto.customFont ?? 'Inter';
+      themeCss = `
+        section { font-family: '${font}', sans-serif !important; }
+        section h1, section h2, section h3 { color: ${color} !important; font-family: '${font}', sans-serif !important; }
+        section strong { color: ${color} !important; }
+      `;
+    }
     return this.previewService.renderHtml(dto.markdown, themeCss, slideWidth, slideHeight);
   }
 }

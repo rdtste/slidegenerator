@@ -85,6 +85,8 @@ export class ChatController {
     @Body('templateId') templateId?: string,
     @Body('audience') audience?: string,
     @Body('imageStyle') imageStyle?: string,
+    @Body('customColor') customColor?: string,
+    @Body('customFont') customFont?: string,
     @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<ChatResponseDto> {
     if (!prompt?.trim()) {
@@ -117,7 +119,7 @@ export class ChatController {
         }
       }
 
-      return await this.chatService.generate(prompt.trim(), documentTexts, templateId, audience, imageStyle);
+      return await this.chatService.generate(prompt.trim(), documentTexts, templateId, audience, imageStyle, customColor, customFont);
     } catch (error: unknown) {
       if (error instanceof HttpException) throw error;
       const message = error instanceof Error ? error.message : 'Unknown error';

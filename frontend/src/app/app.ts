@@ -36,6 +36,12 @@ export class App implements OnInit, OnDestroy {
     { id: 'casual', icon: '💬', title: 'Casual', desc: 'Locker, visuell, für Meetings & Workshops' },
   ];
 
+  readonly fontOptions = [
+    'Inter', 'Arial', 'Helvetica', 'Roboto', 'Open Sans', 'Lato',
+    'Montserrat', 'Poppins', 'Raleway', 'Georgia', 'Playfair Display',
+    'Merriweather', 'Source Sans Pro', 'Nunito', 'Work Sans',
+  ];
+
   readonly imageStyleOptions: Array<{ id: ImageStyle; icon: string; title: string; desc: string }> = [
     { id: 'photo', icon: '📸', title: 'Fotografie', desc: 'Realistische Fotos und Aufnahmen' },
     { id: 'illustration', icon: '🎨', title: 'Illustration', desc: 'Grafiken, Diagramme und Zeichnungen' },
@@ -72,11 +78,13 @@ export class App implements OnInit, OnDestroy {
       const md = this.state.currentSlideMarkdown();
       if (step === 3 && md) {
         const slideMd = md.includes('marp:') ? md : `---\nmarp: true\n---\n\n${md}`;
-        const tid = untracked(() => {
+        const [tid, cColor, cFont] = untracked(() => {
           const t = this.state.selectedTemplateId();
-          return t !== 'default' ? t : undefined;
+          return t !== 'default'
+            ? [t, undefined, undefined] as const
+            : [undefined, this.state.customColor(), this.state.customFont()] as const;
         });
-        this.api.preview(slideMd, tid).subscribe({
+        this.api.preview(slideMd, tid, cColor, cFont).subscribe({
           next: (html) => this.state.slidePreviewHtml.set(html),
           error: (err) => console.error('[SlidePreview] Fehler:', err),
         });
@@ -199,8 +207,13 @@ export class App implements OnInit, OnDestroy {
     const md = this.state.markdown();
     if (!md) return;
     const templateId = this.state.selectedTemplateId();
-    const tid = templateId !== 'default' ? templateId : undefined;
-    this.api.preview(md, tid).subscribe({
+    const isDefault = templateId === 'default';
+    this.api.preview(
+      md,
+      isDefault ? undefined : templateId,
+      isDefault ? this.state.customColor() : undefined,
+      isDefault ? this.state.customFont() : undefined,
+    ).subscribe({
       next: (html) => this.state.previewHtml.set(html),
     });
   }
