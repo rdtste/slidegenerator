@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, Param, Res, Sse, HttpException, HttpStatus } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, merge, interval, map, takeUntil, Subject } from 'rxjs';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { ExportRequestDto } from './export.dto';
@@ -36,7 +36,24 @@ export class ExportController {
 
   @Sse('progress/:jobId')
   progress(@Param('jobId') jobId: string): Observable<MessageEvent> {
-    return this.exportService.getJobProgress(jobId);
+    const jobProgress$ = this.exportService.getJobProgress(jobId);
+    const done$ = new Subject<void>();
+
+    // Heartbeat every 15s to keep Cloud Run connection alive
+    const heartbeat$ = interval(15_000).pipe(
+      takeUntil(done$),
+      map(() => ({ data: { step: 'heartbeat' }, type: 'heartbeat' } as MessageEvent)),
+    );
+
+    return new Observable<MessageEvent>((subscriber) => {
+      const merged = merge(jobProgress$, heartbeat$);
+      const sub = merged.subscribe({
+        next: (event) => subscriber.next(event),
+        error: (err) => { done$.next(); subscriber.error(err); },
+        complete: () => { done$.next(); subscriber.complete(); },
+      });
+      return () => { done$.next(); sub.unsubscribe(); };
+    });
   }
 
   @Get('download/:jobId')

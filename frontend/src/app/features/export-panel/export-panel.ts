@@ -74,8 +74,13 @@ export class ExportPanel implements OnDestroy {
     const source = new EventSource(url);
     this.eventSource = source;
 
+    source.addEventListener('heartbeat', () => {
+      // Keep-alive from server, ignore
+    });
+
     source.addEventListener('progress', (e: Event) => {
       const data = JSON.parse((e as MessageEvent).data);
+      if (data.step === 'heartbeat') return;
       if (data.progress != null && data.progress >= 0) {
         this.exportProgress.set(data.progress);
       }
