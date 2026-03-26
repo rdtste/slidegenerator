@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, Res, Sse, HttpException, HttpStatus
 import { Observable, merge, interval, map, takeUntil, Subject } from 'rxjs';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
-import { ExportRequestDto, ExportV2RequestDto } from './export.dto';
+import { ExportRequestDto, ExportV2RequestDto, GenerateDeckRequestDto } from './export.dto';
 
 const CONTENT_TYPES: Record<string, string> = {
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -72,6 +72,68 @@ export class ExportController {
 
   @Get('download/:jobId')
   async downloadJob(
+    @Param('jobId') jobId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, filename } = this.exportService.getJobFile(jobId);
+    res.set({
+      'Content-Type': CONTENT_TYPES['pptx'],
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length.toString(),
+    });
+    res.send(buffer);
+  }
+
+  // ── Generate-Deck API (external, async + polling) ──────────────────
+
+  @Post('generate-deck')
+  async generateDeck(@Body() dto: GenerateDeckRequestDto): Promise<{
+    jobId: string;
+    statusUrl: string;
+    message: string;
+  }> {
+    const jobId = await this.exportService.startV2Job(
+      dto.topic,
+      undefined,
+      dto.audience,
+      dto.imageStyle,
+      dto.accentColor,
+      dto.fontFamily,
+      dto.templateId,
+    );
+    return {
+      jobId,
+      statusUrl: `/api/v1/export/generate-deck/${jobId}`,
+      message: 'Deck-Generierung gestartet. Abfrage des Status über statusUrl.',
+    };
+  }
+
+  @Get('generate-deck/:jobId')
+  async getDeckStatus(@Param('jobId') jobId: string): Promise<{
+    jobId: string;
+    status: string;
+    progress: number;
+    downloadUrl?: string;
+  }> {
+    const info = this.exportService.getJobInfo(jobId);
+    const result: {
+      jobId: string;
+      status: string;
+      progress: number;
+      downloadUrl?: string;
+    } = {
+      jobId,
+      status: info.status,
+      progress: info.progress,
+    };
+    if (info.status === 'complete') {
+      result.downloadUrl = `/api/v1/export/generate-deck/${jobId}/file`;
+    }
+    return result;
+  }
+
+  @Get('generate-deck/:jobId/file')
+  async downloadDeck(
     @Param('jobId') jobId: string,
     @Res() res: Response,
   ): Promise<void> {

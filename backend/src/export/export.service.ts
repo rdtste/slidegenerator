@@ -19,6 +19,7 @@ interface ExportJob {
   buffer?: Buffer;
   filename: string;
   createdAt: number;
+  progress: number;
 }
 
 @Injectable()
@@ -49,6 +50,7 @@ export class ExportService {
       subject: new ReplaySubject<MessageEvent>(),
       filename: 'presentation_v2.pptx',
       createdAt: Date.now(),
+      progress: 0,
     };
     this.jobs.set(jobId, job);
 
@@ -165,6 +167,7 @@ export class ExportService {
           }
           job.buffer = Buffer.from(await fileResponse.arrayBuffer());
           job.status = 'complete';
+          job.progress = 100;
           job.subject.next({ data: parsed, type: 'complete' } as MessageEvent);
           job.subject.complete();
           this.logger.log(`V2 Job ${jobId} complete: ${job.filename}`);
@@ -174,6 +177,9 @@ export class ExportService {
           job.subject.complete();
           this.logger.warn(`V2 Job ${jobId} failed: ${parsed['detail']}`);
         } else {
+          if (typeof parsed['progress'] === 'number') {
+            job.progress = parsed['progress'] as number;
+          }
           job.subject.next({ data: parsed, type: eventType || 'progress' } as MessageEvent);
         }
       }
@@ -198,6 +204,7 @@ export class ExportService {
       subject: new ReplaySubject<MessageEvent>(),
       filename: 'presentation.pptx',
       createdAt: Date.now(),
+      progress: 0,
     };
     this.jobs.set(jobId, job);
 
@@ -363,6 +370,17 @@ export class ExportService {
       throw new HttpException({ detail: 'Job nicht gefunden' }, HttpStatus.NOT_FOUND);
     }
     return job.subject.asObservable();
+  }
+
+  getJobInfo(jobId: string): { status: string; progress: number } {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      throw new HttpException({ detail: 'Job nicht gefunden' }, HttpStatus.NOT_FOUND);
+    }
+    return {
+      status: job.status,
+      progress: job.progress ?? 0,
+    };
   }
 
   getJobFile(jobId: string): { buffer: Buffer; filename: string } {

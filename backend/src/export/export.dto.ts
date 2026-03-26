@@ -52,3 +52,29 @@ export class ExportV2RequestDto {
   @IsOptional()
   templateId?: string;
 }
+
+export class GenerateDeckRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  topic!: string;
+
+  @IsString()
+  @IsOptional()
+  audience?: string = 'management';
+
+  @IsString()
+  @IsOptional()
+  imageStyle?: string = 'minimal';
+
+  @IsString()
+  @IsOptional()
+  accentColor?: string = '#2563EB';
+
+  @IsString()
+  @IsOptional()
+  fontFamily?: string = 'Calibri';
+
+  @IsString()
+  @IsOptional()
+  templateId?: string;
+}
