@@ -26,19 +26,37 @@ logger = logging.getLogger(__name__)
 
 _IMAGE_CACHE: dict[str, Path] = {}
 
-# P0 Configuration  
+# P0 Configuration
 MAX_RETRIES = 3
 TIMEOUT_SECS = 30
 RETRY_BACKOFF_BASE = 2  # seconds (2s, 4s, 8s)
 
+# Cached credentials & client
+_credentials: google.auth.credentials.Credentials | None = None
+_token_expiry: float = 0
+_imagen_client: httpx.AsyncClient | None = None
+
 
 def _get_access_token() -> str:
-    """Get a GCP access token via Application Default Credentials."""
-    credentials, _ = google.auth.default(
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
-    )
-    credentials.refresh(google.auth.transport.requests.Request())
-    return credentials.token
+    """Get a GCP access token with caching (tokens valid ~60min, cached for 50min)."""
+    global _credentials, _token_expiry
+    now = time.time()
+    if _credentials is not None and now < _token_expiry:
+        return _credentials.token
+    if _credentials is None:
+        _credentials, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+    _credentials.refresh(google.auth.transport.requests.Request())
+    _token_expiry = now + 3000
+    return _credentials.token
+
+
+def _get_imagen_client() -> httpx.AsyncClient:
+    global _imagen_client
+    if _imagen_client is None or _imagen_client.is_closed:
+        _imagen_client = httpx.AsyncClient(timeout=TIMEOUT_SECS)
+    return _imagen_client
 
 
 def generate_image(description: str, width: int = 1024, height: int = 1024,
@@ -188,13 +206,12 @@ async def _generate_image_once(
     }
 
     try:
-        # Use async httpx for non-blocking I/O
-        async with httpx.AsyncClient(timeout=TIMEOUT_SECS) as client:
-            response = await client.post(
-                url,
-                json=payload,
-                headers={"Authorization": f"Bearer {token}"},
-            )
+        client = _get_imagen_client()
+        response = await client.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         if response.status_code != 200:
             logger.error(f"[Image Gen] Imagen API error {response.status_code}: {response.text[:200]}")

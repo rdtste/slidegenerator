@@ -128,6 +128,11 @@ export class ExportPanel implements OnDestroy {
 
   private connectProgress(jobId: string): void {
     this.closeEventSource();
+    // On reconnect, reset progress UI to avoid duplicate entries from ReplaySubject
+    if (this.reconnectAttempts > 0) {
+      this.progressEntries.set([]);
+      this.currentActiveKey = '';
+    }
     const url = this.api.getExportProgressUrl(jobId);
     const source = new EventSource(url);
     this.eventSource = source;

@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -79,45 +80,68 @@ class PipelineOrchestrator:
     async def run(self, user_input: str, document_text: str = "",
                   output_dir: str | None = None) -> PipelineResult:
         """Execute the full pipeline."""
+        pipeline_start = time.monotonic()
+        timings: dict[str, float] = {}
+
+        def _timed(name: str) -> float:
+            t = time.monotonic()
+            timings[name] = t - pipeline_start
+            return t
 
         # ── Stage 1: Input Interpretation ──
         self._progress("stage_1", "Briefing wird analysiert...", 2)
+        t0 = time.monotonic()
         briefing = await self._stage_1_interpret(user_input, document_text)
         briefing.audience = self.audience
         briefing.image_style = self.image_style
+        logger.info(f"[Timing] Stage 1 (interpret): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 2: Storyline Planning ──
         self._progress("stage_2", "Storyline wird geplant...", 10)
+        t0 = time.monotonic()
         storyline = await self._stage_2_storyline(briefing)
+        logger.info(f"[Timing] Stage 2 (storyline): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 3: Slide Planning ──
         self._progress("stage_3", "Folien werden geplant...", 20)
+        t0 = time.monotonic()
         plan = await self._stage_3_slide_plan(storyline, briefing)
+        logger.info(f"[Timing] Stage 3 (slide plan): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 4: Schema Validation ──
         self._progress("stage_4", "Validierung...", 30)
+        t0 = time.monotonic()
         plan, quality = await self._stage_4_validate(plan, storyline, briefing)
+        logger.info(f"[Timing] Stage 4 (validate): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 5: Content Filling ──
         self._progress("stage_5", "Texte werden finalisiert...", 40)
+        t0 = time.monotonic()
         filled_slides = await self._stage_5_fill_content(plan)
+        logger.info(f"[Timing] Stage 5 (content fill, {len(plan.slides)} slides): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 6: Layout Engine ──
         self._progress("stage_6", "Layouts werden berechnet...", 60)
+        t0 = time.monotonic()
         render_instructions = self._stage_6_layout(filled_slides)
+        logger.info(f"[Timing] Stage 6 (layout): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 7: PPTX Rendering ──
         self._progress("stage_7", "PPTX wird gerendert...", 70)
+        t0 = time.monotonic()
         pptx_path = self.renderer.render(
             render_instructions, output_dir=output_dir,
             progress_callback=self._progress_cb,
         )
+        logger.info(f"[Timing] Stage 7 (render): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 8: Post-Generation Review ──
         self._progress("stage_8", "Qualitaetspruefung...", 90)
         final_quality = self._stage_8_review(filled_slides, plan, quality)
 
-        self._progress("done", "Praesentation erstellt!", 100)
+        total = time.monotonic() - pipeline_start
+        logger.info(f"[Timing] TOTAL pipeline: {total:.1f}s ({len(plan.slides)} slides)")
+        self._progress("done", f"Praesentation erstellt! ({total:.0f}s)", 100)
 
         return PipelineResult(
             pptx_path=pptx_path,
@@ -135,7 +159,7 @@ class PipelineOrchestrator:
 
         prompt = build_interpreter_prompt(user_input, document_text)
         try:
-            return await call_llm_structured_async(prompt, InterpretedBriefing, temperature=0.3)
+            return await call_llm_structured_async(prompt, InterpretedBriefing, temperature=0.3, max_tokens=2048)
         except Exception as exc:
             logger.warning(f"Stage 1 LLM failed, using fallback: {exc}")
             return InterpretedBriefing(
@@ -153,7 +177,7 @@ class PipelineOrchestrator:
 
         prompt = build_storyline_prompt(briefing.model_dump())
         try:
-            storyline = await call_llm_structured_async(prompt, Storyline, temperature=0.5)
+            storyline = await call_llm_structured_async(prompt, Storyline, temperature=0.5, max_tokens=4096)
             storyline.total_beats = len(storyline.beats)
             return storyline
         except Exception as exc:

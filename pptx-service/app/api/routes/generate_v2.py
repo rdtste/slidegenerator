@@ -71,18 +71,14 @@ async def generate_v2(request: GenerateV2Request):
             template_id=request.template_id,
         )
 
-        # Wire up image generator (needs thread wrapper for async context)
+        # Wire up image generator — uses shared thread pool + dedicated event loop
         try:
             from app.services.image_service import generate_image_async
+            from app.services._image_thread import run_image_gen_sync
 
-            def sync_image_gen(description: str):
-                """Run async image gen in a new thread to avoid event loop conflicts."""
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                    future = pool.submit(asyncio.run, generate_image_async(description))
-                    return future.result(timeout=60)
-
-            orchestrator.set_image_generator(sync_image_gen)
+            orchestrator.set_image_generator(
+                lambda desc: run_image_gen_sync(desc, generate_image_async)
+            )
         except Exception as exc:
             logger.warning(f"Image generator not available: {exc}")
 

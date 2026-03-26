@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -143,6 +143,11 @@ class StoryBeat(BaseModel):
     evidence_needed: bool = Field(False)
     suggested_slide_types: list[SlideType] = Field(default_factory=list)
 
+    @field_validator("content_theme", "core_message", mode="before")
+    @classmethod
+    def _coerce_none_to_empty(cls, v: object) -> str:
+        return "" if v is None else v
+
 
 class Storyline(BaseModel):
     narrative_arc: NarrativeArc = Field(NarrativeArc.SITUATION_COMPLICATION_RESOLUTION)
@@ -271,6 +276,11 @@ class SlidePlan(BaseModel):
     speaker_notes: str = Field("", max_length=600)
     transition_hint: str = Field("")
 
+    @field_validator("subheadline", "core_message", "speaker_notes", "transition_hint", mode="before")
+    @classmethod
+    def _coerce_none_to_empty(cls, v: object) -> str:
+        return "" if v is None else v
+
 
 class PresentationMetadata(BaseModel):
     total_slides: int = Field(0)
@@ -307,6 +317,11 @@ class FilledSlide(BaseModel):
     visual: Visual = Field(default_factory=Visual)
     speaker_notes: str = Field("")
     text_metrics: TextMetrics = Field(default_factory=TextMetrics)
+
+    @field_validator("subheadline", "core_message", "speaker_notes", mode="before")
+    @classmethod
+    def _coerce_none_to_empty(cls, v: object) -> str:
+        return "" if v is None else v
 
 
 # ---------------------------------------------------------------------------
