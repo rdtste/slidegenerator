@@ -15,7 +15,7 @@ _BULLET_LIMITS: dict[SlideType, int] = {
 }
 
 MAX_HEADLINE_LEN = 70
-MAX_BULLET_LEN = 80
+MAX_BULLET_LEN = 60
 
 
 # ---------------------------------------------------------------------------
@@ -79,12 +79,12 @@ def truncate_content_block_text(slide: SlidePlan) -> SlidePlan:
     """Truncate overly long text in content blocks."""
     for block in slide.content_blocks:
         if isinstance(block, CardBlock):
-            block.title = _truncate_at_word_boundary(block.title, 35)
-            block.body = _truncate_at_word_boundary(block.body, 120)
+            block.title = _truncate_at_word_boundary(block.title, 30)
+            block.body = _truncate_at_word_boundary(block.body, 80)
         elif isinstance(block, TimelineEntryBlock):
-            block.date = _truncate_at_word_boundary(block.date, 25)
-            block.title = _truncate_at_word_boundary(block.title, 50)
-            block.description = _truncate_at_word_boundary(block.description, 100)
+            block.date = _truncate_at_word_boundary(block.date, 20)
+            block.title = _truncate_at_word_boundary(block.title, 40)
+            block.description = _truncate_at_word_boundary(block.description, 80)
     return slide
 
 

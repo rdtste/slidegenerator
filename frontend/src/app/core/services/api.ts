@@ -124,12 +124,6 @@ export class ApiService {
     );
   }
 
-  startExport(markdown: string, templateId: string, format: string, customColor?: string, customFont?: string): Observable<{ jobId: string }> {
-    return this.http.post<{ jobId: string }>(`${this.baseUrl}/export/start`,
-      { markdown, templateId, format, customColor, customFont },
-    );
-  }
-
   startV2Export(
     prompt: string,
     audience: string,

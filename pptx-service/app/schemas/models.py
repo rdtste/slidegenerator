@@ -421,6 +421,8 @@ class QualityReport(BaseModel):
     passed: bool = Field(True)
     deck_findings: list[QualityFinding] = Field(default_factory=list)
     slide_findings: list[SlideFinding] = Field(default_factory=list)
+    design_score: float | None = Field(None, description="Visual design score from Design Review Agent (1-10)")
+    design_fixes_applied: int = Field(0, description="Number of design fixes applied by the agent")
 
     def add_finding(self, finding: QualityFinding) -> None:
         if finding.slide_index is not None:

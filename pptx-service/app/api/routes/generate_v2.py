@@ -134,9 +134,13 @@ async def generate_v2(request: GenerateV2Request):
 
         result = pipeline_result["result"]
 
+        design_score = result.quality.design_score
+        design_info = f", Design: {design_score:.1f}/10" if design_score else ""
+        design_fixes = result.quality.design_fixes_applied
+
         yield _sse_event("progress", {
             "step": "quality",
-            "message": f"Qualitaet: {result.score:.0f}/100 ({result.slide_count} Folien)",
+            "message": f"Qualitaet: {result.score:.0f}/100 ({result.slide_count} Folien{design_info})",
             "progress": 95,
         })
 
@@ -153,6 +157,8 @@ async def generate_v2(request: GenerateV2Request):
                 "passed": result.passed,
                 "score": result.score,
                 "slide_count": result.slide_count,
+                "design_score": design_score,
+                "design_fixes": design_fixes,
             },
         })
 

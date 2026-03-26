@@ -13,10 +13,7 @@
   </div>
 
   <div class="export-actions">
-    <button class="btn-primary v2-btn" (click)="downloadV2()" [disabled]="!state.hasMarkdown() || exporting()">
-      PowerPoint V2 (AI-Pipeline)
-    </button>
-    <button class="btn-primary" (click)="download('pptx')" [disabled]="!state.hasMarkdown() || exporting()">
+    <button class="btn-primary" (click)="downloadV2()" [disabled]="!state.hasMarkdown() || exporting()">
       PowerPoint (.pptx)
     </button>
     <button class="btn-secondary" (click)="download('pdf')" [disabled]="!state.hasMarkdown() || exporting()">

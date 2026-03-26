@@ -55,6 +55,47 @@ ALLOWED SLIDE TYPES — ONLY these types are permitted:
 BEAT-TO-SLIDE RULES:
 {transform_rules}
 
+READABILITY RULES (MANDATORY — every slide must follow ALL of these):
+
+R1. FORMAT: 16:9 widescreen only. All content must breathe — no edge-to-edge text.
+R2. HEADLINES: Max 2 lines, under 70 characters. Must be a statement, never a label.
+R3. HEADLINE SHORTENING: If a headline exceeds 60 chars, actively shorten it.
+    Cut filler words, use stronger verbs, compress without losing meaning.
+    BAD (72 chars): "Die digitale Transformation veraendert die Art und Weise wie wir arbeiten"
+    GOOD (48 chars): "Digitale Transformation veraendert unsere Arbeit grundlegend."
+R4. SUBHEADLINES: Must be shorter than body text. Max 1 line, max 90 chars.
+    If a subheadline is longer than the shortest body text block, shorten it.
+R5. NO TEXT WALLS: Never create compact text blocks. Every content unit must be
+    a scannable visual unit with whitespace around it. If text exceeds 3 lines,
+    split it into separate visual blocks (cards, bullets, or process steps).
+R6. THREE ITEMS = THREE CARDS: When content has 3 parallel items (features,
+    pillars, benefits, phases), ALWAYS use "three_cards" — never bullets_focused.
+R7. CARD CONTENT: Each card has ONLY: short title (max 30 chars) + core sentence
+    (max 80 chars) + optional 1 support line. No paragraphs inside cards.
+R8. LABEL SEPARATION: Labels and explanatory text must be typographically distinct.
+    Labels: bold, smaller font. Values: large, prominent. Never glue label+value
+    into one text run.
+R9. READING ORDER: The eye path must be immediately obvious. Top-to-bottom,
+    left-to-right. No scattered elements. No ambiguous flow.
+R10. NO DOCUMENT SLIDES: Slides must NOT look like condensed document pages.
+     If a slide has more than 5 text blocks or more than 150 words, split it
+     into 2 slides or simplify radically.
+
+ADDITIONAL READABILITY:
+- More whitespace between every element. Minimum 0.8cm gap between content blocks.
+- Fewer words per block: max 25 words per bullet, max 15 words per card body sentence.
+- Shorter statements: prefer "X steigert Y um Z%" over explanatory paragraphs.
+- Clear visual hierarchy: headline > subheadline > body > caption. Never let levels blur.
+- No "read-only" slides: every slide must be graspable in under 8 seconds.
+
+CONTENT TRANSFORMATION RULES:
+- Text-heavy content with 3 aspects → three_cards
+- Text-heavy content with sequence → process_flow or timeline
+- Text-heavy content with pros/cons or before/after → comparison
+- Text-heavy content with numbers → kpi_dashboard
+- Single strong statement → key_statement
+- NEVER default to bullets_focused when a structured type fits better.
+
 SEQUENCE RULES (CRITICAL):
 1. First slide MUST be slide_type "title_hero".
 2. Last slide MUST be slide_type "closing".
@@ -70,15 +111,15 @@ SEQUENCE RULES (CRITICAL):
 12. beat_ref must reference a valid beat position from the storyline.
 
 CONTENT BLOCK RULES:
-- bullets: items array, each item has text (max 80 chars) and bold_prefix (max 25 chars)
-- kpi: label (max 35), value (max 20), trend (up|down|neutral), delta (max 20)
-- card: title (max 35), body (max 120), icon_hint
-- quote: text (max 180), attribution (max 60)
-- timeline_entry: date (max 25), title (max 50), description (max 100)
-- process_step: step_number, title (max 40), description (max 100)
-- comparison_column: column_label (max 30), items array
-- label_value: pairs array with label (max 30) and value (max 50)
-- text: text field (max 250)
+- bullets: items array, each item has text (max 60 chars) and bold_prefix (max 20 chars). Max 3 items.
+- kpi: label (max 30), value (max 15), trend (up|down|neutral), delta (max 15)
+- card: title (max 30), body (max 80), icon_hint. Body = 1 sentence, no paragraphs.
+- quote: text (max 150), attribution (max 50)
+- timeline_entry: date (max 20), title (max 40), description (max 80)
+- process_step: step_number, title (max 35), description (max 80)
+- comparison_column: column_label (max 25), items array (max 4 items, each max 50 chars)
+- label_value: pairs array with label (max 25) and value (max 40)
+- text: text field (max 200). If exceeds 200, split into cards or bullets.
 
 TITLE LOGIC (CRITICAL — every title must follow these rules):
 Headlines must be STATEMENTS, never topic labels or chapter headings.

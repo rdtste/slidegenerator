@@ -72,12 +72,6 @@
 
   &:hover:not(:disabled) { background: #16a34a; }
 
-  &.v2-btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: #fff;
-
-    &:hover:not(:disabled) { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
-  }
 }
 
 .btn-secondary {

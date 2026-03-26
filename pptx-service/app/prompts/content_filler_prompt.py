@@ -40,47 +40,61 @@ IMAGE STYLE:
 {image_style_profile}
 
 TEXT RULES (CRITICAL):
-1. headline: max 70 characters. Must be a STATEMENT with substance, NOT a topic label.
+1. headline: max 70 characters, ideally under 55. Must be a STATEMENT with substance, NOT a topic label.
    The headline must transport an insight, verdict, or conclusion.
-   BAD: "Bier im Mittelalter" — GOOD: "Kloester bewahrten das Brauwissen und professionalisierten es."
-   BAD: "Aktuelle Trends" — GOOD: "Craft Beer gewinnt durch Regionalitaet und alkoholfreie Innovation."
-   If the headline sounds like a Wikipedia article title, rewrite it as an assertion.
-2. subheadline: max 120 characters.
-3. core_message: max 150 characters.
-4. speaker_notes: max 600 characters. Write as spoken text for the presenter.
+   BAD: "Bier im Mittelalter" — GOOD: "Kloester professionalisierten das Brauwissen."
+   BAD: "Aktuelle Trends" — GOOD: "Craft Beer waechst durch Regionalitaet."
+   If the headline sounds like a Wikipedia article title, rewrite it as a short assertion.
+   SHORTEN actively: cut filler words ("Art und Weise", "im Bereich von"), use strong verbs.
+2. subheadline: max 90 characters. Must be SHORTER than the shortest body text element.
+   If the subheadline is longer than a bullet or card body, shorten the subheadline.
+3. core_message: max 120 characters. One sentence. No compound sentences.
+4. speaker_notes: max 500 characters. Write as spoken text for the presenter.
+
+READABILITY RULES (MANDATORY):
+- Every text block must be a SCANNABLE VISUAL UNIT, not a paragraph.
+- Max 25 words per bullet item. If longer, split or compress.
+- Max 15 words per card body sentence. Cards are not paragraphs.
+- No text block may exceed 3 visible lines when rendered.
+- Labels and values must be separate: "Umsatz" as label, "+12%" as value — never "Umsatz: +12%" in one string.
+- Prefer numbers, facts, names over generic descriptions.
+- Each slide must be graspable in under 8 seconds of reading.
 
 BULLET RULES:
-- Each bullet text: max 80 characters.
-- Each bold_prefix: max 25 characters.
+- Each bullet text: max 60 characters.
+- Each bold_prefix: max 20 characters.
+- Max 3 bullets per slide. If more content, use cards or process_flow instead.
 - For management audience: EVERY bullet MUST have a non-empty bold_prefix.
 - Be specific: use numbers, names, dates. Never write generic filler.
 - No bullet may start with a dash or bullet character (plain text only).
 
 CONTENT BLOCK LIMITS:
-- kpi.label: max 35 chars, kpi.value: max 20 chars, kpi.delta: max 20 chars
-- card.title: max 35 chars, card.body: max 120 chars
-- quote.text: max 180 chars, quote.attribution: max 60 chars
-- timeline_entry.date: max 25, .title: max 50, .description: max 100
-- process_step.title: max 40, .description: max 100
-- comparison_column.column_label: max 30
-- label_value: label max 30, value max 50
-- text.text: max 250 chars
+- kpi.label: max 30 chars, kpi.value: max 15 chars, kpi.delta: max 15 chars
+- card.title: max 30 chars, card.body: max 80 chars (1 sentence only, no paragraphs)
+- quote.text: max 150 chars, quote.attribution: max 50 chars
+- timeline_entry.date: max 20, .title: max 40, .description: max 80
+- process_step.title: max 35, .description: max 80
+- comparison_column.column_label: max 25, max 4 items each max 50 chars
+- label_value: label max 25, value max 40
+- text.text: max 200 chars
 
 QUALITY CHECKS:
 - No lorem ipsum, no "[placeholder]", no "XYZ".
 - Every number should be plausible in context.
 - Language: German unless briefing specifies otherwise.
 - Tone must match audience profile above.
+- WORD COUNT CHECK: count words in each text element. If any exceeds its limit, shorten.
 
 COMPLETENESS CHECK (apply before outputting):
 Before returning, verify:
-- Is the headline a statement (not a topic label)?
+- Is the headline a short statement (not a topic label)? Under 60 chars ideally?
+- Is the subheadline shorter than the body content?
 - Are all content blocks fully populated (no empty fields, no placeholder text)?
-- Does every bullet have real content (min 30 chars)?
-- For image_text_split: is there a subheadline AND 2-3 supporting points?
-- For three_cards: does each card have title (min 10 chars) AND body (min 40 chars)?
-- For timeline: does each entry have date AND title AND description (min 30 chars)?
-- Would this slide look professional and complete when rendered, or does it look half-empty?
+- Does every bullet have real content (min 20 chars, max 60 chars)?
+- For three_cards: does each card have title (max 30 chars) AND body (max 80 chars, 1 sentence)?
+- For timeline: does each entry have date AND title AND description (max 80 chars)?
+- Would this slide be graspable in 8 seconds, or is it a text wall?
+- Does any element have more than 3 lines of text? If yes, shorten.
 If any check fails, fix the content before outputting.
 
 OUTPUT:

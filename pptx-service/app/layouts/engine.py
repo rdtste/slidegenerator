@@ -20,23 +20,23 @@ from app.layouts.blueprints import get_blueprint, ElementBlueprint, SlideBluepri
 
 logger = logging.getLogger(__name__)
 
-# Audience style modifiers
+# Audience style modifiers — tuned for readability
 _AUDIENCE_MODS: dict[Audience, dict[str, float]] = {
     Audience.MANAGEMENT: {
-        "headline_size": 1.1, "body_size": 0.9, "whitespace": 1.15,
-        "kpi_value_size": 1.2,
+        "headline_size": 1.1, "body_size": 0.85, "whitespace": 1.25,
+        "kpi_value_size": 1.25, "line_spacing": 1.2,
     },
     Audience.TEAM: {
-        "headline_size": 1.0, "body_size": 1.0, "whitespace": 1.0,
-        "kpi_value_size": 1.0,
+        "headline_size": 1.0, "body_size": 0.95, "whitespace": 1.1,
+        "kpi_value_size": 1.0, "line_spacing": 1.1,
     },
     Audience.CUSTOMER: {
-        "headline_size": 1.05, "body_size": 0.95, "whitespace": 1.2,
-        "kpi_value_size": 1.1,
+        "headline_size": 1.1, "body_size": 0.9, "whitespace": 1.3,
+        "kpi_value_size": 1.15, "line_spacing": 1.15,
     },
     Audience.WORKSHOP: {
-        "headline_size": 1.0, "body_size": 1.05, "whitespace": 0.9,
-        "kpi_value_size": 1.0,
+        "headline_size": 1.0, "body_size": 1.0, "whitespace": 1.0,
+        "kpi_value_size": 1.0, "line_spacing": 1.0,
     },
 }
 
@@ -359,8 +359,15 @@ class LayoutEngine:
         elif role == "":
             size = int(size * mods.get("body_size", 1.0))
 
+        # Apply line spacing modifier for more breathing room
+        spacing = el.line_spacing * mods.get("line_spacing", 1.0)
+
+        # Use blueprint key as semantic role so the renderer can apply
+        # the correct typography level (card_title_0 → "card_title", etc.)
+        semantic_role = role if role else el.key
+
         return RenderElement(
-            element_type=role or "text",
+            element_type=semantic_role,
             content=text,
             position=ElementPosition(
                 left_cm=el.x_cm, top_cm=el.y_cm,
@@ -373,13 +380,14 @@ class LayoutEngine:
                 bold=el.bold,
                 alignment=el.alignment,
                 vertical_alignment=el.v_alignment,
-                line_spacing=el.line_spacing,
+                line_spacing=spacing,
             ),
         )
 
     def _bullet_element(self, el: ElementBlueprint, items: list[str],
                         mods: dict) -> RenderElement:
         size = int(el.font_size_pt * mods.get("body_size", 1.0))
+        spacing = el.line_spacing * mods.get("line_spacing", 1.0)
         return RenderElement(
             element_type="bullets",
             content=items,
@@ -391,7 +399,7 @@ class LayoutEngine:
                 font_family=self.font_family,
                 font_size_pt=size,
                 font_color=self._resolve_color(el.font_color),
-                line_spacing=el.line_spacing,
+                line_spacing=spacing,
             ),
         )
 

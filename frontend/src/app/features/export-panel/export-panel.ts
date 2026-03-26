@@ -66,41 +66,9 @@ export class ExportPanel implements OnDestroy {
   }
 
   download(format: string): void {
-    const markdown = this.state.markdown();
-    if (!markdown) return;
-
     if (format === 'pdf') {
       this.downloadDirect(format);
-      return;
     }
-
-    this.exporting.set(true);
-    this.exportProgress.set(0);
-    const slideCount = this.state.slides().length;
-    this.exportMessage.set(`${slideCount} Folien werden als PowerPoint aufbereitet…`);
-    this.exportStatus.set('');
-    this.currentActiveKey = '';
-    this.progressEntries.set([
-      { icon: '🚀', label: `PowerPoint-Export für ${slideCount} Folien wird vorbereitet…`, status: 'active' },
-    ]);
-
-    this.reconnectAttempts = 0;
-    const templateId = this.state.selectedTemplateId();
-    const isDefault = templateId === 'default';
-    this.api.startExport(
-      markdown, templateId, format,
-      isDefault ? this.state.customColor() : undefined,
-      isDefault ? this.state.customFont() : undefined,
-    ).subscribe({
-      next: ({ jobId }) => {
-        this.currentJobId = jobId;
-        this.connectProgress(jobId);
-      },
-      error: (err) => {
-        this.exportStatus.set(`Fehler: ${err.error?.detail ?? err.message}`);
-        this.exporting.set(false);
-      },
-    });
   }
 
   getTemplateName(): string {

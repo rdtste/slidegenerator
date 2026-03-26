@@ -136,9 +136,22 @@ class PipelineOrchestrator:
         )
         logger.info(f"[Timing] Stage 7 (render): {time.monotonic() - t0:.1f}s")
 
-        # ── Stage 8: Post-Generation Review ──
-        self._progress("stage_8", "Qualitaetspruefung...", 90)
-        final_quality = self._stage_8_review(filled_slides, plan, quality)
+        # ── Stage 8: Visual Design Review ──
+        self._progress("stage_8", "Design-Review...", 90)
+        t0 = time.monotonic()
+        design_result = await self._stage_8_design_review(
+            pptx_path, render_instructions, output_dir,
+        )
+        if design_result and design_result.total_fixes_applied > 0:
+            # Update pptx_path to the re-rendered version
+            re_rendered = Path(output_dir or pptx_path.parent) / "presentation_v2.pptx"
+            if re_rendered.exists():
+                pptx_path = re_rendered
+        logger.info(f"[Timing] Stage 8 (design review): {time.monotonic() - t0:.1f}s")
+
+        final_quality = self._stage_8_quality_report(
+            filled_slides, plan, quality, design_result,
+        )
 
         total = time.monotonic() - pipeline_start
         logger.info(f"[Timing] TOTAL pipeline: {total:.1f}s ({len(plan.slides)} slides)")
@@ -361,11 +374,46 @@ class PipelineOrchestrator:
             instructions.append(instr)
         return instructions
 
-    def _stage_8_review(self, filled_slides: list[FilledSlide],
-                        plan: PresentationPlan,
-                        validation_quality: QualityReport) -> QualityReport:
-        """Deterministic post-generation checks (LLM review is optional/future)."""
-        # For now, return the validation quality report
+    async def _stage_8_design_review(
+        self,
+        pptx_path: Path,
+        render_instructions: list[RenderInstruction],
+        output_dir: str | None,
+    ):
+        """Run the visual design review agent on the rendered PPTX."""
+        from app.services.design_review_agent import DesignReviewAgent, DesignReviewResult
+
+        try:
+            agent = DesignReviewAgent(
+                render_instructions=render_instructions,
+                renderer=self.renderer,
+                max_iterations=2,
+            )
+            agent.set_progress_callback(self._progress_cb)
+            result = await agent.review_and_fix(pptx_path, output_dir=output_dir)
+
+            logger.info(
+                f"[Pipeline] Design review: score={result.avg_score:.1f}, "
+                f"fixes={result.total_fixes_applied}, passed={result.passed}"
+            )
+            return result
+
+        except Exception as exc:
+            logger.warning(f"[Pipeline] Design review failed (non-blocking): {exc}")
+            return None
+
+    def _stage_8_quality_report(
+        self,
+        filled_slides: list[FilledSlide],
+        plan: PresentationPlan,
+        validation_quality: QualityReport,
+        design_result=None,
+    ) -> QualityReport:
+        """Combine validation quality with design review results."""
+        # Merge design score into quality report if available
+        if design_result is not None:
+            validation_quality.design_score = design_result.avg_score
+            validation_quality.design_fixes_applied = design_result.total_fixes_applied
         return validation_quality
 
     # ── Helpers ──

@@ -41,10 +41,11 @@ class SlideBlueprint:
 # ── Standard measurements ──
 _SL_W = 25.4   # slide width cm
 _SL_H = 19.05  # slide height cm
-_PAD = 1.8     # standard side padding
-_TOP = 1.5     # standard top padding
-_HDL_H = 2.5   # headline height
-_BODY_TOP = 4.8  # where body content starts
+_PAD = 2.2     # generous side padding for readability
+_TOP = 1.8     # top padding
+_HDL_H = 2.2   # headline height (compact, 2 lines max)
+_BODY_TOP = 5.2  # body content starts lower for whitespace gap
+_GAP = 0.8     # minimum gap between content blocks
 
 
 def _headline(x: float = _PAD, y: float = _TOP, w: float = _SL_W - 2 * _PAD,
@@ -109,49 +110,64 @@ _BULLETS_FOCUSED = SlideBlueprint(
     slide_type=SlideType.BULLETS_FOCUSED,
     elements=[
         _headline(),
-        ElementBlueprint(key="bullet_area", x_cm=_PAD, y_cm=_BODY_TOP, w_cm=15.0, h_cm=11.0,
-                         font_size_pt=18, line_spacing=1.6, font_color="#374151"),
+        ElementBlueprint(key="bullet_area", x_cm=_PAD, y_cm=_BODY_TOP + 0.5, w_cm=14.0, h_cm=10.0,
+                         font_size_pt=18, line_spacing=1.8, font_color="#374151"),
     ],
 )
+
+_CARD_W = 6.4   # card width with better spacing
+_CARD_GAP = 1.0  # gap between cards for visual separation
+_CARD_INNER = 0.7  # inner padding of cards
 
 _THREE_CARDS = SlideBlueprint(
     slide_type=SlideType.THREE_CARDS,
     elements=[
         _headline(),
-        # 3 cards calculated dynamically; these are placeholders for card area
-        ElementBlueprint(key="card_0", x_cm=_PAD, y_cm=_BODY_TOP, w_cm=6.8, h_cm=11.5,
-                         is_shape=True, shape_fill="#f3f4f6", corner_radius_cm=0.35),
-        ElementBlueprint(key="card_1", x_cm=_PAD + 7.4, y_cm=_BODY_TOP, w_cm=6.8, h_cm=11.5,
-                         is_shape=True, shape_fill="#f3f4f6", corner_radius_cm=0.35),
-        ElementBlueprint(key="card_2", x_cm=_PAD + 14.8, y_cm=_BODY_TOP, w_cm=6.8, h_cm=11.5,
-                         is_shape=True, shape_fill="#f3f4f6", corner_radius_cm=0.35),
-        # Card titles (inside cards)
-        ElementBlueprint(key="card_title_0", x_cm=_PAD + 0.6, y_cm=_BODY_TOP + 2.8,
-                         w_cm=5.6, h_cm=1.5, font_size_pt=18, bold=True, alignment="center",
-                         font_color="#1a1a2e"),
-        ElementBlueprint(key="card_title_1", x_cm=_PAD + 8.0, y_cm=_BODY_TOP + 2.8,
-                         w_cm=5.6, h_cm=1.5, font_size_pt=18, bold=True, alignment="center",
-                         font_color="#1a1a2e"),
-        ElementBlueprint(key="card_title_2", x_cm=_PAD + 15.4, y_cm=_BODY_TOP + 2.8,
-                         w_cm=5.6, h_cm=1.5, font_size_pt=18, bold=True, alignment="center",
-                         font_color="#1a1a2e"),
-        # Card bodies
-        ElementBlueprint(key="card_body_0", x_cm=_PAD + 0.6, y_cm=_BODY_TOP + 4.6,
-                         w_cm=5.6, h_cm=5.5, font_size_pt=14, font_color="#4b5563",
-                         alignment="center", line_spacing=1.35),
-        ElementBlueprint(key="card_body_1", x_cm=_PAD + 8.0, y_cm=_BODY_TOP + 4.6,
-                         w_cm=5.6, h_cm=5.5, font_size_pt=14, font_color="#4b5563",
-                         alignment="center", line_spacing=1.35),
-        ElementBlueprint(key="card_body_2", x_cm=_PAD + 15.4, y_cm=_BODY_TOP + 4.6,
-                         w_cm=5.6, h_cm=5.5, font_size_pt=14, font_color="#4b5563",
-                         alignment="center", line_spacing=1.35),
-        # Card icons (emoji/icon area)
-        ElementBlueprint(key="card_icon_0", x_cm=_PAD + 0.6, y_cm=_BODY_TOP + 0.6,
-                         w_cm=5.6, h_cm=2.0, font_size_pt=32, alignment="center"),
-        ElementBlueprint(key="card_icon_1", x_cm=_PAD + 8.0, y_cm=_BODY_TOP + 0.6,
-                         w_cm=5.6, h_cm=2.0, font_size_pt=32, alignment="center"),
-        ElementBlueprint(key="card_icon_2", x_cm=_PAD + 15.4, y_cm=_BODY_TOP + 0.6,
-                         w_cm=5.6, h_cm=2.0, font_size_pt=32, alignment="center"),
+        # 3 cards with generous gaps between them
+        ElementBlueprint(key="card_0", x_cm=_PAD, y_cm=_BODY_TOP, w_cm=_CARD_W, h_cm=10.5,
+                         is_shape=True, shape_fill="#f3f4f6", corner_radius_cm=0.4),
+        ElementBlueprint(key="card_1", x_cm=_PAD + _CARD_W + _CARD_GAP, y_cm=_BODY_TOP,
+                         w_cm=_CARD_W, h_cm=10.5,
+                         is_shape=True, shape_fill="#f3f4f6", corner_radius_cm=0.4),
+        ElementBlueprint(key="card_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP), y_cm=_BODY_TOP,
+                         w_cm=_CARD_W, h_cm=10.5,
+                         is_shape=True, shape_fill="#f3f4f6", corner_radius_cm=0.4),
+        # Card icons — larger, more prominent
+        ElementBlueprint(key="card_icon_0", x_cm=_PAD + _CARD_INNER, y_cm=_BODY_TOP + 0.8,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=2.2, font_size_pt=36,
+                         alignment="center"),
+        ElementBlueprint(key="card_icon_1", x_cm=_PAD + _CARD_W + _CARD_GAP + _CARD_INNER,
+                         y_cm=_BODY_TOP + 0.8,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=2.2, font_size_pt=36,
+                         alignment="center"),
+        ElementBlueprint(key="card_icon_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP) + _CARD_INNER,
+                         y_cm=_BODY_TOP + 0.8,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=2.2, font_size_pt=36,
+                         alignment="center"),
+        # Card titles — bold, clear hierarchy
+        ElementBlueprint(key="card_title_0", x_cm=_PAD + _CARD_INNER, y_cm=_BODY_TOP + 3.2,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.4, font_size_pt=17, bold=True,
+                         alignment="center", font_color="#1a1a2e"),
+        ElementBlueprint(key="card_title_1", x_cm=_PAD + _CARD_W + _CARD_GAP + _CARD_INNER,
+                         y_cm=_BODY_TOP + 3.2,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.4, font_size_pt=17, bold=True,
+                         alignment="center", font_color="#1a1a2e"),
+        ElementBlueprint(key="card_title_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP) + _CARD_INNER,
+                         y_cm=_BODY_TOP + 3.2,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.4, font_size_pt=17, bold=True,
+                         alignment="center", font_color="#1a1a2e"),
+        # Card bodies — compact, 1-2 sentences max
+        ElementBlueprint(key="card_body_0", x_cm=_PAD + _CARD_INNER, y_cm=_BODY_TOP + 5.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=4.5, font_size_pt=13,
+                         font_color="#4b5563", alignment="center", line_spacing=1.4),
+        ElementBlueprint(key="card_body_1", x_cm=_PAD + _CARD_W + _CARD_GAP + _CARD_INNER,
+                         y_cm=_BODY_TOP + 5.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=4.5, font_size_pt=13,
+                         font_color="#4b5563", alignment="center", line_spacing=1.4),
+        ElementBlueprint(key="card_body_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP) + _CARD_INNER,
+                         y_cm=_BODY_TOP + 5.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=4.5, font_size_pt=13,
+                         font_color="#4b5563", alignment="center", line_spacing=1.4),
     ],
 )
 
@@ -159,46 +175,51 @@ _KPI_DASHBOARD = SlideBlueprint(
     slide_type=SlideType.KPI_DASHBOARD,
     elements=[
         _headline(),
-        # KPI cards — up to 5, positioned dynamically by engine
-        # Base positions for a 3-KPI layout (most common)
-        ElementBlueprint(key="kpi_card_0", x_cm=_PAD, y_cm=_BODY_TOP + 0.5,
-                         w_cm=6.8, h_cm=8.0, is_shape=True, shape_fill="#f3f4f6",
-                         corner_radius_cm=0.35),
-        ElementBlueprint(key="kpi_card_1", x_cm=_PAD + 7.4, y_cm=_BODY_TOP + 0.5,
-                         w_cm=6.8, h_cm=8.0, is_shape=True, shape_fill="#f3f4f6",
-                         corner_radius_cm=0.35),
-        ElementBlueprint(key="kpi_card_2", x_cm=_PAD + 14.8, y_cm=_BODY_TOP + 0.5,
-                         w_cm=6.8, h_cm=8.0, is_shape=True, shape_fill="#f3f4f6",
-                         corner_radius_cm=0.35),
-        # KPI values (large numbers)
-        ElementBlueprint(key="kpi_value_0", x_cm=_PAD + 0.5, y_cm=_BODY_TOP + 1.5,
-                         w_cm=5.8, h_cm=3.0, font_size_pt=40, bold=True,
-                         alignment="center", font_color="#1a1a2e"),
-        ElementBlueprint(key="kpi_value_1", x_cm=_PAD + 7.9, y_cm=_BODY_TOP + 1.5,
-                         w_cm=5.8, h_cm=3.0, font_size_pt=40, bold=True,
-                         alignment="center", font_color="#1a1a2e"),
-        ElementBlueprint(key="kpi_value_2", x_cm=_PAD + 15.3, y_cm=_BODY_TOP + 1.5,
-                         w_cm=5.8, h_cm=3.0, font_size_pt=40, bold=True,
-                         alignment="center", font_color="#1a1a2e"),
-        # KPI labels
-        ElementBlueprint(key="kpi_label_0", x_cm=_PAD + 0.5, y_cm=_BODY_TOP + 5.0,
-                         w_cm=5.8, h_cm=1.5, font_size_pt=14, alignment="center",
-                         font_color="#6b7280"),
-        ElementBlueprint(key="kpi_label_1", x_cm=_PAD + 7.9, y_cm=_BODY_TOP + 5.0,
-                         w_cm=5.8, h_cm=1.5, font_size_pt=14, alignment="center",
-                         font_color="#6b7280"),
-        ElementBlueprint(key="kpi_label_2", x_cm=_PAD + 15.3, y_cm=_BODY_TOP + 5.0,
-                         w_cm=5.8, h_cm=1.5, font_size_pt=14, alignment="center",
-                         font_color="#6b7280"),
-        # KPI deltas
-        ElementBlueprint(key="kpi_delta_0", x_cm=_PAD + 0.5, y_cm=_BODY_TOP + 6.5,
-                         w_cm=5.8, h_cm=1.2, font_size_pt=16, bold=True,
+        # KPI cards — dynamically repositioned by engine. Base for 3 KPIs:
+        ElementBlueprint(key="kpi_card_0", x_cm=_PAD, y_cm=_BODY_TOP + 0.8,
+                         w_cm=_CARD_W, h_cm=9.0, is_shape=True, shape_fill="#f3f4f6",
+                         corner_radius_cm=0.4),
+        ElementBlueprint(key="kpi_card_1", x_cm=_PAD + _CARD_W + _CARD_GAP, y_cm=_BODY_TOP + 0.8,
+                         w_cm=_CARD_W, h_cm=9.0, is_shape=True, shape_fill="#f3f4f6",
+                         corner_radius_cm=0.4),
+        ElementBlueprint(key="kpi_card_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP), y_cm=_BODY_TOP + 0.8,
+                         w_cm=_CARD_W, h_cm=9.0, is_shape=True, shape_fill="#f3f4f6",
+                         corner_radius_cm=0.4),
+        # KPI values — large, prominent (value is hero element)
+        ElementBlueprint(key="kpi_value_0", x_cm=_PAD + _CARD_INNER, y_cm=_BODY_TOP + 2.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=3.5, font_size_pt=44, bold=True,
+                         alignment="center", font_color="#1a1a2e", v_alignment="middle"),
+        ElementBlueprint(key="kpi_value_1", x_cm=_PAD + _CARD_W + _CARD_GAP + _CARD_INNER,
+                         y_cm=_BODY_TOP + 2.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=3.5, font_size_pt=44, bold=True,
+                         alignment="center", font_color="#1a1a2e", v_alignment="middle"),
+        ElementBlueprint(key="kpi_value_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP) + _CARD_INNER,
+                         y_cm=_BODY_TOP + 2.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=3.5, font_size_pt=44, bold=True,
+                         alignment="center", font_color="#1a1a2e", v_alignment="middle"),
+        # KPI labels — smaller, below value, clear separation
+        ElementBlueprint(key="kpi_label_0", x_cm=_PAD + _CARD_INNER, y_cm=_BODY_TOP + 6.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.5, font_size_pt=13,
+                         alignment="center", font_color="#6b7280"),
+        ElementBlueprint(key="kpi_label_1", x_cm=_PAD + _CARD_W + _CARD_GAP + _CARD_INNER,
+                         y_cm=_BODY_TOP + 6.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.5, font_size_pt=13,
+                         alignment="center", font_color="#6b7280"),
+        ElementBlueprint(key="kpi_label_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP) + _CARD_INNER,
+                         y_cm=_BODY_TOP + 6.0,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.5, font_size_pt=13,
+                         alignment="center", font_color="#6b7280"),
+        # KPI deltas — bold trend indicator
+        ElementBlueprint(key="kpi_delta_0", x_cm=_PAD + _CARD_INNER, y_cm=_BODY_TOP + 7.8,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.2, font_size_pt=16, bold=True,
                          alignment="center", font_color="#22c55e"),
-        ElementBlueprint(key="kpi_delta_1", x_cm=_PAD + 7.9, y_cm=_BODY_TOP + 6.5,
-                         w_cm=5.8, h_cm=1.2, font_size_pt=16, bold=True,
+        ElementBlueprint(key="kpi_delta_1", x_cm=_PAD + _CARD_W + _CARD_GAP + _CARD_INNER,
+                         y_cm=_BODY_TOP + 7.8,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.2, font_size_pt=16, bold=True,
                          alignment="center", font_color="#22c55e"),
-        ElementBlueprint(key="kpi_delta_2", x_cm=_PAD + 15.3, y_cm=_BODY_TOP + 6.5,
-                         w_cm=5.8, h_cm=1.2, font_size_pt=16, bold=True,
+        ElementBlueprint(key="kpi_delta_2", x_cm=_PAD + 2 * (_CARD_W + _CARD_GAP) + _CARD_INNER,
+                         y_cm=_BODY_TOP + 7.8,
+                         w_cm=_CARD_W - 2 * _CARD_INNER, h_cm=1.2, font_size_pt=16, bold=True,
                          alignment="center", font_color="#22c55e"),
     ],
 )
@@ -214,33 +235,39 @@ _IMAGE_TEXT_SPLIT = SlideBlueprint(
     ],
 )
 
+_COL_W = 9.8    # comparison column width
+_COL_GAP = 1.2  # gap between columns
+
 _COMPARISON = SlideBlueprint(
     slide_type=SlideType.COMPARISON,
     elements=[
         _headline(),
         # Left column
         ElementBlueprint(key="col_left_bg", x_cm=_PAD, y_cm=_BODY_TOP,
-                         w_cm=10.5, h_cm=12.0, is_shape=True, shape_fill="#f3f4f6",
-                         corner_radius_cm=0.3),
-        ElementBlueprint(key="col_left_label", x_cm=_PAD + 0.6, y_cm=_BODY_TOP + 0.5,
-                         w_cm=9.3, h_cm=1.8, font_size_pt=20, bold=True,
+                         w_cm=_COL_W, h_cm=11.0, is_shape=True, shape_fill="#f3f4f6",
+                         corner_radius_cm=0.4),
+        ElementBlueprint(key="col_left_label", x_cm=_PAD + 0.8, y_cm=_BODY_TOP + 0.6,
+                         w_cm=_COL_W - 1.6, h_cm=1.6, font_size_pt=20, bold=True,
                          font_color="#1a1a2e", alignment="center"),
-        ElementBlueprint(key="col_left_body", x_cm=_PAD + 0.6, y_cm=_BODY_TOP + 2.8,
-                         w_cm=9.3, h_cm=8.5, font_size_pt=15, font_color="#374151",
-                         line_spacing=1.5),
-        # Divider
-        ElementBlueprint(key="divider", x_cm=12.7, y_cm=_BODY_TOP + 0.5,
-                         w_cm=0.06, h_cm=11.0, is_shape=True, shape_fill="#d1d5db"),
+        ElementBlueprint(key="col_left_body", x_cm=_PAD + 0.8, y_cm=_BODY_TOP + 2.8,
+                         w_cm=_COL_W - 1.6, h_cm=7.5, font_size_pt=15, font_color="#374151",
+                         line_spacing=1.6),
+        # Divider — more prominent gap, no thin line
+        ElementBlueprint(key="divider", x_cm=_PAD + _COL_W + _COL_GAP / 2 - 0.03,
+                         y_cm=_BODY_TOP + 0.5,
+                         w_cm=0.06, h_cm=10.0, is_shape=True, shape_fill="#d1d5db"),
         # Right column
-        ElementBlueprint(key="col_right_bg", x_cm=13.1, y_cm=_BODY_TOP,
-                         w_cm=10.5, h_cm=12.0, is_shape=True, shape_fill="#f3f4f6",
-                         corner_radius_cm=0.3),
-        ElementBlueprint(key="col_right_label", x_cm=13.7, y_cm=_BODY_TOP + 0.5,
-                         w_cm=9.3, h_cm=1.8, font_size_pt=20, bold=True,
+        ElementBlueprint(key="col_right_bg", x_cm=_PAD + _COL_W + _COL_GAP, y_cm=_BODY_TOP,
+                         w_cm=_COL_W, h_cm=11.0, is_shape=True, shape_fill="#f3f4f6",
+                         corner_radius_cm=0.4),
+        ElementBlueprint(key="col_right_label", x_cm=_PAD + _COL_W + _COL_GAP + 0.8,
+                         y_cm=_BODY_TOP + 0.6,
+                         w_cm=_COL_W - 1.6, h_cm=1.6, font_size_pt=20, bold=True,
                          font_color="#1a1a2e", alignment="center"),
-        ElementBlueprint(key="col_right_body", x_cm=13.7, y_cm=_BODY_TOP + 2.8,
-                         w_cm=9.3, h_cm=8.5, font_size_pt=15, font_color="#374151",
-                         line_spacing=1.5),
+        ElementBlueprint(key="col_right_body", x_cm=_PAD + _COL_W + _COL_GAP + 0.8,
+                         y_cm=_BODY_TOP + 2.8,
+                         w_cm=_COL_W - 1.6, h_cm=7.5, font_size_pt=15, font_color="#374151",
+                         line_spacing=1.6),
     ],
 )
 
@@ -409,15 +436,15 @@ _AGENDA = SlideBlueprint(
 _CLOSING = SlideBlueprint(
     slide_type=SlideType.CLOSING,
     elements=[
-        ElementBlueprint(key="headline", x_cm=_PAD, y_cm=4.5,
-                         w_cm=_SL_W - 2 * _PAD, h_cm=4.0,
-                         font_size_pt=36, bold=True, alignment="center",
+        ElementBlueprint(key="headline", x_cm=_PAD, y_cm=4.0,
+                         w_cm=_SL_W - 2 * _PAD, h_cm=3.5,
+                         font_size_pt=34, bold=True, alignment="center",
                          font_color="#1a1a2e"),
-        ElementBlueprint(key="takeaways", x_cm=4.0, y_cm=9.5,
-                         w_cm=17.4, h_cm=5.5, font_size_pt=18,
-                         alignment="center", font_color="#374151", line_spacing=1.6),
-        ElementBlueprint(key="contact", x_cm=4.0, y_cm=16.0,
-                         w_cm=17.4, h_cm=2.0, font_size_pt=14,
+        ElementBlueprint(key="takeaways", x_cm=4.5, y_cm=8.5,
+                         w_cm=16.4, h_cm=5.5, font_size_pt=17,
+                         alignment="center", font_color="#374151", line_spacing=1.8),
+        ElementBlueprint(key="contact", x_cm=4.5, y_cm=15.5,
+                         w_cm=16.4, h_cm=2.0, font_size_pt=13,
                          alignment="center", font_color="#9ca3af"),
     ],
 )

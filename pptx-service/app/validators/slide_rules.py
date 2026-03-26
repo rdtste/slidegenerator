@@ -15,25 +15,26 @@ from app.schemas.models import (
 
 # ---- constants ----------------------------------------------------------------
 
+# Tighter text density limits for readability — slides must be scannable, not readable
 MAX_CHARS: dict[SlideType, int] = {
-    SlideType.TITLE_HERO: 130,
-    SlideType.SECTION_DIVIDER: 100,
-    SlideType.KEY_STATEMENT: 150,
-    SlideType.BULLETS_FOCUSED: 250,
-    SlideType.THREE_CARDS: 400,
-    SlideType.KPI_DASHBOARD: 300,
-    SlideType.IMAGE_TEXT_SPLIT: 250,
-    SlideType.COMPARISON: 350,
-    SlideType.TIMELINE: 500,
-    SlideType.PROCESS_FLOW: 450,
-    SlideType.CHART_INSIGHT: 200,
-    SlideType.IMAGE_FULLBLEED: 60,
-    SlideType.AGENDA: 280,
-    SlideType.CLOSING: 250,
+    SlideType.TITLE_HERO: 110,
+    SlideType.SECTION_DIVIDER: 80,
+    SlideType.KEY_STATEMENT: 130,
+    SlideType.BULLETS_FOCUSED: 200,
+    SlideType.THREE_CARDS: 320,
+    SlideType.KPI_DASHBOARD: 250,
+    SlideType.IMAGE_TEXT_SPLIT: 200,
+    SlideType.COMPARISON: 280,
+    SlideType.TIMELINE: 400,
+    SlideType.PROCESS_FLOW: 350,
+    SlideType.CHART_INSIGHT: 170,
+    SlideType.IMAGE_FULLBLEED: 50,
+    SlideType.AGENDA: 220,
+    SlideType.CLOSING: 200,
 }
 
 MAX_HEADLINE_LEN = 70
-MAX_BULLET_LEN = 80
+MAX_BULLET_LEN = 60
 
 _BULLET_LIMITS: dict[SlideType, int] = {
     SlideType.BULLETS_FOCUSED: 3,
