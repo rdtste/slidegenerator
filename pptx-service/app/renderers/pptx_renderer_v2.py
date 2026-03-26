@@ -36,12 +36,34 @@ def _set_alignment(tf_or_para, alignment: str) -> None:
     tf_or_para.alignment = mapping.get(alignment, PP_ALIGN.LEFT)
 
 
+# Mapping: V2 SlideType → REWE template layout index
+# These map to the 2023_REWEdigital_Master_DE_01.potx layouts
+_REWE_LAYOUT_MAP: dict[SlideType, int] = {
+    SlideType.TITLE_HERO:       1,   # Titelfolie
+    SlideType.SECTION_DIVIDER:  3,   # Kapitelbeginn
+    SlideType.KEY_STATEMENT:    13,  # Zitat
+    SlideType.BULLETS_FOCUSED:  5,   # Inhalt 1-spaltig
+    SlideType.THREE_CARDS:      7,   # Inhalt 3-spaltig
+    SlideType.KPI_DASHBOARD:    6,   # Inhalt 2-spaltig
+    SlideType.IMAGE_TEXT_SPLIT: 8,   # Bild + Inhalt
+    SlideType.COMPARISON:       6,   # Inhalt 2-spaltig
+    SlideType.TIMELINE:         5,   # Inhalt 1-spaltig
+    SlideType.PROCESS_FLOW:     5,   # Inhalt 1-spaltig
+    SlideType.CHART_INSIGHT:    5,   # Inhalt 1-spaltig
+    SlideType.IMAGE_FULLBLEED:  11,  # Bild
+    SlideType.AGENDA:           2,   # Agenda
+    SlideType.CLOSING:          17,  # Kontakt
+}
+
+
 class PptxRendererV2:
     """Renders a list of RenderInstructions into a .pptx file."""
 
-    def __init__(self, accent_color: str = "#2563EB", font_family: str = "Calibri"):
+    def __init__(self, accent_color: str = "#2563EB", font_family: str = "Calibri",
+                 template_id: str | None = None):
         self.accent_color = accent_color
         self.font_family = font_family
+        self.template_id = template_id
         self._image_generator: Callable | None = None
         self._chart_generator: Callable | None = None
 
@@ -57,11 +79,12 @@ class PptxRendererV2:
         output_dir: str | None = None,
         progress_callback: ProgressCallback | None = None,
     ) -> Path:
-        prs = Presentation()
-        prs.slide_width = Cm(25.4)
-        prs.slide_height = Cm(19.05)
+        prs = self._load_presentation()
+        use_template = self.template_id is not None
 
-        blank_layout = prs.slide_layouts[6]  # Blank layout
+        # Remove existing slides from template
+        if use_template:
+            self._remove_all_slides(prs)
 
         total = len(instructions)
         for i, instr in enumerate(instructions):
@@ -69,10 +92,11 @@ class PptxRendererV2:
                 pct = int(10 + (i / total) * 80)
                 progress_callback("rendering", f"Folie {i+1}/{total} wird gerendert...", pct)
 
-            slide = prs.slides.add_slide(blank_layout)
+            slide = self._add_slide(prs, instr, use_template)
 
-            # Set background
-            self._set_background(slide, instr.background_color)
+            # Only set custom background for non-template slides
+            if not use_template:
+                self._set_background(slide, instr.background_color)
 
             # Render each element
             for element in instr.elements:
@@ -91,6 +115,45 @@ class PptxRendererV2:
             progress_callback("saved", "Praesentation gespeichert", 95)
 
         return out_path
+
+    def _load_presentation(self) -> Presentation:
+        """Load template or create blank presentation."""
+        if self.template_id:
+            try:
+                from app.services.template_service import load_presentation
+                prs = load_presentation(self.template_id)
+                logger.info(f"Loaded template: {self.template_id} ({len(prs.slide_layouts)} layouts)")
+                return prs
+            except Exception as exc:
+                logger.warning(f"Failed to load template '{self.template_id}', using blank: {exc}")
+        prs = Presentation()
+        prs.slide_width = Cm(25.4)
+        prs.slide_height = Cm(19.05)
+        return prs
+
+    def _remove_all_slides(self, prs: Presentation) -> None:
+        """Remove all existing slides from the template."""
+        from lxml import etree
+        sldIdLst = prs.presentation.sldIdLst
+        if sldIdLst is None:
+            return
+        for sldId in list(sldIdLst):
+            rId = sldId.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+            if rId:
+                prs.part.drop_rel(rId)
+            sldIdLst.remove(sldId)
+
+    def _add_slide(self, prs: Presentation, instr: RenderInstruction,
+                   use_template: bool) -> object:
+        """Add a slide using the appropriate template layout or blank."""
+        if use_template:
+            layout_idx = _REWE_LAYOUT_MAP.get(instr.slide_type, 16)  # 16 = Leer
+            if layout_idx < len(prs.slide_layouts):
+                return prs.slides.add_slide(prs.slide_layouts[layout_idx])
+            # Fallback to blank layout (16) or last available
+            fallback = min(16, len(prs.slide_layouts) - 1)
+            return prs.slides.add_slide(prs.slide_layouts[fallback])
+        return prs.slides.add_slide(prs.slide_layouts[6])
 
     def _set_background(self, slide, color: str) -> None:
         bg = slide.background

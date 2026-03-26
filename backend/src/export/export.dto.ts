@@ -74,7 +74,8 @@ export class GenerateDeckRequestDto {
   @IsOptional()
   fontFamily?: string = 'Calibri';
 
+  /** Default: REWE digital Master template */
   @IsString()
   @IsOptional()
-  templateId?: string;
+  templateId?: string = '2023_REWEdigital_Master_DE_01';
 }

@@ -55,7 +55,8 @@ class PipelineOrchestrator:
         self.template_id = template_id
 
         self.layout_engine = LayoutEngine(accent_color=accent_color, font_family=font_family)
-        self.renderer = PptxRendererV2(accent_color=accent_color, font_family=font_family)
+        self.renderer = PptxRendererV2(accent_color=accent_color, font_family=font_family,
+                                       template_id=template_id)
 
         self._progress_cb: ProgressCallback | None = None
         self._image_generator: Callable | None = None
