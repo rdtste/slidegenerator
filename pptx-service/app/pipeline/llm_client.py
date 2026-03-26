@@ -51,14 +51,14 @@ def _get_access_token() -> str:
 def _get_sync_client() -> httpx.Client:
     global _sync_client
     if _sync_client is None or _sync_client.is_closed:
-        _sync_client = httpx.Client(timeout=120, http2=True)
+        _sync_client = httpx.Client(timeout=120, http2=False)
     return _sync_client
 
 
 def _get_async_client() -> httpx.AsyncClient:
     global _async_client
     if _async_client is None or _async_client.is_closed:
-        _async_client = httpx.AsyncClient(timeout=120, http2=True)
+        _async_client = httpx.AsyncClient(timeout=120, http2=False)
     return _async_client
 
 
