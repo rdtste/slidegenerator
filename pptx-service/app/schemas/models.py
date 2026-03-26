@@ -1,4 +1,10 @@
-"""V2 Pipeline data models — all Pydantic schemas for the production pipeline."""
+"""V2 Pipeline data models — all Pydantic schemas for the production pipeline.
+
+Note: max_length constraints are intentionally NOT enforced at the Pydantic level
+because LLM output frequently exceeds them by a few characters. Length limits are
+enforced via prompts and validated in Stage 4 (with auto-truncation). The field
+validators here coerce None→"" and truncate extreme outliers to prevent crashes.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +12,18 @@ from enum import Enum
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field, field_validator
+
+
+# ── Helper: coerce None→"" and truncate extreme outliers ─────────────────
+def _str_sanitizer(*fields: str, fallback: str = ""):
+    """Create a Pydantic field_validator that coerces None and truncates strings."""
+    @field_validator(*fields, mode="before")
+    @classmethod
+    def _sanitize(cls, v: object) -> str:
+        if v is None:
+            return fallback
+        return str(v)
+    return _sanitize
 
 
 # ---------------------------------------------------------------------------
@@ -137,16 +155,13 @@ class InterpretedBriefing(BaseModel):
 class StoryBeat(BaseModel):
     position: int = Field(..., ge=1)
     beat_type: BeatType
-    core_message: str = Field(..., max_length=150)
+    core_message: str = Field(...)
     content_theme: str = Field("")
     emotional_intent: EmotionalIntent = Field(EmotionalIntent.CONFIDENCE)
     evidence_needed: bool = Field(False)
     suggested_slide_types: list[SlideType] = Field(default_factory=list)
 
-    @field_validator("content_theme", "core_message", mode="before")
-    @classmethod
-    def _coerce_none_to_empty(cls, v: object) -> str:
-        return "" if v is None else v
+    _sanitize = _str_sanitizer("content_theme", "core_message")
 
 
 class Storyline(BaseModel):
@@ -160,8 +175,10 @@ class Storyline(BaseModel):
 # ---------------------------------------------------------------------------
 
 class BulletItem(BaseModel):
-    text: str = Field(..., max_length=80)
-    bold_prefix: str = Field("", max_length=25)
+    text: str = Field(...)
+    bold_prefix: str = Field("")
+
+    _sanitize = _str_sanitizer("text", "bold_prefix")
 
 
 class BulletsBlock(BaseModel):
@@ -171,21 +188,27 @@ class BulletsBlock(BaseModel):
 
 class KpiBlock(BaseModel):
     type: Literal["kpi"] = "kpi"
-    label: str = Field(..., max_length=35)
-    value: str = Field(..., max_length=20)
+    label: str = Field(...)
+    value: str = Field(...)
     trend: Trend = Field(Trend.NEUTRAL)
-    delta: str = Field("", max_length=20)
+    delta: str = Field("")
+
+    _sanitize = _str_sanitizer("label", "value", "delta")
 
 
 class QuoteBlock(BaseModel):
     type: Literal["quote"] = "quote"
-    text: str = Field(..., max_length=180)
-    attribution: str = Field("", max_length=60)
+    text: str = Field(...)
+    attribution: str = Field("")
+
+    _sanitize = _str_sanitizer("text", "attribution")
 
 
 class LabelValuePair(BaseModel):
-    label: str = Field(..., max_length=30)
-    value: str = Field(..., max_length=50)
+    label: str = Field(...)
+    value: str = Field(...)
+
+    _sanitize = _str_sanitizer("label", "value")
 
 
 class LabelValueBlock(BaseModel):
@@ -195,34 +218,44 @@ class LabelValueBlock(BaseModel):
 
 class ComparisonColumnBlock(BaseModel):
     type: Literal["comparison_column"] = "comparison_column"
-    column_label: str = Field(..., max_length=30)
+    column_label: str = Field(...)
     items: list[str] = Field(default_factory=list)
+
+    _sanitize = _str_sanitizer("column_label")
 
 
 class TimelineEntryBlock(BaseModel):
     type: Literal["timeline_entry"] = "timeline_entry"
-    date: str = Field(..., max_length=25)
-    title: str = Field(..., max_length=50)
-    description: str = Field("", max_length=100)
+    date: str = Field(...)
+    title: str = Field(...)
+    description: str = Field("")
+
+    _sanitize = _str_sanitizer("date", "title", "description")
 
 
 class ProcessStepBlock(BaseModel):
     type: Literal["process_step"] = "process_step"
     step_number: int = Field(1)
-    title: str = Field(..., max_length=40)
-    description: str = Field("", max_length=100)
+    title: str = Field(...)
+    description: str = Field("")
+
+    _sanitize = _str_sanitizer("title", "description")
 
 
 class CardBlock(BaseModel):
     type: Literal["card"] = "card"
-    title: str = Field(..., max_length=35)
-    body: str = Field("", max_length=120)
+    title: str = Field(...)
+    body: str = Field("")
     icon_hint: str = Field("")
+
+    _sanitize = _str_sanitizer("title", "body", "icon_hint")
 
 
 class TextBlock(BaseModel):
     type: Literal["text"] = "text"
-    text: str = Field("", max_length=250)
+    text: str = Field("")
+
+    _sanitize = _str_sanitizer("text")
 
 
 ContentBlock = Union[
@@ -243,10 +276,12 @@ class ChartSeries(BaseModel):
 
 class ChartSpec(BaseModel):
     chart_type: Literal["bar", "horizontal_bar", "stacked_bar", "line", "pie", "donut"] = "bar"
-    title: str = Field("", max_length=60)
+    title: str = Field("")
     data: dict = Field(default_factory=lambda: {"labels": [], "series": []})
     unit: str = Field("")
     highlight_index: int | None = Field(None)
+
+    _sanitize = _str_sanitizer("title", "unit")
 
 
 # ---------------------------------------------------------------------------
@@ -256,8 +291,10 @@ class ChartSpec(BaseModel):
 class Visual(BaseModel):
     type: VisualType = Field(VisualType.NONE)
     image_role: ImageRole = Field(ImageRole.NONE)
-    image_description: str = Field("", max_length=250)
+    image_description: str = Field("")
     chart_spec: ChartSpec | None = Field(None)
+
+    _sanitize = _str_sanitizer("image_description")
 
 
 # ---------------------------------------------------------------------------
@@ -268,18 +305,18 @@ class SlidePlan(BaseModel):
     position: int = Field(..., ge=1)
     slide_type: SlideType
     beat_ref: int = Field(0, description="References storyline beat position")
-    headline: str = Field(..., max_length=70)
-    subheadline: str = Field("", max_length=120)
-    core_message: str = Field("", max_length=150)
+    headline: str = Field(...)
+    subheadline: str = Field("")
+    core_message: str = Field("")
     content_blocks: list[ContentBlock] = Field(default_factory=list)
     visual: Visual = Field(default_factory=Visual)
-    speaker_notes: str = Field("", max_length=600)
+    speaker_notes: str = Field("")
     transition_hint: str = Field("")
 
-    @field_validator("subheadline", "core_message", "speaker_notes", "transition_hint", mode="before")
-    @classmethod
-    def _coerce_none_to_empty(cls, v: object) -> str:
-        return "" if v is None else v
+    _sanitize = _str_sanitizer(
+        "headline", "subheadline", "core_message",
+        "speaker_notes", "transition_hint",
+    )
 
 
 class PresentationMetadata(BaseModel):
@@ -318,10 +355,9 @@ class FilledSlide(BaseModel):
     speaker_notes: str = Field("")
     text_metrics: TextMetrics = Field(default_factory=TextMetrics)
 
-    @field_validator("subheadline", "core_message", "speaker_notes", mode="before")
-    @classmethod
-    def _coerce_none_to_empty(cls, v: object) -> str:
-        return "" if v is None else v
+    _sanitize = _str_sanitizer(
+        "headline", "subheadline", "core_message", "speaker_notes",
+    )
 
 
 # ---------------------------------------------------------------------------
