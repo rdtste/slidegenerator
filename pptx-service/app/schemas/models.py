@@ -11,7 +11,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ── Helper: coerce None→"" and truncate extreme outliers ─────────────────
@@ -282,6 +282,39 @@ class ChartSpec(BaseModel):
     highlight_index: int | None = Field(None)
 
     _sanitize = _str_sanitizer("title", "unit")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_data(cls, values):
+        """LLM sometimes returns data as a list of dicts instead of a dict.
+        Convert list[{label, values}] → {labels: [...], series: [...]}."""
+        if not isinstance(values, dict):
+            return values
+        data = values.get("data")
+        if isinstance(data, list):
+            labels = []
+            series_values: list[list[float]] = []
+            for item in data:
+                if isinstance(item, dict):
+                    labels.append(str(item.get("label", "")))
+                    vals = item.get("values", item.get("value", []))
+                    if isinstance(vals, (int, float)):
+                        vals = [vals]
+                    if isinstance(vals, list):
+                        series_values.append([float(v) for v in vals])
+            # Transpose if needed: each item may be one data point across series
+            if series_values and all(len(v) == 1 for v in series_values):
+                values["data"] = {
+                    "labels": labels,
+                    "series": [{"name": "Daten", "values": [v[0] for v in series_values]}],
+                }
+            else:
+                values["data"] = {
+                    "labels": labels,
+                    "series": [{"name": labels[i] if i < len(labels) else f"Serie {i+1}",
+                                "values": sv} for i, sv in enumerate(series_values)],
+                }
+        return values
 
 
 # ---------------------------------------------------------------------------

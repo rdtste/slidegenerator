@@ -236,46 +236,80 @@
       </div>
     }
 
-    <!-- Step 3: Prüfen & Bearbeiten (per-slide) -->
+    <!-- Step 3: Prüfen -->
     @if (state.currentStep() === 3) {
       <div class="step-content review-step">
-        <!-- Slide picker sidebar -->
-        <div class="slide-picker">
-          <h3>Folien</h3>
-          @for (slide of state.slides(); track $index) {
-            <button
-              class="slide-pick"
-              [class.active]="state.selectedSlideIndex() === $index"
-              (click)="goToSlide($index)">
-              <span class="pick-num">{{ $index + 1 }}</span>
-              <span class="pick-title">{{ slide.title || '(Ohne Titel)' }}</span>
-            </button>
-          }
-        </div>
-
-        <!-- Slide content area -->
-        <div class="slide-viewer">
-          <!-- Navigation bar -->
-          <div class="slide-nav-bar">
-            <button class="btn-slide-nav" (click)="prevSlide()" [disabled]="state.selectedSlideIndex() === 0" aria-label="Vorherige Folie">←</button>
-            <span class="slide-indicator">Folie {{ state.selectedSlideIndex() + 1 }} / {{ state.slideCount() }}</span>
-            <button class="btn-slide-nav" (click)="nextSlide()" [disabled]="state.selectedSlideIndex() >= state.slideCount() - 1" aria-label="Nächste Folie">→</button>
+        <div class="review-layout">
+          <!-- Slide preview cards -->
+          <div class="review-preview">
+            <app-preview />
           </div>
 
-          <div class="slide-content-split">
-            <!-- Preview -->
-            <div class="slide-preview-pane">
-              <iframe class="slide-iframe" #slideIframe></iframe>
-              @if (previewLoading()) {
-                <div class="slide-placeholder">Vorschau wird geladen...</div>
-              }
-              @if (previewError()) {
-                <div class="slide-placeholder error">{{ previewError() }}</div>
-              }
+          <!-- Selected slide detail -->
+          <div class="review-detail">
+            <div class="slide-nav-bar">
+              <button class="btn-slide-nav" (click)="prevSlide()" [disabled]="state.selectedSlideIndex() === 0" aria-label="Vorherige Folie">←</button>
+              <span class="slide-indicator">Folie {{ state.selectedSlideIndex() + 1 }} / {{ state.slideCount() }}</span>
+              <button class="btn-slide-nav" (click)="nextSlide()" [disabled]="state.selectedSlideIndex() >= state.slideCount() - 1" aria-label="Nächste Folie">→</button>
             </div>
 
-            <!-- Markdown for this slide -->
-            <div class="slide-markdown-pane">
+            @if (selectedSlide(); as slide) {
+              <div class="detail-card">
+                <div class="detail-header">
+                  <span class="detail-layout">{{ slide.layout }}</span>
+                </div>
+                <h2 class="detail-title">{{ slide.title }}</h2>
+                @if (slide.subtitle) {
+                  <p class="detail-subtitle">{{ slide.subtitle }}</p>
+                }
+
+                @if (slide.bullets.length) {
+                  <div class="detail-section">
+                    <span class="detail-label">Inhalte</span>
+                    <ul class="detail-bullets">
+                      @for (b of slide.bullets; track $index) {
+                        <li>{{ b }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (slide.body) {
+                  <div class="detail-section">
+                    <span class="detail-label">Text</span>
+                    <p class="detail-body">{{ slide.body }}</p>
+                  </div>
+                }
+
+                @if (slide.leftColumn || slide.rightColumn) {
+                  <div class="detail-section">
+                    <span class="detail-label">Spalten</span>
+                    <div class="detail-columns">
+                      @if (slide.leftColumn) { <div class="detail-col">{{ slide.leftColumn }}</div> }
+                      @if (slide.rightColumn) { <div class="detail-col">{{ slide.rightColumn }}</div> }
+                    </div>
+                  </div>
+                }
+
+                @if (slide.imageDescription) {
+                  <div class="detail-section">
+                    <span class="detail-label">Bild</span>
+                    <p class="detail-image-desc">🖼 {{ slide.imageDescription }}</p>
+                  </div>
+                }
+
+                @if (slide.notes) {
+                  <div class="detail-section">
+                    <span class="detail-label">Sprechernotizen</span>
+                    <p class="detail-notes">{{ slide.notes }}</p>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Markdown editor (collapsible) -->
+            <details class="markdown-editor-details">
+              <summary>Markdown bearbeiten</summary>
               <div class="slide-md-toolbar">
                 @if (editingSlide()) {
                   <button class="btn-sm" (click)="saveSlideEdit()">Übernehmen</button>
@@ -283,14 +317,13 @@
                 } @else {
                   <button class="btn-sm" (click)="startSlideEdit()">Bearbeiten</button>
                 }
-                <span class="slide-layout-badge">{{ state.slides()[state.selectedSlideIndex()]?.layout }}</span>
               </div>
               @if (editingSlide()) {
                 <textarea class="slide-md-editor" [(ngModel)]="slideEditValue"></textarea>
               } @else {
                 <pre class="slide-md-view">{{ state.currentSlideMarkdown() }}</pre>
               }
-            </div>
+            </details>
           </div>
         </div>
       </div>

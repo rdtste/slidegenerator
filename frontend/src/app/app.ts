@@ -1,17 +1,18 @@
-import { Component, inject, OnInit, OnDestroy, signal, effect, untracked, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, effect, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Chat } from './features/chat/chat';
+import { Preview } from './features/preview/preview';
 import { ExportPanel } from './features/export-panel/export-panel';
 import { TemplateManagement } from './features/template-management/template-management';
 import { Settings } from './features/settings/settings';
 import { ChatState } from './core/services/chat';
 import { ApiService } from './core/services/api';
-import { Audience, ImageStyle, TemplateProfile } from './core/models';
+import { Audience, ImageStyle, SlideContent, TemplateProfile } from './core/models';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, Chat, ExportPanel, TemplateManagement, Settings],
+  imports: [FormsModule, Chat, Preview, ExportPanel, TemplateManagement, Settings],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -25,10 +26,13 @@ export class App implements OnInit, OnDestroy {
   readonly showTemplateManager = signal(false);
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
-  readonly previewLoading = signal(false);
-  readonly previewError = signal('');
 
-  @ViewChild('slideIframe') private slideIframeRef?: ElementRef<HTMLIFrameElement>;
+  readonly selectedSlide = computed<SlideContent | undefined>(() => {
+    const slides = this.state.slides();
+    const idx = this.state.selectedSlideIndex();
+    return slides[idx];
+  });
+
   private previewSub?: Subscription;
 
   readonly audienceOptions: Array<{ id: Audience; icon: string; title: string; desc: string }> = [
@@ -86,16 +90,6 @@ export class App implements OnInit, OnDestroy {
       });
     });
 
-    // Trigger slide preview when step 3 is active (handles direct signal writes from chat component)
-    effect(() => {
-      const step = this.state.currentStep();
-      // Track slide index so preview refreshes when navigating slides
-      this.state.selectedSlideIndex();
-      const md = this.state.currentSlideMarkdown();
-      if (step === 3 && md) {
-        untracked(() => this.loadSlidePreview());
-      }
-    });
   }
 
   ngOnInit(): void {
@@ -188,60 +182,4 @@ export class App implements OnInit, OnDestroy {
     this.previewSub?.unsubscribe();
   }
 
-  loadSlidePreview(): void {
-    const md = this.state.currentSlideMarkdown();
-    if (!md) return;
-
-    const slideMd = md.includes('marp:') ? md : `---\nmarp: true\n---\n\n${md}`;
-    const templateId = this.state.selectedTemplateId();
-    const isDefault = templateId === 'default';
-
-    this.previewLoading.set(true);
-    this.previewError.set('');
-    this.previewSub?.unsubscribe();
-
-    this.previewSub = this.api.preview(
-      slideMd,
-      isDefault ? undefined : templateId,
-      isDefault ? this.state.customColor() : undefined,
-      isDefault ? this.state.customFont() : undefined,
-    ).subscribe({
-      next: (html) => {
-        this.previewLoading.set(false);
-        this.writeToIframe(html);
-      },
-      error: (err) => {
-        this.previewLoading.set(false);
-        this.previewError.set(`Vorschau-Fehler: ${err.message || 'Unbekannt'}`);
-        console.error('[SlidePreview] Fehler:', err);
-      },
-    });
-  }
-
-  private writeToIframe(html: string): void {
-    // Use requestAnimationFrame to ensure the iframe element exists in the DOM
-    requestAnimationFrame(() => {
-      const iframe = this.slideIframeRef?.nativeElement;
-      if (!iframe) {
-        // Retry once more after another frame (iframe may not be rendered yet)
-        requestAnimationFrame(() => {
-          const retryIframe = this.slideIframeRef?.nativeElement;
-          if (retryIframe) {
-            this.setIframeContent(retryIframe, html);
-          }
-        });
-        return;
-      }
-      this.setIframeContent(iframe, html);
-    });
-  }
-
-  private setIframeContent(iframe: HTMLIFrameElement, html: string): void {
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(html);
-      doc.close();
-    }
-  }
 }

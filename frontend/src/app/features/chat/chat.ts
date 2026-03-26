@@ -154,7 +154,6 @@ export class Chat implements OnDestroy {
           });
           this.state.loading.set(false);
           this.resetConversation();
-          this.refreshPreview(res.markdown);
           this.state.currentStep.set(3);
         },
         error: (err) => {
@@ -213,22 +212,4 @@ export class Chat implements OnDestroy {
     this.attachedFiles.update((prev) => prev.filter((_, i) => i !== index));
   }
 
-  private refreshPreview(markdown: string): void {
-    const templateId = this.state.selectedTemplateId();
-    const isDefault = templateId === 'default';
-    this.api.preview(
-      markdown,
-      isDefault ? undefined : templateId,
-      isDefault ? this.state.customColor() : undefined,
-      isDefault ? this.state.customFont() : undefined,
-    ).subscribe({
-      next: (html) => {
-        this.state.previewHtml.set(html);
-      },
-      error: (err) => {
-        console.error('[Preview] Fehler:', err);
-        this.state.addMessage({ role: 'error', content: `Vorschau-Fehler: ${err.message}` });
-      },
-    });
-  }
 }
