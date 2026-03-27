@@ -375,7 +375,7 @@ class PptxRendererV2:
         return prs
 
     def _remove_all_slides(self, prs: Presentation) -> None:
-        sldIdLst = prs.presentation.sldIdLst
+        sldIdLst = prs.part._element.sldIdLst
         if sldIdLst is None:
             return
         ns = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
