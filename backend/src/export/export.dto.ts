@@ -53,6 +53,32 @@ export class ExportV2RequestDto {
   templateId?: string;
 }
 
+export class PregenerateV2RequestDto {
+  @IsString()
+  @IsNotEmpty()
+  prompt!: string;
+
+  @IsString()
+  @IsOptional()
+  audience?: string = 'management';
+
+  @IsString()
+  @IsOptional()
+  imageStyle?: string = 'minimal';
+
+  @IsString()
+  @IsOptional()
+  accentColor?: string;
+
+  @IsString()
+  @IsOptional()
+  fontFamily?: string;
+
+  @IsString()
+  @IsOptional()
+  templateId?: string;
+}
+
 export class GenerateDeckRequestDto {
   @IsString()
   @IsNotEmpty()

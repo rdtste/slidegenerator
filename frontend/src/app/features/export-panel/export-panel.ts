@@ -35,6 +35,61 @@ export class ExportPanel implements OnDestroy {
       return;
     }
 
+    // Check if pre-generated PPTX is available and slides weren't edited
+    const pregenKey = this.state.pregenKey();
+    if (pregenKey && !this.state.slidesEdited()) {
+      this.tryPregenDownload(pregenKey, briefing);
+      return;
+    }
+
+    this.startFreshV2Export(briefing);
+  }
+
+  private tryPregenDownload(key: string, briefing: string): void {
+    this.exporting.set(true);
+    this.exportProgress.set(50);
+    this.exportMessage.set('Vorbereitete Praesentation wird geladen…');
+    this.exportStatus.set('');
+
+    this.api.getPregenStatus(key).subscribe({
+      next: (status) => {
+        if (status.status === 'complete') {
+          // Pre-gen ready — download directly
+          this.exportProgress.set(90);
+          this.exportMessage.set('Download wird vorbereitet…');
+          this.api.downloadPregen(key).subscribe({
+            next: (response) => {
+              const blob = response.body;
+              if (!blob) {
+                this.startFreshV2Export(briefing);
+                return;
+              }
+              this.triggerDownload(blob, 'presentation_v2.pptx');
+              this.exportProgress.set(100);
+              this.exportStatus.set('PPTX heruntergeladen (vorberechnet).');
+              this.exporting.set(false);
+            },
+            error: () => this.startFreshV2Export(briefing),
+          });
+        } else if (status.status === 'processing' && status.jobId) {
+          // Pre-gen still running — connect to its progress stream
+          this.exportProgress.set(0);
+          this.exportMessage.set('V2 AI-Pipeline laeuft bereits…');
+          this.progressEntries.set([]);
+          this.currentActiveKey = '';
+          this.reconnectAttempts = 0;
+          this.currentJobId = status.jobId;
+          this.connectProgress(status.jobId);
+        } else {
+          // Pre-gen failed or missing — start fresh
+          this.startFreshV2Export(briefing);
+        }
+      },
+      error: () => this.startFreshV2Export(briefing),
+    });
+  }
+
+  private startFreshV2Export(briefing: string): void {
     this.exporting.set(true);
     this.exportProgress.set(0);
     this.exportMessage.set('V2 AI-Pipeline wird gestartet…');

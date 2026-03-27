@@ -124,6 +124,35 @@ export class ApiService {
     );
   }
 
+  pregenerateV2(
+    prompt: string,
+    audience: string,
+    imageStyle: string,
+    accentColor?: string,
+    fontFamily?: string,
+    templateId?: string,
+  ): Observable<{ key: string }> {
+    return this.http.post<{ key: string }>(`${this.baseUrl}/export/pregenerate-v2`, {
+      prompt,
+      audience,
+      imageStyle,
+      accentColor,
+      fontFamily,
+      templateId,
+    });
+  }
+
+  getPregenStatus(key: string): Observable<{ status: string; jobId?: string }> {
+    return this.http.get<{ status: string; jobId?: string }>(`${this.baseUrl}/export/pregenerate-v2/${encodeURIComponent(key)}`);
+  }
+
+  downloadPregen(key: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}/export/pregenerate-v2/${encodeURIComponent(key)}/download`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
   startV2Export(
     prompt: string,
     audience: string,

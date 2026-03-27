@@ -24,6 +24,8 @@ export class ChatState {
   readonly previewHtml = signal('');
   readonly selectedSlideIndex = signal(0);
   readonly briefing = signal('');
+  readonly slidesEdited = signal(false);
+  readonly pregenKey = signal('');
 
   readonly slideCount = computed(() => this.slides().length);
   readonly hasMarkdown = computed(() => this.markdown().trim().length > 0);
@@ -48,6 +50,7 @@ export class ChatState {
 
   updateMarkdown(md: string): void {
     this.markdown.set(md);
+    this.slidesEdited.set(true);
   }
 
   reset(): void {
@@ -66,5 +69,7 @@ export class ChatState {
     this.previewHtml.set('');
     this.selectedSlideIndex.set(0);
     this.briefing.set('');
+    this.slidesEdited.set(false);
+    this.pregenKey.set('');
   }
 }

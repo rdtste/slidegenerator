@@ -153,8 +153,10 @@ export class Chat implements OnDestroy {
             content: `✅ Deine Präsentation mit ${res.slides.length} Folien ist fertig! Du kannst sie jetzt prüfen und bearbeiten.`,
           });
           this.state.loading.set(false);
+          this.state.slidesEdited.set(false);
           this.resetConversation();
           this.state.currentStep.set(3);
+          this.triggerPregeneration(briefing);
         },
         error: (err) => {
           this.stopPhaseRotation();
@@ -185,6 +187,22 @@ export class Chat implements OnDestroy {
       this.phaseInterval = null;
     }
     this.generationPhase.set('');
+  }
+
+  private triggerPregeneration(briefing: string): void {
+    const templateId = this.state.selectedTemplateId();
+    const isDefault = templateId === 'default';
+    this.api.pregenerateV2(
+      briefing,
+      this.state.audience(),
+      this.state.imageStyle(),
+      isDefault ? this.state.customColor() : undefined,
+      isDefault ? this.state.customFont() : undefined,
+      isDefault ? undefined : templateId,
+    ).subscribe({
+      next: ({ key }) => this.state.pregenKey.set(key),
+      error: () => { /* silent — export will just run fresh */ },
+    });
   }
 
   private resetConversation(): void {

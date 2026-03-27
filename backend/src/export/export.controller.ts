@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, Res, Sse, HttpException, HttpStatus
 import { Observable, merge, interval, map, takeUntil, Subject } from 'rxjs';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
-import { ExportRequestDto, ExportV2RequestDto, GenerateDeckRequestDto } from './export.dto';
+import { ExportRequestDto, ExportV2RequestDto, GenerateDeckRequestDto, PregenerateV2RequestDto } from './export.dto';
 
 const CONTENT_TYPES: Record<string, string> = {
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -17,6 +17,39 @@ const EXTENSIONS: Record<string, string> = {
 @Controller('export')
 export class ExportController {
   constructor(private readonly exportService: ExportService) {}
+
+  @Post('pregenerate-v2')
+  async pregenerateV2(@Body() dto: PregenerateV2RequestDto): Promise<{ key: string }> {
+    const key = this.exportService.buildPregenKey(
+      dto.prompt, dto.audience, dto.imageStyle, dto.accentColor, dto.fontFamily, dto.templateId,
+    );
+    this.exportService.pregenerateV2(
+      key, dto.prompt, dto.audience, dto.imageStyle, dto.accentColor, dto.fontFamily, dto.templateId,
+    ).catch(() => { /* fire-and-forget */ });
+    return { key };
+  }
+
+  @Get('pregenerate-v2/:key')
+  getPregenStatus(@Param('key') key: string): { status: string; jobId?: string } {
+    return this.exportService.getPregenStatus(key);
+  }
+
+  @Get('pregenerate-v2/:key/download')
+  async downloadPregen(
+    @Param('key') key: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = this.exportService.consumePregen(key);
+    if (!result) {
+      throw new HttpException({ detail: 'Vorgeniertes PPTX nicht verfügbar' }, HttpStatus.NOT_FOUND);
+    }
+    res.set({
+      'Content-Type': CONTENT_TYPES['pptx'],
+      'Content-Disposition': `attachment; filename="${result.filename}"`,
+      'Content-Length': result.buffer.length.toString(),
+    });
+    res.send(result.buffer);
+  }
 
   @Post('start-v2')
   async startV2Export(@Body() dto: ExportV2RequestDto): Promise<{ jobId: string }> {

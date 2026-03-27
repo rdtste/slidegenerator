@@ -22,17 +22,123 @@ interface ExportJob {
   progress: number;
 }
 
+interface PregenEntry {
+  status: 'processing' | 'complete' | 'error';
+  jobId: string;
+  buffer?: Buffer;
+  filename: string;
+  createdAt: number;
+  error?: string;
+}
+
 @Injectable()
 export class ExportService {
   private readonly logger = new Logger(ExportService.name);
   private readonly pptxServiceUrl: string;
   private readonly jobs = new Map<string, ExportJob>();
+  private readonly pregenCache = new Map<string, PregenEntry>();
 
   constructor(private readonly config: ConfigService) {
     this.pptxServiceUrl = this.config.get<string>(
       'PPTX_SERVICE_URL',
       'http://localhost:8000',
     );
+  }
+
+  /**
+   * Build a cache key from generation parameters.
+   */
+  buildPregenKey(
+    prompt: string,
+    audience?: string,
+    imageStyle?: string,
+    accentColor?: string,
+    fontFamily?: string,
+    templateId?: string,
+  ): string {
+    const parts = [prompt.slice(0, 200), audience, imageStyle, accentColor, fontFamily, templateId].join('|');
+    // Simple hash
+    let hash = 0;
+    for (let i = 0; i < parts.length; i++) {
+      hash = ((hash << 5) - hash + parts.charCodeAt(i)) | 0;
+    }
+    return `pregen_${Math.abs(hash).toString(36)}`;
+  }
+
+  /**
+   * Start V2 pipeline in background for pre-generation (fire-and-forget).
+   */
+  async pregenerateV2(
+    key: string,
+    prompt: string,
+    audience?: string,
+    imageStyle?: string,
+    accentColor?: string,
+    fontFamily?: string,
+    templateId?: string,
+  ): Promise<void> {
+    if (this.pregenCache.has(key)) {
+      this.logger.log(`Pre-generation already running/cached for key ${key}`);
+      return;
+    }
+
+    const jobId = await this.startV2Job(prompt, undefined, audience, imageStyle, accentColor, fontFamily, templateId);
+    const entry: PregenEntry = {
+      status: 'processing',
+      jobId,
+      filename: 'presentation_v2.pptx',
+      createdAt: Date.now(),
+    };
+    this.pregenCache.set(key, entry);
+    this.logger.log(`Pre-generation started: key=${key}, jobId=${jobId}`);
+
+    // Monitor the job until complete
+    const job = this.jobs.get(jobId);
+    if (job) {
+      job.subject.subscribe({
+        complete: () => {
+          const finishedJob = this.jobs.get(jobId);
+          if (finishedJob?.status === 'complete' && finishedJob.buffer) {
+            entry.status = 'complete';
+            entry.buffer = finishedJob.buffer;
+            entry.filename = finishedJob.filename;
+            this.logger.log(`Pre-generation complete: key=${key}`);
+          } else if (finishedJob?.status === 'error') {
+            entry.status = 'error';
+            entry.error = 'Pipeline failed';
+            this.logger.warn(`Pre-generation failed: key=${key}`);
+          }
+        },
+      });
+    }
+
+    // Clean up old pre-gen entries after 30 minutes
+    setTimeout(() => {
+      this.pregenCache.delete(key);
+      this.logger.log(`Pre-generation cache expired: key=${key}`);
+    }, 30 * 60 * 1000);
+  }
+
+  /**
+   * Check if a pre-generated PPTX is available.
+   */
+  getPregenStatus(key: string): { status: string; jobId?: string } {
+    const entry = this.pregenCache.get(key);
+    if (!entry) return { status: 'none' };
+    return { status: entry.status, jobId: entry.jobId };
+  }
+
+  /**
+   * Consume the pre-generated PPTX buffer. Returns null if not ready.
+   */
+  consumePregen(key: string): { buffer: Buffer; filename: string } | null {
+    const entry = this.pregenCache.get(key);
+    if (!entry || entry.status !== 'complete' || !entry.buffer) return null;
+    const { buffer, filename } = entry;
+    this.pregenCache.delete(key);
+    // Also clean up the underlying job
+    this.jobs.delete(entry.jobId);
+    return { buffer, filename };
   }
 
   async startV2Job(
