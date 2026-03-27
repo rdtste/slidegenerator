@@ -1,10 +1,9 @@
 import { Component, inject, computed } from '@angular/core';
-import { SlicePipe } from '@angular/common';
 import { ChatState } from '../../core/services/chat';
 
 @Component({
   selector: 'app-preview',
-  imports: [SlicePipe],
+  imports: [],
   templateUrl: './preview.html',
   styleUrl: './preview.scss',
 })

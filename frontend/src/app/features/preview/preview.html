@@ -13,48 +13,9 @@
           <!-- Layout badge -->
           <span class="layout-badge">{{ slide.layout }}</span>
 
-          <!-- Title area -->
+          <!-- Title only -->
           @if (slide.title) {
             <h3 class="slide-title">{{ slide.title }}</h3>
-          }
-          @if (slide.subtitle) {
-            <p class="slide-subtitle">{{ slide.subtitle }}</p>
-          }
-
-          <!-- Body / Bullets -->
-          @if (slide.bullets.length) {
-            <ul class="slide-bullets">
-              @for (b of slide.bullets; track $index) {
-                <li>{{ b }}</li>
-              }
-            </ul>
-          } @else if (slide.body) {
-            <p class="slide-body">{{ slide.body | slice:0:200 }}{{ slide.body.length > 200 ? '...' : '' }}</p>
-          }
-
-          <!-- Columns (comparison) -->
-          @if (slide.leftColumn || slide.rightColumn) {
-            <div class="slide-columns">
-              @if (slide.leftColumn) {
-                <div class="slide-col">{{ slide.leftColumn | slice:0:100 }}</div>
-              }
-              @if (slide.rightColumn) {
-                <div class="slide-col">{{ slide.rightColumn | slice:0:100 }}</div>
-              }
-            </div>
-          }
-
-          <!-- Image hint -->
-          @if (slide.imageDescription) {
-            <div class="slide-image-hint">
-              <span class="image-icon">🖼</span>
-              <span>{{ slide.imageDescription | slice:0:80 }}</span>
-            </div>
-          }
-
-          <!-- Speaker notes indicator -->
-          @if (slide.notes) {
-            <div class="slide-notes-hint" title="{{ slide.notes }}">📝 Notizen</div>
           }
         </div>
       }

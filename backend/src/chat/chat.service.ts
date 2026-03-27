@@ -479,15 +479,17 @@ ${documentTexts.join('\n\n')}`;
     const model = this.settings.getModel();
 
     let response: OpenAI.Chat.Completions.ChatCompletion;
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userContent },
+    ];
+
     try {
       response = await client.chat.completions.create({
         model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent },
-        ],
+        messages,
         temperature: 0.5,
-        max_tokens: 16384,
+        max_tokens: 32768,
       });
     } catch (err: unknown) {
       const status = (err as { status?: number }).status;
@@ -498,6 +500,11 @@ ${documentTexts.join('\n\n')}`;
         );
       }
       throw err;
+    }
+
+    const finishReason = response.choices[0]?.finish_reason;
+    if (finishReason === 'length') {
+      this.logger.warn('LLM response was TRUNCATED (finish_reason=length) — output may be incomplete');
     }
 
     let markdown = response.choices[0]?.message?.content?.trim() ?? '';
@@ -595,16 +602,22 @@ KORREKTUR-REGELN:
           { role: 'user', content: markdown },
         ],
         temperature: 0.2,
-        max_tokens: 8192,
+        max_tokens: 16384,
       });
 
       const fixedMarkdown = response.choices[0]?.message?.content?.trim() ?? '';
       if (!fixedMarkdown) return { markdown, slides };
 
       const fixedSlides = this.parseMarkdown(fixedMarkdown);
-      if (fixedSlides.length > 0) {
+      // Reject the fix if it lost slides (truncated LLM response)
+      if (fixedSlides.length > 0 && fixedSlides.length >= slides.length - 1) {
         this.logger.log(`Structural fix applied: ${slides.length} → ${fixedSlides.length} slides`);
         return { markdown: fixedMarkdown, slides: fixedSlides };
+      }
+      if (fixedSlides.length < slides.length - 1) {
+        this.logger.warn(
+          `Structural fix REJECTED: would reduce slides from ${slides.length} to ${fixedSlides.length} (likely truncated)`,
+        );
       }
     } catch (err) {
       this.logger.warn(`Structural fix LLM call failed: ${err}`);
@@ -1001,7 +1014,7 @@ STRATEGISCHE FOLIENGESTALTUNG:
           { role: 'user', content: markdown },
         ],
         temperature: 0.3,
-        max_tokens: 4096,
+        max_tokens: 16384,
       });
 
       const fixedMarkdown = response.choices[0]?.message?.content?.trim() ?? '';
@@ -1010,12 +1023,17 @@ STRATEGISCHE FOLIENGESTALTUNG:
       }
 
       const fixedSlides = this.parseMarkdown(fixedMarkdown);
-      // Only accept the fix if it actually produced slides
-      if (fixedSlides.length > 0) {
+      // Accept the fix only if it didn't lose slides (truncation guard)
+      if (fixedSlides.length > 0 && fixedSlides.length >= slides.length - 1) {
         this.logger.log(
           `Readability fix applied: ${slides.length} → ${fixedSlides.length} slides`,
         );
         return { markdown: fixedMarkdown, slides: fixedSlides };
+      }
+      if (fixedSlides.length < slides.length - 1) {
+        this.logger.warn(
+          `Readability fix REJECTED: would reduce slides from ${slides.length} to ${fixedSlides.length} (likely truncated)`,
+        );
       }
     } catch (err) {
       this.logger.warn(`Readability fix LLM call failed: ${err}`);
