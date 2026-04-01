@@ -86,6 +86,7 @@ export class TemplatesController {
   setScope(
     @Param('id') id: string,
     @Body('scope') scope: string,
+    @Headers('x-session-id') sessionId?: string,
   ): TemplateInfoDto {
     if (scope !== 'global' && scope !== 'session') {
       throw new HttpException(
@@ -93,7 +94,7 @@ export class TemplatesController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const result = this.templatesService.setScope(id, scope as TemplateScope);
+    const result = this.templatesService.setScope(id, scope as TemplateScope, sessionId);
     if (!result) {
       throw new HttpException(
         { detail: 'Template nicht gefunden' },

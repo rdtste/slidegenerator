@@ -253,15 +253,26 @@ class PipelineOrchestrator:
             image_profile,
         )
 
-        try:
-            plan = await call_llm_structured_async(prompt, PresentationPlan, temperature=0.4)
-            plan.audience = self.audience
-            plan.image_style = self.image_style
-            plan.metadata.total_slides = len(plan.slides)
-            return plan
-        except Exception as exc:
-            logger.error(f"Stage 3 failed: {exc}")
-            raise
+        # Stage 3 produces large JSON — retry on parse failures
+        last_exc = None
+        for attempt in range(3):
+            try:
+                plan = await call_llm_structured_async(
+                    prompt, PresentationPlan,
+                    temperature=0.4 + (attempt * 0.1),
+                    max_tokens=32768,
+                )
+                plan.audience = self.audience
+                plan.image_style = self.image_style
+                plan.metadata.total_slides = len(plan.slides)
+                return plan
+            except Exception as exc:
+                last_exc = exc
+                logger.warning(f"Stage 3 attempt {attempt + 1}/3 failed: {exc}")
+                if attempt < 2:
+                    self._progress("stage_3", f"Retry {attempt + 2}/3...", 22 + attempt * 3)
+        logger.error(f"Stage 3 failed after 3 attempts: {last_exc}")
+        raise last_exc
 
     async def _stage_4_validate(self, plan: PresentationPlan,
                                  storyline: Storyline,

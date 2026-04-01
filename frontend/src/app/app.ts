@@ -170,6 +170,7 @@ export class App implements OnInit, OnDestroy {
 
   closeTemplateManager(): void {
     this.showTemplateManager.set(false);
+    this.loadTemplates();
   }
 
   private commitSlideEdit(): void {

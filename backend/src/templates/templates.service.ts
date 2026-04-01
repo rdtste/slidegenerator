@@ -171,7 +171,7 @@ export class TemplatesService {
     return true;
   }
 
-  setScope(templateId: string, scope: TemplateScope): TemplateInfoDto | null {
+  setScope(templateId: string, scope: TemplateScope, sessionId?: string): TemplateInfoDto | null {
     const filePath = this.getTemplatePath(templateId);
     if (!filePath) return null;
 
@@ -179,6 +179,8 @@ export class TemplatesService {
     meta.scope = scope;
     if (scope === 'global') {
       delete meta.sessionId;
+    } else if (sessionId) {
+      meta.sessionId = sessionId;
     }
     this.saveMeta(templateId, meta);
     this.logger.log(`Template scope changed: ${templateId} → ${scope}`);
