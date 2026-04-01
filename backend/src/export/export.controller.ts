@@ -61,6 +61,7 @@ export class ExportController {
       dto.accentColor,
       dto.fontFamily,
       dto.templateId,
+      dto.mode,
     );
     return { jobId };
   }
@@ -133,6 +134,7 @@ export class ExportController {
       dto.accentColor,
       dto.fontFamily,
       dto.templateId,
+      dto.mode,
     );
     return {
       jobId,
@@ -147,6 +149,7 @@ export class ExportController {
     status: string;
     progress: number;
     downloadUrl?: string;
+    error?: string;
   }> {
     const info = this.exportService.getJobInfo(jobId);
     const result: {
@@ -154,6 +157,7 @@ export class ExportController {
       status: string;
       progress: number;
       downloadUrl?: string;
+      error?: string;
     } = {
       jobId,
       status: info.status,
@@ -161,6 +165,9 @@ export class ExportController {
     };
     if (info.status === 'complete') {
       result.downloadUrl = `/api/v1/export/generate-deck/${jobId}/file`;
+    }
+    if (info.error) {
+      result.error = info.error;
     }
     return result;
   }

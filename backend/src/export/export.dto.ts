@@ -30,6 +30,11 @@ export class ExportV2RequestDto {
 
   @IsString()
   @IsOptional()
+  @IsIn(['design', 'template'])
+  mode?: string = 'design';
+
+  @IsString()
+  @IsOptional()
   documentText?: string;
 
   @IsString()
@@ -83,6 +88,11 @@ export class GenerateDeckRequestDto {
   @IsString()
   @IsNotEmpty()
   topic!: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['design', 'template'])
+  mode?: string = 'design';
 
   @IsString()
   @IsOptional()

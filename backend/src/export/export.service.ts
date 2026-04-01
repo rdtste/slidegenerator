@@ -20,6 +20,7 @@ interface ExportJob {
   filename: string;
   createdAt: number;
   progress: number;
+  errorDetail?: string;
 }
 
 interface PregenEntry {
@@ -149,6 +150,7 @@ export class ExportService {
     accentColor?: string,
     fontFamily?: string,
     templateId?: string,
+    mode?: string,
   ): Promise<string> {
     const jobId = randomUUID();
     const job: ExportJob = {
@@ -160,7 +162,7 @@ export class ExportService {
     };
     this.jobs.set(jobId, job);
 
-    this.processV2Job(jobId, prompt, documentText, audience, imageStyle, accentColor, fontFamily, templateId).catch((err) => {
+    this.processV2Job(jobId, prompt, documentText, audience, imageStyle, accentColor, fontFamily, templateId, mode).catch((err) => {
       let message: string;
       if (err instanceof Error) {
         message = err.message;
@@ -172,6 +174,7 @@ export class ExportService {
       this.logger.error(`V2 Job ${jobId} failed: ${message}`);
       if (job.status === 'processing') {
         job.status = 'error';
+        job.errorDetail = message;
         job.subject.next({ data: { step: 'error', detail: message, message }, type: 'fail' } as MessageEvent);
         job.subject.complete();
       }
@@ -189,6 +192,7 @@ export class ExportService {
     accentColor?: string,
     fontFamily?: string,
     templateId?: string,
+    mode?: string,
   ): Promise<void> {
     const job = this.jobs.get(jobId);
     if (!job) return;
@@ -207,6 +211,7 @@ export class ExportService {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt,
+            mode: mode || 'design',
             document_text: documentText || '',
             audience: audience || 'management',
             image_style: imageStyle || 'minimal',
@@ -279,6 +284,7 @@ export class ExportService {
           this.logger.log(`V2 Job ${jobId} complete: ${job.filename}`);
         } else if (eventType === 'fail') {
           job.status = 'error';
+          job.errorDetail = String(parsed['detail'] ?? 'Pipeline failed');
           job.subject.next({ data: parsed, type: 'fail' } as MessageEvent);
           job.subject.complete();
           this.logger.warn(`V2 Job ${jobId} failed: ${parsed['detail']}`);
@@ -295,6 +301,7 @@ export class ExportService {
 
     if (job.status === 'processing') {
       job.status = 'error';
+      job.errorDetail = 'V2 Pipeline Verbindung unterbrochen';
       job.subject.next({
         data: { step: 'error', detail: 'V2 Pipeline Verbindung unterbrochen', message: 'V2 Pipeline Verbindung unterbrochen' },
         type: 'fail',
@@ -478,7 +485,7 @@ export class ExportService {
     return job.subject.asObservable();
   }
 
-  getJobInfo(jobId: string): { status: string; progress: number } {
+  getJobInfo(jobId: string): { status: string; progress: number; error?: string } {
     const job = this.jobs.get(jobId);
     if (!job) {
       throw new HttpException({ detail: 'Job nicht gefunden' }, HttpStatus.NOT_FOUND);
@@ -486,6 +493,7 @@ export class ExportService {
     return {
       status: job.status,
       progress: job.progress ?? 0,
+      error: job.errorDetail,
     };
   }
 

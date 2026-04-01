@@ -9,9 +9,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 
 from app.config import settings
 from app.models.schemas import TemplateInfo
-from app.services.template_service import list_templates, get_template_path
-from app.services.theme_service import extract_theme, extract_structure, theme_to_css, TemplateTheme
-from app.services.profile_service import extract_profile
+from app.templates_mgmt.service import list_templates, get_template_path
+from app.templates_mgmt.theme import extract_theme, extract_structure, theme_to_css, TemplateTheme
+from app.templates_mgmt.profiler import extract_profile
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

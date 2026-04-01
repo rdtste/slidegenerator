@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.schemas.models import Audience, ImageStyleType
+from app.domain.models import GenerationMode
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,6 +28,7 @@ _generated_files: dict[str, str] = {}
 class GenerateV2Request(BaseModel):
     """Request body for V2 pipeline generation."""
     prompt: str = Field(..., description="User prompt / briefing text")
+    mode: str = Field("design", description="Generation mode: 'design' or 'template'")
     document_text: str = Field("", description="Extracted document text (optional)")
     audience: str = Field("management", description="Target audience")
     image_style: str = Field("minimal", description="Image style preference")
@@ -55,7 +57,20 @@ def _parse_image_style(value: str) -> ImageStyleType:
 
 @router.post("/generate-v2")
 async def generate_v2(request: GenerateV2Request):
-    """Generate a presentation using the V2 AI pipeline with SSE progress."""
+    """Generate a presentation using the V2 AI pipeline with SSE progress.
+
+    Supports two modes via the `mode` parameter:
+    - "design" (default): AI-driven pipeline for visually excellent presentations
+    - "template": Deterministic pipeline for corporate template filling
+    """
+    # Route to template mode if requested
+    try:
+        mode = GenerationMode(request.mode)
+    except ValueError:
+        mode = GenerationMode.DESIGN
+
+    if mode == GenerationMode.TEMPLATE:
+        return await _generate_template_mode(request)
 
     async def event_generator():
         from app.pipeline.orchestrator import PipelineOrchestrator
@@ -159,6 +174,115 @@ async def generate_v2(request: GenerateV2Request):
                 "slide_count": result.slide_count,
                 "design_score": design_score,
                 "design_fixes": design_fixes,
+            },
+        })
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+async def _generate_template_mode(request: GenerateV2Request):
+    """Handle Template Mode generation via the unified orchestrator.
+
+    Uses SSE streaming for progress, same protocol as Design Mode.
+    """
+
+    async def event_generator():
+        from app.generation.orchestrator import UnifiedOrchestrator
+        from app.domain.models import PresentationRequest, GenerationMode
+
+        unified_request = PresentationRequest(
+            prompt=request.prompt,
+            mode=GenerationMode.TEMPLATE,
+            template_id=request.template_id,
+            document_text=request.document_text,
+            audience=request.audience,
+            image_style=request.image_style,
+            accent_color=request.accent_color,
+            font_family=request.font_family,
+        )
+
+        # Validate
+        errors = unified_request.validate_for_mode()
+        if errors:
+            yield _sse_event("fail", {"detail": f"Validierung fehlgeschlagen: {'; '.join(errors)}"})
+            return
+
+        orchestrator = UnifiedOrchestrator()
+
+        # Wire up image generator
+        try:
+            from app.services.image_service import generate_image_async
+            from app.services._image_thread import run_image_gen_sync
+            orchestrator.set_image_generator(
+                lambda desc: run_image_gen_sync(desc, generate_image_async)
+            )
+        except Exception as exc:
+            logger.warning(f"Image generator not available: {exc}")
+
+        # Wire up chart generator
+        try:
+            from app.services.chart_service import generate_chart
+            orchestrator.set_chart_generator(
+                lambda data, color: generate_chart(data, colors=[color])
+            )
+        except Exception as exc:
+            logger.warning(f"Chart generator not available: {exc}")
+
+        # Use asyncio.Queue for real-time progress streaming
+        progress_queue: asyncio.Queue = asyncio.Queue()
+
+        def on_progress(step: str, message: str, pct: int | None) -> None:
+            progress_queue.put_nowait({"step": step, "message": message, "progress": pct})
+
+        orchestrator.set_progress_callback(on_progress)
+
+        # Run pipeline in background task
+        pipeline_result: dict = {"result": None, "error": None}
+
+        async def run_pipeline():
+            try:
+                pipeline_result["result"] = await orchestrator.generate(unified_request)
+            except Exception as exc:
+                pipeline_result["error"] = exc
+            finally:
+                await progress_queue.put(None)
+
+        task = asyncio.create_task(run_pipeline())
+
+        while True:
+            event = await progress_queue.get()
+            if event is None:
+                break
+            yield _sse_event("progress", event)
+
+        await task
+
+        if pipeline_result["error"]:
+            logger.exception("Template mode failed", exc_info=pipeline_result["error"])
+            yield _sse_event("fail", {
+                "detail": f"Template-Modus-Fehler: {str(pipeline_result['error'])[:500]}",
+            })
+            return
+
+        result = pipeline_result["result"]
+
+        # Store file for download
+        file_id = str(uuid.uuid4())
+        _generated_files[file_id] = result.pptx_path
+
+        yield _sse_event("complete", {
+            "fileId": file_id,
+            "filename": "presentation.pptx",
+            "progress": 100,
+            "message": "Praesentation erstellt (Template-Modus)!",
+            "quality": {
+                "passed": result.quality_passed,
+                "score": result.quality_score,
+                "slide_count": result.slide_count,
             },
         })
 

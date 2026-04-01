@@ -102,7 +102,9 @@ export class ApiService {
   }
 
   setTemplateScope(id: string, scope: 'global' | 'session'): Observable<TemplateInfo> {
-    return this.http.patch<TemplateInfo>(`${this.baseUrl}/templates/${id}/scope`, { scope });
+    return this.http.patch<TemplateInfo>(`${this.baseUrl}/templates/${id}/scope`, { scope }, {
+      headers: this.sessionHeaders(),
+    });
   }
 
   deleteTemplate(id: string): Observable<unknown> {
@@ -161,9 +163,11 @@ export class ApiService {
     fontFamily?: string,
     templateId?: string,
     documentText?: string,
+    mode?: string,
   ): Observable<{ jobId: string }> {
     return this.http.post<{ jobId: string }>(`${this.baseUrl}/export/start-v2`, {
       prompt,
+      mode: mode || 'design',
       documentText: documentText || '',
       audience,
       imageStyle,
