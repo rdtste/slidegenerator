@@ -187,6 +187,10 @@ def generate_pptx(
             ok_count = sum(1 for v in prefetched.values() if v is not None)
             _report_progress("image", f"{ok_count}/{len(image_descs)} Bilder bereit", 40)
 
+        # Pre-render content leak sanitization — same quality gate as V2
+        from app.validators.v1_content_leak_check import sanitize_presentation
+        sanitize_presentation(data)
+
         total = len(data.slides)
         for i, slide_data in enumerate(data.slides):
             progress = 40 + int((i / total) * 50)
@@ -878,10 +882,8 @@ def _handle_chart(slide, data: SlideContent) -> None:
             except Exception:
                 logger.exception("Failed to insert chart image")
 
-    # Last resort: put chart title/data description in text
-    content_ph = _find_content_placeholder(slide)
-    if content_ph:
-        content_ph.text = f"[Diagramm: {chart_data.get('title', data.title)}]"
+    # Last resort: leave content area empty — never show internal metadata as text
+    logger.warning("Chart could not be rendered and no fallback available for slide '%s'", data.title)
 
 
 def _load_template_profile() -> dict | None:

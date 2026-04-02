@@ -117,7 +117,9 @@ def _apply_single_fix(slide, issue: SlideIssue, prs: Presentation) -> bool:
     action = issue.fix_action
 
     try:
-        if action == "resize_image":
+        if action == "clear_content_leak":
+            return _fix_content_leak(slide, issue)
+        elif action == "resize_image":
             return _fix_resize_image(slide, issue)
         elif action == "crop_image":
             return _fix_crop_image(slide, issue)
@@ -142,6 +144,63 @@ def _apply_single_fix(slide, issue: SlideIssue, prs: Presentation) -> bool:
             f"({action}): {e}"
         )
         return False
+
+
+def _fix_content_leak(slide, issue: SlideIssue) -> bool:
+    """Clear shapes containing leaked descriptors, icon hints, or AI prompts.
+
+    Content leaks are the most critical issue — raw internal metadata visible
+    on the slide destroys user trust immediately.
+    """
+    import re
+
+    _LEAK_PATTERNS = [
+        re.compile(r'\b\w+\s+icon\b', re.IGNORECASE),
+        re.compile(r'\bicon\s+of\b', re.IGNORECASE),
+        re.compile(r'\b(stock\s+photo|stock\s+image)\b', re.IGNORECASE),
+        re.compile(r'\b(photorealistic|hyperrealistic|4k|8k)\b', re.IGNORECASE),
+        re.compile(r'\b(illustration\s+of|photo\s+of|image\s+of|picture\s+of)\b', re.IGNORECASE),
+        re.compile(r'\b(Bild\s+von|Foto\s+von|Darstellung\s+von)\b', re.IGNORECASE),
+        re.compile(r'\b(Symbol|Piktogramm)\s+(von|fuer|eines)\b', re.IGNORECASE),
+        re.compile(r'\[Diagramm:', re.IGNORECASE),
+        re.compile(r'\[.*?(placeholder|TODO|TBD).*?\]', re.IGNORECASE),
+        re.compile(r'\{.*?\}'),
+        re.compile(r'\bPLACEHOLDER\b', re.IGNORECASE),
+        re.compile(r'lorem\s+ipsum', re.IGNORECASE),
+    ]
+
+    changed = False
+    element_lower = issue.element.lower() if issue.element else ""
+
+    for shape in slide.shapes:
+        if not shape.has_text_frame:
+            continue
+
+        full_text = shape.text_frame.text
+        if not full_text or len(full_text) < 3:
+            continue
+
+        is_leak = False
+        for pattern in _LEAK_PATTERNS:
+            if pattern.search(full_text):
+                is_leak = True
+                break
+
+        # Also check if the shape text matches the issue description
+        if not is_leak and element_lower and element_lower in full_text.lower():
+            is_leak = True
+
+        if is_leak:
+            for para in shape.text_frame.paragraphs:
+                for run in para.runs:
+                    run.text = ""
+            logger.warning(
+                f"[PPTX Fixer] Cleared content leak on slide {issue.slide_number}: "
+                f"'{full_text[:60]}'"
+            )
+            changed = True
+
+    return changed
 
 
 def _fix_resize_image(slide, issue: SlideIssue) -> bool:
