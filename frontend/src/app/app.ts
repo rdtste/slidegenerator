@@ -99,6 +99,14 @@ export class App implements OnInit, OnDestroy {
   loadTemplates(): void {
     this.api.getTemplates().subscribe({
       next: (templates) => this.state.templates.set(templates),
+      error: () => {
+        // Retry once after 2s — backend may still be starting
+        setTimeout(() => {
+          this.api.getTemplates().subscribe({
+            next: (templates) => this.state.templates.set(templates),
+          });
+        }, 2000);
+      },
     });
   }
 
