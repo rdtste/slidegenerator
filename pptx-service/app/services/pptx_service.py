@@ -187,9 +187,31 @@ def generate_pptx(
             ok_count = sum(1 for v in prefetched.values() if v is not None)
             _report_progress("image", f"{ok_count}/{len(image_descs)} Bilder bereit", 40)
 
-        # Pre-render content leak sanitization — same quality gate as V2
+        # ── V1 Quality Pipeline (mirrors V2 validate → fix → preflight) ──
         from app.validators.v1_content_leak_check import sanitize_presentation
+        from app.validators.v1_slide_rules import validate_v1_presentation
+        from app.validators.v1_auto_fixes import auto_fix_presentation
+        from app.validators.v1_preflight import run_v1_preflight
+
+        # Step 1: Content leak sanitization
         sanitize_presentation(data)
+
+        # Step 2: Validate all slides (log findings)
+        findings = validate_v1_presentation(data)
+
+        # Step 3: Auto-fix fixable issues (truncate headlines, trim bullets, etc.)
+        if any(f.auto_fixable for f in findings):
+            auto_fix_presentation(data)
+
+        # Step 4: Preflight scoring (log warnings for low-quality slides)
+        preflight = run_v1_preflight(data)
+        if not preflight.passed:
+            _report_progress(
+                "warning",
+                f"Qualitätsprüfung: {len(preflight.failing_slides)} Folie(n) "
+                f"unter Schwellenwert (Ø {preflight.avg_score:.0f}/100)",
+                None,
+            )
 
         total = len(data.slides)
         for i, slide_data in enumerate(data.slides):

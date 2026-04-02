@@ -29,6 +29,10 @@ from app.schemas.models import (
 )
 from app.layouts.engine import LayoutEngine
 from app.renderers.pptx_renderer_v2 import PptxRendererV2
+from app.compression.content_compressor import compress_presentation
+from app.quality.quality_gate import QualityGate, GateResult, GateVerdict
+from app.quality.replan_engine import ReplanEngine
+from app.domain.models import CompressedSlideSpec
 
 logger = logging.getLogger(__name__)
 
@@ -115,16 +119,22 @@ class PipelineOrchestrator:
         plan, quality = await self._stage_4_validate(plan, storyline, briefing)
         logger.info(f"[Timing] Stage 4 (validate): {time.monotonic() - t0:.1f}s")
 
-        # ── Stage 4b: Preflight Quality Gate ──
-        self._progress("stage_4b", "Preflight-Qualitaetspruefung...", 38)
+        # ── Stage 4b: Content Compression ──
+        self._progress("stage_4b", "Inhalte werden komprimiert...", 35)
         t0 = time.monotonic()
-        preflight = self._stage_4b_preflight(plan)
-        if preflight.failing_slides:
+        compressed_slides = self._stage_4b_compress(plan)
+        logger.info(f"[Timing] Stage 4b (compression): {time.monotonic() - t0:.1f}s")
+
+        # ── Stage 4c: Hard Quality Gate + Replan ──
+        self._progress("stage_4c", "Qualitaetspruefung (Hard Gate)...", 38)
+        t0 = time.monotonic()
+        compressed_slides, gate_result = self._stage_4c_quality_gate(compressed_slides)
+        if not gate_result.passed:
             logger.warning(
-                f"[Pipeline] Preflight: {len(preflight.failing_slides)} slides below threshold "
-                f"(avg={preflight.avg_score:.0f}). Proceeding with warnings."
+                f"[Pipeline] Quality gate: {gate_result.blocked_count} slides blocked, "
+                f"replanned. Overall: {gate_result.overall_score:.0f}/100"
             )
-        logger.info(f"[Timing] Stage 4b (preflight): {time.monotonic() - t0:.1f}s")
+        logger.info(f"[Timing] Stage 4c (quality gate): {time.monotonic() - t0:.1f}s")
 
         # ── Stage 5: Content Filling ──
         self._progress("stage_5", "Texte werden finalisiert...", 40)
@@ -358,10 +368,57 @@ class PipelineOrchestrator:
             logger.warning(f"LLM regeneration failed for slide {slide_idx + 1}: {exc}")
             return None
 
-    def _stage_4b_preflight(self, plan: PresentationPlan):
-        """Run preflight quality gate — score each slide before content fill."""
-        from app.validators.preflight import run_preflight
-        return run_preflight(plan)
+    def _stage_4b_compress(self, plan: PresentationPlan) -> list[CompressedSlideSpec]:
+        """Compress all slides — semantic reduction, not truncation."""
+        return compress_presentation(plan)
+
+    def _stage_4c_quality_gate(
+        self, slides: list[CompressedSlideSpec],
+    ) -> tuple[list[CompressedSlideSpec], GateResult]:
+        """Hard quality gate with replan loop.
+
+        Score < 70 = BLOCK. Blocked slides go through the replan engine
+        (reduce → switch layout → split → escalate) up to 3 attempts.
+        """
+        gate = QualityGate()
+        replan = ReplanEngine()
+
+        result = gate.evaluate(slides)
+        if result.passed:
+            return slides, result
+
+        # Replan loop for blocked slides
+        for attempt in range(3):
+            if not result.blocked_slides:
+                break
+
+            self._progress(
+                "stage_4c",
+                f"Replan Versuch {attempt + 1}/3 "
+                f"({result.blocked_count} Folien)...",
+                39,
+            )
+
+            new_slides: list[CompressedSlideSpec] = []
+            for i, slide in enumerate(slides):
+                slide_result = result.slide_results[i] if i < len(result.slide_results) else None
+                if slide_result and slide_result.blocked:
+                    hint = replan.get_next_action(slide_result.replan_hint, attempt)
+                    replanned = replan.replan_slide(slide, hint=hint, attempt=attempt)
+                    new_slides.extend(replanned)
+                else:
+                    new_slides.append(slide)
+
+            # Re-number positions
+            for j, s in enumerate(new_slides):
+                s.position = j + 1
+
+            slides = new_slides
+            result = gate.evaluate(slides)
+            if result.passed:
+                break
+
+        return slides, result
 
     async def _stage_5_fill_content(self, plan: PresentationPlan) -> list[FilledSlide]:
         from app.prompts.content_filler_prompt import build_content_filler_prompt
