@@ -115,6 +115,17 @@ class PipelineOrchestrator:
         plan, quality = await self._stage_4_validate(plan, storyline, briefing)
         logger.info(f"[Timing] Stage 4 (validate): {time.monotonic() - t0:.1f}s")
 
+        # ── Stage 4b: Preflight Quality Gate ──
+        self._progress("stage_4b", "Preflight-Qualitaetspruefung...", 38)
+        t0 = time.monotonic()
+        preflight = self._stage_4b_preflight(plan)
+        if preflight.failing_slides:
+            logger.warning(
+                f"[Pipeline] Preflight: {len(preflight.failing_slides)} slides below threshold "
+                f"(avg={preflight.avg_score:.0f}). Proceeding with warnings."
+            )
+        logger.info(f"[Timing] Stage 4b (preflight): {time.monotonic() - t0:.1f}s")
+
         # ── Stage 5: Content Filling ──
         self._progress("stage_5", "Texte werden finalisiert...", 40)
         t0 = time.monotonic()
@@ -346,6 +357,11 @@ class PipelineOrchestrator:
         except Exception as exc:
             logger.warning(f"LLM regeneration failed for slide {slide_idx + 1}: {exc}")
             return None
+
+    def _stage_4b_preflight(self, plan: PresentationPlan):
+        """Run preflight quality gate — score each slide before content fill."""
+        from app.validators.preflight import run_preflight
+        return run_preflight(plan)
 
     async def _stage_5_fill_content(self, plan: PresentationPlan) -> list[FilledSlide]:
         from app.prompts.content_filler_prompt import build_content_filler_prompt

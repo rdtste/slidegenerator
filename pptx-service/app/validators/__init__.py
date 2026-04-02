@@ -11,8 +11,10 @@ from app.schemas.models import (
 
 from .deck_rules import validate_deck
 from .slide_rules import validate_slide
+from .composition_rules import validate_composition
+from .preflight import run_preflight
 
-__all__ = ["validate_plan", "validate_slide", "validate_deck"]
+__all__ = ["validate_plan", "validate_slide", "validate_deck", "validate_composition", "run_preflight"]
 
 
 def validate_plan(plan: PresentationPlan) -> QualityReport:
@@ -29,6 +31,8 @@ def validate_plan(plan: PresentationPlan) -> QualityReport:
     # -- slide-level checks ----------------------------------------------------
     for idx, slide in enumerate(plan.slides):
         slide_findings = validate_slide(slide, idx)
+        # Composition rules (visual quality enforcement)
+        slide_findings.extend(validate_composition(slide, idx))
         if slide_findings:
             report.slide_findings.append(
                 SlideFinding(slide_index=idx, findings=slide_findings)

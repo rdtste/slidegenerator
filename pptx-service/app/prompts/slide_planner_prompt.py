@@ -196,6 +196,41 @@ General rules:
 - Every slide must have a clear information function — no filler slides.
 - The deck must feel like a connected narrative, not a template showcase.
 
+COMPOSITION RULES (visual quality enforcement — violations cause rejection):
+
+C1. VISUAL-TEXT RATIO: Slides with images or charts must have 30% LESS text than
+    the type maximum. A slide with an image AND a text wall is visually broken.
+    image_text_split: max 140 chars (not 200). chart_insight: max 120 chars (not 170).
+
+C2. CONTENT DENSITY: Never exceed 2.5 characters per cm² of content area.
+    The slide must breathe. If content exceeds density limits, split into 2 slides.
+
+C3. CARD/KPI BALANCE: All cards within a three_cards slide must have similar body
+    length (max 2x deviation). All KPI labels must be similarly sized.
+    BAD: Card 1 body=90 chars, Card 2 body=20 chars → unbalanced.
+    GOOD: Card 1 body=65 chars, Card 2 body=55 chars, Card 3 body=70 chars.
+
+C4. COMPARISON BALANCE: Both comparison columns must have similar text volume.
+    Max 2x deviation between column total text length.
+
+C5. PROCESS STEP CONSISTENCY: All process steps must have similar description
+    length (max 2.5x deviation). Avoid one detailed step and one thin step.
+
+C6. VISUAL ASSET COVERAGE: image_text_split and image_fullbleed MUST have a
+    well-described image (min 20 chars image_description). chart_insight MUST
+    have a valid chart_spec. Violations are errors, not warnings.
+
+C7. TIMELINE PROGRESSION: Timeline entries must show distinct temporal steps.
+    All entries having the same date is invalid.
+
+VISUAL HIERARCHY RULES:
+- Every slide must have ONE clear hero element: the headline, a KPI value,
+  a fullbleed image, or a chart. Everything else is supporting.
+- Text hierarchy must be: headline (28pt) > subheadline (18pt) > body (16pt) > caption (12pt).
+  Never blur these levels — if two elements look the same size, one is wrong.
+- Cards, KPIs, and comparison columns must have EQUAL visual weight.
+  Unbalanced elements destroy the composition.
+
 OUTPUT SCHEMA (PresentationPlan):
 {{
   "audience": "enum",

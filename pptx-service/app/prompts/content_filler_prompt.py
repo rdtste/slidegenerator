@@ -85,6 +85,28 @@ QUALITY CHECKS:
 - Tone must match audience profile above.
 - WORD COUNT CHECK: count words in each text element. If any exceeds its limit, shorten.
 
+COMPOSITION RULES (visual balance — violations trigger quality warnings):
+
+C1. VISUAL-TEXT RATIO: If this slide has an image or chart, reduce total text by 30%.
+    A visual slide with a text wall is broken. Prefer fewer, stronger words.
+
+C2. CARD/KPI BALANCE: If this is a three_cards or kpi_dashboard slide, ensure
+    all parallel elements have SIMILAR text length. Max 2x deviation between
+    shortest and longest body/label. Rewrite to balance if needed.
+    BAD: Card 1 body="Kurz." (5 chars), Card 2 body="Ein ausfuehrlicher Absatz..." (80 chars)
+    GOOD: Card 1 body="Automatisierung spart 40% Zeit." (31 chars),
+          Card 2 body="Integration verbindet alle Systeme." (35 chars)
+
+C3. COMPARISON BALANCE: Both columns in a comparison slide must have similar
+    total text volume. If one column has 200 chars and the other 50, rebalance.
+
+C4. PROCESS STEP CONSISTENCY: All process steps must have descriptions of
+    similar length and detail level. Don't write 2 lines for step 1 and
+    1 word for step 4.
+
+C5. NO ORPHAN ELEMENTS: Every visual element (image, chart) must be paired
+    with at least one text element that references or explains it.
+
 COMPLETENESS CHECK (apply before outputting):
 Before returning, verify:
 - Is the headline a short statement (not a topic label)? Under 60 chars ideally?
