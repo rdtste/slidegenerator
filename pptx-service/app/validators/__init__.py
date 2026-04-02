@@ -12,9 +12,10 @@ from app.schemas.models import (
 from .deck_rules import validate_deck
 from .slide_rules import validate_slide
 from .composition_rules import validate_composition
+from .content_leak_rules import validate_content_leaks
 from .preflight import run_preflight
 
-__all__ = ["validate_plan", "validate_slide", "validate_deck", "validate_composition", "run_preflight"]
+__all__ = ["validate_plan", "validate_slide", "validate_deck", "validate_composition", "validate_content_leaks", "run_preflight"]
 
 
 def validate_plan(plan: PresentationPlan) -> QualityReport:
@@ -33,6 +34,8 @@ def validate_plan(plan: PresentationPlan) -> QualityReport:
         slide_findings = validate_slide(slide, idx)
         # Composition rules (visual quality enforcement)
         slide_findings.extend(validate_composition(slide, idx))
+        # Content leak detection (descriptors, placeholders, metadata in visible text)
+        slide_findings.extend(validate_content_leaks(slide, idx))
         if slide_findings:
             report.slide_findings.append(
                 SlideFinding(slide_index=idx, findings=slide_findings)

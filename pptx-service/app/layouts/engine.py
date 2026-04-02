@@ -136,7 +136,10 @@ class LayoutEngine:
             elif el.key.startswith("card_icon_"):
                 idx = int(el.key.split("_")[-1])
                 if idx < len(cards) and cards[idx].icon_hint:
-                    instr.elements.append(self._text_element(el, cards[idx].icon_hint, mods))
+                    from app.utils.icon_resolver import resolve_icon_hint
+                    emoji = resolve_icon_hint(cards[idx].icon_hint)
+                    if emoji:
+                        instr.elements.append(self._text_element(el, emoji, mods))
             elif el.key.startswith("card_title_"):
                 idx = int(el.key.split("_")[-1])
                 if idx < len(cards):

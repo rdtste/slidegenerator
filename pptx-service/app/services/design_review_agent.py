@@ -558,6 +558,19 @@ class DesignReviewAgent:
                     element.style.font_color = new_color
                     return True
 
+            elif category == "CONTENT_LEAK":
+                # Content leak detected by Vision — remove the leaking element
+                # by clearing its content and shrinking to zero
+                if element.position:
+                    element.position.width_cm = 0
+                    element.position.height_cm = 0
+                    element.content = ""
+                    logger.warning(
+                        f"[DesignReview] CONTENT LEAK on slide {fix.slide_index + 1}: "
+                        f"{fix.issue}"
+                    )
+                    return True
+
             elif category == "REMOVE":
                 # We don't actually remove — just make invisible by shrinking
                 if element.position:

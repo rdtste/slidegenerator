@@ -592,24 +592,21 @@ class PptxRendererV2:
             self._render_image_placeholder(slide, pos, description)
 
     def _render_image_placeholder(self, slide, pos, description: str) -> None:
-        """Render a styled placeholder when image generation is unavailable."""
+        """Render a clean visual placeholder when image generation is unavailable.
+
+        IMPORTANT: Never show the raw image_description text on the slide.
+        The description is internal metadata for image generation, not content.
+        """
         shape = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE,
             Cm(pos.left_cm), Cm(pos.top_cm),
             Cm(pos.width_cm), Cm(pos.height_cm),
         )
+        # Subtle dark gradient-like background — professional placeholder
         shape.fill.solid()
-        shape.fill.fore_color.rgb = RGBColor(0x1f, 0x24, 0x2b)
+        shape.fill.fore_color.rgb = RGBColor(0xf0, 0xf0, 0xf5)
         shape.line.fill.background()
         shape.adjustments[0] = 0.02
-
-        tf = shape.text_frame
-        tf.word_wrap = True
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-
-        pb = _ParagraphBuilder(tf.paragraphs[0], self.font)
-        pb.align("center")
-        pb.add_run(f"\U0001F5BC  {description[:70]}", 12, "#9ca3af")
 
     # ── Chart rendering ───────────────────────────────────────
 
@@ -633,6 +630,10 @@ class PptxRendererV2:
             logger.warning(f"Chart generation failed: {exc}")
 
     def _render_chart_placeholder(self, slide, pos) -> None:
+        """Render a clean placeholder for charts that couldn't be generated.
+
+        IMPORTANT: No internal labels or descriptors on the slide.
+        """
         shape = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE,
             Cm(pos.left_cm), Cm(pos.top_cm),
@@ -642,13 +643,6 @@ class PptxRendererV2:
         shape.fill.fore_color.rgb = RGBColor(0xf3, 0xf4, 0xf6)
         shape.line.fill.background()
         shape.adjustments[0] = 0.02
-
-        tf = shape.text_frame
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-
-        pb = _ParagraphBuilder(tf.paragraphs[0], self.font)
-        pb.align("center")
-        pb.add_run("\U0001F4CA  Chart", 14, "#9ca3af")
 
     # ── Color resolution ──────────────────────────────────────
 

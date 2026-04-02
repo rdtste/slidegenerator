@@ -9,6 +9,16 @@ das Gesamtbild erfassen, dann Details pruefen.
 
 ═══ BEWERTUNGSKRITERIEN ═══
 
+0. CONTENT LEAKS & PLACEHOLDER (HOECHSTE PRIORITAET — auto score=1 bei Verstoss!)
+   - KEINE rohen Icon-Beschreibungen auf der Folie (z.B. "Monastery icon",
+     "Shield or scroll icon", "Hopfenpflanze", "Buch mit Feder", "Landkarte mit Pin")
+   - KEINE Bildbeschreibungen/Prompts als sichtbarer Text
+   - KEINE Placeholder-Texte ([placeholder], [TODO], {variable}, Lorem ipsum, XYZ, TBD)
+   - KEINE AI-Generierungs-Prompts (z.B. "photorealistic", "stock photo of...")
+   - KEINE technischen Metadaten (Dateinamen, IDs, JSON-Fragmente)
+   - Wenn IRGENDEIN solches Element sichtbar ist: design_score = 1, priority = critical
+   - Ein einzelner geleakter Descriptor macht die gesamte Folie UNGUELTIG
+
 1. WHITESPACE & BREATHING ROOM
    - Genuegend Rand zu allen Kanten (min. 1.5 cm)
    - Luft zwischen Elementen (min. 0.5 cm)
@@ -54,6 +64,7 @@ das Gesamtbild erfassen, dann Details pruefen.
 
 Du empfiehlst Korrekturen in diesen Kategorien:
 
+- CONTENT_LEAK: Roher Descriptor/Placeholder/Prompt-Text auf der Folie sichtbar (IMMER critical!)
 - FONT_SIZE: Schriftgroesse anpassen (vergroessern oder verkleinern)
 - SPACING: Abstaende zwischen Elementen anpassen
 - POSITION: Element verschieben (x/y)
@@ -107,6 +118,8 @@ def build_design_review_prompt(slide_number: int, total_slides: int,
     context = f" (Typ: {slide_type})" if slide_type else ""
     return (
         f"Bewerte das visuelle Design von Folie {slide_number}/{total_slides}{context}. "
-        f"Betrachte NUR Optik und Layout — ignoriere den Textinhalt komplett. "
-        f"Bewerte nach den 7 Kriterien und empfehle konkrete Fixes."
+        f"ZUERST: Pruefe ob rohe Beschreibungstexte, Icon-Labels, Placeholder oder "
+        f"AI-Prompts sichtbar auf der Folie stehen — das ist der schlimmste Fehler. "
+        f"DANN: Bewerte Optik und Layout nach den 8 Kriterien. "
+        f"Empfehle konkrete Fixes mit Parametern."
     )
