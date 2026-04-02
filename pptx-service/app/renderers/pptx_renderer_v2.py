@@ -370,8 +370,8 @@ class PptxRendererV2:
             except Exception as exc:
                 logger.warning(f"Template '{self.template_id}' failed, using blank: {exc}")
         prs = Presentation()
-        prs.slide_width = Cm(25.4)
-        prs.slide_height = Cm(19.05)
+        prs.slide_width = Cm(33.867)  # 16:9 widescreen (13.333")
+        prs.slide_height = Cm(19.05)  # 7.5"
         return prs
 
     def _remove_all_slides(self, prs: Presentation) -> None:

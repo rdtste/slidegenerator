@@ -46,10 +46,10 @@ class ColorPalette:
 
 @dataclass(frozen=True)
 class SpacingTokens:
-    """Spatial tokens in cm for the 25.4 x 19.05 cm slide canvas."""
+    """Spatial tokens in cm for the 33.867 x 19.05 cm slide canvas (16:9 widescreen)."""
 
-    # Canvas
-    slide_width: float = 25.4
+    # Canvas (16:9 = 13.333" x 7.5" = 33.867 x 19.05 cm)
+    slide_width: float = 33.867
     slide_height: float = 19.05
 
     # Margins & padding
@@ -61,19 +61,19 @@ class SpacingTokens:
     headline_height: float = 2.2
     body_top: float = 5.2       # where body content begins (after headline + whitespace)
 
-    # Card system
-    card_width: float = 6.4
-    card_gap: float = 1.0
-    card_inner_padding: float = 0.7
+    # Card system (3 cards: 3*9.0 + 2*1.2 = 29.4 ≈ content_width 29.467)
+    card_width: float = 9.0
+    card_gap: float = 1.2
+    card_inner_padding: float = 0.8
     card_corner_radius: float = 0.4
 
-    # Comparison columns
-    column_width: float = 9.8
-    column_gap: float = 1.2
+    # Comparison columns (2 cols: 2*14.0 + 1.5 = 29.5 ≈ content_width)
+    column_width: float = 14.0
+    column_gap: float = 1.5
 
-    # Process steps
-    step_box_width: float = 4.8
-    step_box_gap: float = 0.7   # derived: 5.5 - 4.8
+    # Process steps (4 steps: 4*6.7 + 3*0.9 = 29.5 ≈ content_width)
+    step_box_width: float = 6.7
+    step_box_gap: float = 0.9
     step_number_size: float = 1.6
     step_number_radius: float = 0.8
 
