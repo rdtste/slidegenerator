@@ -1103,3 +1103,75 @@
     max-width: 100%;
   }
 }
+
+// ── Markdown Import ────────────────────────────────────────
+.markdown-import-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  overflow: hidden;
+
+  .import-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+  }
+
+  .import-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+
+    code {
+      background: var(--bg-secondary);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.8rem;
+    }
+  }
+
+  .markdown-import-textarea {
+    flex: 1;
+    min-height: 250px;
+    padding: 14px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text);
+    resize: none;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  }
+
+  .import-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.btn-import {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bg-tertiary, #e5e7eb);
+  }
+}

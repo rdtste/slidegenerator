@@ -228,10 +228,34 @@
     <!-- Step 2: Erstellen -->
     @if (state.currentStep() === 2) {
       <div class="step-content chat-step">
-        <app-chat />
+        @if (showMarkdownImport()) {
+          <div class="markdown-import-panel">
+            <div class="import-header">
+              <h3>Markdown importieren</h3>
+              <button class="btn-sm btn-cancel" (click)="showMarkdownImport.set(false)">Abbrechen</button>
+            </div>
+            <p class="import-hint">Folien mit <code>---</code> trennen. Titel mit <code># </code>, Aufzaehlungen mit <code>- </code>.</p>
+            <textarea
+              class="markdown-import-textarea"
+              [(ngModel)]="markdownImportValue"
+              placeholder="# Titel der Praesentation&#10;Untertitel hier&#10;&#10;---&#10;&#10;# Zweite Folie&#10;- Erster Punkt&#10;- Zweiter Punkt&#10;&#10;---&#10;&#10;# Dritte Folie&#10;Beliebiger Inhalt"
+              rows="16"
+            ></textarea>
+            <div class="import-actions">
+              <button class="btn-primary" (click)="importMarkdown()" [disabled]="!markdownImportValue().trim()">
+                Importieren und weiter
+              </button>
+            </div>
+          </div>
+        } @else {
+          <app-chat />
+        }
         <div class="step-nav pad">
           <button class="btn-back" (click)="goToStep(1)">← Einrichten</button>
-          <button class="btn-next" (click)="goToStep(3)" [disabled]="!state.hasMarkdown()">Weiter: Prüfen →</button>
+          @if (!showMarkdownImport()) {
+            <button class="btn-import" (click)="showMarkdownImport.set(true)">Markdown importieren</button>
+          }
+          <button class="btn-next" (click)="goToStep(3)" [disabled]="!state.hasMarkdown()">Weiter: Pruefen →</button>
         </div>
       </div>
     }

@@ -24,6 +24,8 @@ export class App implements OnInit, OnDestroy {
   readonly slideEditValue = signal('');
   readonly copied = signal(false);
   readonly showTemplateManager = signal(false);
+  readonly showMarkdownImport = signal(false);
+  readonly markdownImportValue = signal('');
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
 
@@ -180,6 +182,47 @@ export class App implements OnInit, OnDestroy {
     }
     this.state.reset();
     this.templateProfile.set(undefined);
+  }
+
+  importMarkdown(): void {
+    const md = this.markdownImportValue().trim();
+    if (!md) return;
+
+    this.state.updateMarkdown(md);
+    this.state.briefing.set('Manueller Markdown-Import');
+
+    // Parse slides from markdown
+    const withoutFrontmatter = md.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
+    const chunks = withoutFrontmatter.split(/^\s*---\s*$/m).filter((s: string) => s.trim());
+    const slides = chunks.map((chunk: string) => {
+      const lines = chunk.trim().split('\n');
+      const titleLine = lines.find((l: string) => l.startsWith('# '));
+      const title = titleLine ? titleLine.replace(/^#+\s*/, '') : 'Folie';
+      const bullets = lines
+        .filter((l: string) => l.startsWith('- '))
+        .map((l: string) => l.replace(/^-\s*/, ''));
+      const body = lines
+        .filter((l: string) => !l.startsWith('#') && !l.startsWith('-') && !l.startsWith('<!--') && l.trim())
+        .join(' ')
+        .trim();
+      return {
+        layout: 'content',
+        title,
+        subtitle: '',
+        body,
+        bullets,
+        notes: '',
+        imageDescription: '',
+        chartData: '',
+        leftColumn: '',
+        rightColumn: '',
+      };
+    });
+
+    this.state.slides.set(slides);
+    this.showMarkdownImport.set(false);
+    this.markdownImportValue.set('');
+    this.state.currentStep.set(3);
   }
 
   openTemplateManager(): void {
