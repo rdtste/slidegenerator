@@ -96,16 +96,26 @@ export class App implements OnInit, OnDestroy {
     this.loadTemplates();
   }
 
+  private templateRetryCount = 0;
+
   loadTemplates(): void {
     this.api.getTemplates().subscribe({
-      next: (templates) => this.state.templates.set(templates),
+      next: (templates) => {
+        this.state.templates.set(templates);
+        // GCS FUSE may not be ready yet — if only the default template is returned,
+        // retry up to 3 times with increasing delay
+        const hasRealTemplates = templates.some((t) => t.id !== 'default');
+        if (!hasRealTemplates && this.templateRetryCount < 3) {
+          this.templateRetryCount++;
+          const delay = this.templateRetryCount * 2000;
+          setTimeout(() => this.loadTemplates(), delay);
+        }
+      },
       error: () => {
-        // Retry once after 2s — backend may still be starting
-        setTimeout(() => {
-          this.api.getTemplates().subscribe({
-            next: (templates) => this.state.templates.set(templates),
-          });
-        }, 2000);
+        if (this.templateRetryCount < 3) {
+          this.templateRetryCount++;
+          setTimeout(() => this.loadTemplates(), 2000);
+        }
       },
     });
   }

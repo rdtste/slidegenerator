@@ -106,9 +106,15 @@ export class TemplatesService {
   }
 
   listTemplates(sessionId?: string): TemplateInfoDto[] {
-    const files = fs.readdirSync(this.templatesDir)
-      .filter((f) => f.endsWith('.pptx') || f.endsWith('.potx'))
-      .sort();
+    let files: string[];
+    try {
+      files = fs.readdirSync(this.templatesDir)
+        .filter((f) => f.endsWith('.pptx') || f.endsWith('.potx'))
+        .sort();
+    } catch (err) {
+      this.logger.warn(`Failed to read templates dir: ${err}`);
+      files = [];
+    }
 
     const all = files.map((f) => this.inspectTemplate(f)).filter(Boolean) as TemplateInfoDto[];
 
@@ -117,15 +123,14 @@ export class TemplatesService {
       t.scope === 'global' || (sessionId && t.sessionId === sessionId),
     );
 
-    if (templates.length === 0) {
-      templates.push({
-        id: 'default',
-        name: 'Standard (Blank)',
-        description: 'Standard-PowerPoint-Template ohne Branding',
-        layouts: [],
-        scope: 'global',
-      });
-    }
+    // Always include the default template as first option
+    templates.unshift({
+      id: 'default',
+      name: 'Standard (Blank)',
+      description: 'Standard-PowerPoint-Template ohne Branding',
+      layouts: [],
+      scope: 'global',
+    });
 
     return templates;
   }
