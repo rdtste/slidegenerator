@@ -463,12 +463,9 @@
                               }
                             }
                             @if (kp.status !== 'covered') {
-                              <button class="coverage-fix-btn" (click)="suggestFromCoverage(kp)">Integrieren</button>
+                              <button class="coverage-fix-btn" (click)="prefillFromCoverage(kp.point)">Folie ergänzen</button>
                             }
                           </span>
-                          @if (kp.status !== 'covered') {
-                            <button class="coverage-fix-btn" (click)="prefillFromCoverage(kp.point)">Folie ergänzen</button>
-                          }
                         </div>
                       </div>
                     }

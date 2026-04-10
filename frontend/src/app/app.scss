@@ -619,7 +619,7 @@
 
 .audience-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
 }
 
@@ -667,7 +667,7 @@
 
 .image-style-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 12px;
 }
 
@@ -1519,6 +1519,7 @@
 
 .step-nav-start {
   gap: 10px;
+  justify-content: flex-end;
 }
 
 .btn-notes-start {
