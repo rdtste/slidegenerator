@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, computed, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
 
@@ -22,6 +22,10 @@ export class ExportPanel implements OnDestroy {
   readonly exportProgress = signal(0);
   readonly exportMessage = signal('');
   readonly progressEntries = signal<ProgressEntry[]>([]);
+  readonly retryAvailable = computed(() => {
+    const status = this.exportStatus();
+    return !this.exporting() && (status.startsWith('Fehler') || status.includes('verloren'));
+  });
 
   private eventSource: EventSource | null = null;
   private currentActiveKey = '';
@@ -320,6 +324,8 @@ export class ExportPanel implements OnDestroy {
     if (!markdown) return;
 
     this.exporting.set(true);
+    this.exportProgress.set(0);
+    this.progressEntries.set([{ icon: '📄', label: `${format.toUpperCase()} wird erstellt…`, status: 'active' }]);
     this.exportStatus.set(`${format.toUpperCase()} wird aus ${this.state.slides().length} Folien erstellt…`);
 
     this.api.exportPresentation(markdown, this.state.selectedTemplateId(), format).subscribe({
@@ -328,10 +334,13 @@ export class ExportPanel implements OnDestroy {
         if (!blob) return;
         const ext = format === 'pptx' ? '.pptx' : '.pdf';
         this.triggerDownload(blob, `presentation${ext}`);
+        this.exportProgress.set(100);
+        this.finishAllEntries();
         this.exportStatus.set(`${format.toUpperCase()} heruntergeladen.`);
         this.exporting.set(false);
       },
       error: (err) => {
+        this.progressEntries.set([]);
         this.exportStatus.set(`Fehler: ${err.error?.detail ?? err.message}`);
         this.exporting.set(false);
       },
