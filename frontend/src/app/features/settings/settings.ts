@@ -15,6 +15,7 @@ export class Settings implements OnInit, OnDestroy {
 
   readonly open = signal(false);
   readonly saving = signal(false);
+  readonly saved = signal(false);
   readonly status = signal('');
 
   readonly gcpProjectId = signal('');
@@ -74,9 +75,10 @@ export class Settings implements OnInit, OnDestroy {
       model: this.model(),
     }).subscribe({
       next: () => {
-        this.status.set('Gespeichert.');
         this.saving.set(false);
-        setTimeout(() => this.status.set(''), 2000);
+        this.saved.set(true);
+        this.status.set('');
+        setTimeout(() => this.saved.set(false), 2000);
       },
       error: (err) => {
         this.status.set(`Fehler: ${err.error?.detail ?? err.message}`);
