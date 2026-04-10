@@ -37,6 +37,15 @@
     font-weight: 700;
     color: var(--primary);
     margin: 0;
+
+    &.logo {
+      cursor: pointer;
+      transition: opacity 0.15s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
   }
 
   .subtitle {
