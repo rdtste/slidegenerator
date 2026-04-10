@@ -26,7 +26,7 @@
       <div class="progress-bar-track">
         <div class="progress-bar-fill" [style.width.%]="exportProgress()"></div>
       </div>
-      <div class="progress-message">{{ exportMessage() }}</div>
+      <div class="progress-message" aria-live="polite">{{ exportMessage() }}</div>
       <div class="progress-log">
         @for (entry of progressEntries(); track $index) {
           <div class="progress-entry" [class.done]="entry.status === 'done'" [class.active]="entry.status === 'active'">
@@ -44,5 +44,8 @@
     </div>
   }
 
-  <div class="status" [class.success]="isSuccess()" [class.warning]="isWarning()" [class.error]="isError()">{{ exportStatus() }}</div>
+  <div class="status" role="status" [class.success]="isSuccess()" [class.warning]="isWarning()" [class.error]="isError()">{{ exportStatus() }}</div>
+  @if (retryAvailable()) {
+    <button class="btn-retry" (click)="downloadV2()">Erneut versuchen</button>
+  }
 </div>
