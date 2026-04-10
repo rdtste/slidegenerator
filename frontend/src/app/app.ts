@@ -224,6 +224,7 @@ export class App implements OnInit, OnDestroy {
     this.state.reset();
     this.templateProfile.set(undefined);
     this.notesCoverage.set(undefined);
+    this.coverageOpen.set(false);
     this.refineInstruction.set('');
   }
 
