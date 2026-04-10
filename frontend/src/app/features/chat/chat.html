@@ -8,6 +8,13 @@
         }
       </div>
     }
+    @if (!conversing() && !state.hasMarkdown() && state.messages().length <= 1 && !state.loading()) {
+      <div class="example-prompts">
+        @for (example of examplePrompts; track $index) {
+          <button class="example-prompt" (click)="useExample(example)">{{ example }}</button>
+        }
+      </div>
+    }
     @if (state.loading()) {
       <div class="message assistant loading">
         {{ conversing() ? 'Einen Moment...' : (generationPhase() || 'Generiere Folien…') }}
@@ -58,5 +65,6 @@
         }
       </button>
     </div>
+    <div class="char-count">{{ prompt().length }} Zeichen</div>
   </div>
 </div>

@@ -32,6 +32,12 @@ export class Chat implements OnDestroy {
   private phaseInterval: ReturnType<typeof setInterval> | null = null;
   private lastPrompt = '';
 
+  readonly examplePrompts = [
+    'Erstelle eine 10-seitige Quartalsreview mit Kennzahlen und Diagrammen',
+    'Workshop-Agenda für Design Thinking mit interaktiven Übungen',
+    'Kundenpitch für ein SaaS-Produkt mit Wettbewerbsvergleich',
+  ];
+
   private lastMessageCount = 0;
   private lastLoading = false;
 
@@ -106,14 +112,18 @@ export class Chat implements OnDestroy {
   }
 
   retry(): void {
-    // Remove the last error message and re-populate the prompt
     const msgs = this.state.messages();
     if (msgs.length && msgs[msgs.length - 1].role === 'error') {
       this.state.messages.set(msgs.slice(0, -1));
     }
     if (this.lastPrompt) {
       this.prompt.set(this.lastPrompt);
+      this.send();
     }
+  }
+
+  useExample(example: string): void {
+    this.prompt.set(example);
   }
 
   skipConversation(): void {
