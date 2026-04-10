@@ -26,6 +26,8 @@ export class App implements OnInit, OnDestroy {
   readonly showTemplateManager = signal(false);
   readonly showMarkdownImport = signal(false);
   readonly markdownImportValue = signal('');
+  readonly optimizing = signal(false);
+  readonly pimping = signal(false);
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
 
@@ -103,18 +105,23 @@ export class App implements OnInit, OnDestroy {
   loadTemplates(): void {
     this.api.getTemplates().subscribe({
       next: (templates) => {
-        this.state.templates.set(templates);
-        // GCS FUSE may not be ready yet — if only the default template is returned,
-        // retry up to 3 times with increasing delay
         const hasRealTemplates = templates.some((t) => t.id !== 'default');
-        if (!hasRealTemplates && this.templateRetryCount < 3) {
+        const currentHasReal = this.state.templates().some((t) => t.id !== 'default');
+
+        // Never overwrite a good template list with one that lost templates
+        if (hasRealTemplates || !currentHasReal) {
+          this.state.templates.set(templates);
+        }
+
+        // GCS FUSE may not be ready yet — retry up to 5 times with increasing delay
+        if (!hasRealTemplates && this.templateRetryCount < 5) {
           this.templateRetryCount++;
           const delay = this.templateRetryCount * 2000;
           setTimeout(() => this.loadTemplates(), delay);
         }
       },
       error: () => {
-        if (this.templateRetryCount < 3) {
+        if (this.templateRetryCount < 5) {
           this.templateRetryCount++;
           setTimeout(() => this.loadTemplates(), 2000);
         }
@@ -189,7 +196,6 @@ export class App implements OnInit, OnDestroy {
     if (!md) return;
 
     this.state.updateMarkdown(md);
-    this.state.briefing.set('Manueller Markdown-Import');
 
     // Parse slides from markdown
     const withoutFrontmatter = md.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
@@ -220,9 +226,140 @@ export class App implements OnInit, OnDestroy {
     });
 
     this.state.slides.set(slides);
+
+    // Extract topic from slide titles for V2 export briefing
+    const titles = slides.map((s) => s.title).filter((t) => t);
+    this.state.briefing.set(`Erstelle eine Präsentation mit ${slides.length} Folien zu: ${titles.join(', ')}`);
     this.showMarkdownImport.set(false);
     this.markdownImportValue.set('');
     this.state.currentStep.set(3);
+  }
+
+  optimizeMarkdown(): void {
+    const md = this.state.markdown();
+    if (!md) return;
+    this.optimizing.set(true);
+
+    const templateId = this.state.selectedTemplateId();
+    const audience = this.state.audience();
+    const imageStyle = this.state.imageStyle();
+    const customColor = templateId === 'default' ? this.state.customColor() : undefined;
+    const customFont = templateId === 'default' ? this.state.customFont() : undefined;
+
+    this.api.optimizeMarkdown(
+      md,
+      templateId !== 'default' ? templateId : undefined,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    ).subscribe({
+      next: (result) => {
+        this.state.updateMarkdown(result.markdown);
+        this.state.slides.set(result.slides);
+        // Extract topic from optimized slide titles for V2 export
+        const titles = result.slides.map((s: { title: string }) => s.title).filter((t: string) => t);
+        this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
+        this.optimizing.set(false);
+      },
+      error: () => {
+        this.optimizing.set(false);
+      },
+    });
+  }
+
+  importAndPimp(): void {
+    const md = this.markdownImportValue().trim();
+    if (!md) return;
+
+    // First import the markdown
+    this.state.updateMarkdown(md);
+    const withoutFrontmatter = md.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
+    const chunks = withoutFrontmatter.split(/^\s*---\s*$/m).filter((s: string) => s.trim());
+    const slides = chunks.map((chunk: string) => {
+      const lines = chunk.trim().split('\n');
+      const titleLine = lines.find((l: string) => l.startsWith('# '));
+      const title = titleLine ? titleLine.replace(/^#+\s*/, '') : 'Folie';
+      const bullets = lines
+        .filter((l: string) => l.startsWith('- '))
+        .map((l: string) => l.replace(/^-\s*/, ''));
+      return {
+        layout: 'content', title, subtitle: '', body: '', bullets,
+        notes: '', imageDescription: '', chartData: '', leftColumn: '', rightColumn: '',
+      };
+    });
+    this.state.slides.set(slides);
+    this.markdownImportValue.set('');
+
+    // Then immediately pimp
+    this.pimping.set(true);
+
+    const templateId = this.state.selectedTemplateId();
+    const audience = this.state.audience();
+    const imageStyle = this.state.imageStyle();
+    const customColor = templateId === 'default' ? this.state.customColor() : undefined;
+    const customFont = templateId === 'default' ? this.state.customFont() : undefined;
+
+    this.api.pimpSlides(
+      md,
+      templateId !== 'default' ? templateId : undefined,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    ).subscribe({
+      next: (result) => {
+        this.state.updateMarkdown(result.markdown);
+        this.state.slides.set(result.slides);
+        this.state.selectedSlideIndex.set(0);
+        const titles = result.slides.map((s: { title: string }) => s.title).filter((t: string) => t);
+        this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
+        this.pimping.set(false);
+        this.showMarkdownImport.set(false);
+        this.state.currentStep.set(3);
+      },
+      error: () => {
+        this.pimping.set(false);
+        // Still go to Step 3 with the raw import
+        const titles = slides.map((s) => s.title).filter((t) => t);
+        this.state.briefing.set(`Erstelle eine Präsentation mit ${slides.length} Folien zu: ${titles.join(', ')}`);
+        this.showMarkdownImport.set(false);
+        this.state.currentStep.set(3);
+      },
+    });
+  }
+
+  pimpSlides(): void {
+    const md = this.state.markdown();
+    if (!md) return;
+    this.pimping.set(true);
+
+    const templateId = this.state.selectedTemplateId();
+    const audience = this.state.audience();
+    const imageStyle = this.state.imageStyle();
+    const customColor = templateId === 'default' ? this.state.customColor() : undefined;
+    const customFont = templateId === 'default' ? this.state.customFont() : undefined;
+
+    this.api.pimpSlides(
+      md,
+      templateId !== 'default' ? templateId : undefined,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    ).subscribe({
+      next: (result) => {
+        this.state.updateMarkdown(result.markdown);
+        this.state.slides.set(result.slides);
+        this.state.selectedSlideIndex.set(0);
+        const titles = result.slides.map((s: { title: string }) => s.title).filter((t: string) => t);
+        this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
+        this.pimping.set(false);
+      },
+      error: () => {
+        this.pimping.set(false);
+      },
+    });
   }
 
   openTemplateManager(): void {
@@ -231,6 +368,7 @@ export class App implements OnInit, OnDestroy {
 
   closeTemplateManager(): void {
     this.showTemplateManager.set(false);
+    this.templateRetryCount = 0;
     this.loadTemplates();
   }
 

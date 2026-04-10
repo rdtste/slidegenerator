@@ -78,6 +78,76 @@ export class ChatController {
     }
   }
 
+  @Post('pimp')
+  async pimpSlides(
+    @Body('markdown') markdown: string,
+    @Body('templateId') templateId?: string,
+    @Body('audience') audience?: string,
+    @Body('imageStyle') imageStyle?: string,
+    @Body('customColor') customColor?: string,
+    @Body('customFont') customFont?: string,
+  ): Promise<ChatResponseDto> {
+    if (!markdown?.trim()) {
+      throw new HttpException(
+        { detail: 'Markdown darf nicht leer sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      return await this.chatService.pimpSlides(
+        markdown.trim(),
+        templateId,
+        audience,
+        imageStyle,
+        customColor,
+        customFont,
+      );
+    } catch (error: unknown) {
+      if (error instanceof HttpException) throw error;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new HttpException(
+        { detail: `LLM-Fehler: ${message}` },
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
+  @Post('optimize')
+  async optimizeMarkdown(
+    @Body('markdown') markdown: string,
+    @Body('templateId') templateId?: string,
+    @Body('audience') audience?: string,
+    @Body('imageStyle') imageStyle?: string,
+    @Body('customColor') customColor?: string,
+    @Body('customFont') customFont?: string,
+  ): Promise<ChatResponseDto> {
+    if (!markdown?.trim()) {
+      throw new HttpException(
+        { detail: 'Markdown darf nicht leer sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      return await this.chatService.optimizeMarkdown(
+        markdown.trim(),
+        templateId,
+        audience,
+        imageStyle,
+        customColor,
+        customFont,
+      );
+    } catch (error: unknown) {
+      if (error instanceof HttpException) throw error;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new HttpException(
+        { detail: `LLM-Fehler: ${message}` },
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
   @Post()
   @UseInterceptors(FilesInterceptor('files', 5))
   async chat(

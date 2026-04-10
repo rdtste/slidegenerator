@@ -39,7 +39,9 @@
               <select [(ngModel)]="state.selectedTemplateId" class="template-select">
                 <option value="default">Kein Template (eigenes Design)</option>
                 @for (t of state.templates(); track t.id) {
-                  <option [value]="t.id">{{ t.name }}</option>
+                  @if (t.id !== 'default') {
+                    <option [value]="t.id">{{ t.name }}</option>
+                  }
                 }
               </select>
               <button class="btn-upload" (click)="openTemplateManager()">Verwalten</button>
@@ -126,9 +128,43 @@
           </section>
 
           <div class="step-nav">
-            <div></div>
+            <button class="btn-pimp-start" (click)="showMarkdownImport.set(true); state.currentStep.set(1)" [disabled]="pimping()">
+              Pimp my Slides
+            </button>
             <button class="btn-next" (click)="goToStep(2)">Weiter: Erstellen →</button>
           </div>
+
+          <!-- Pimp my Slides: Markdown Import + Auto-Optimize overlay -->
+          @if (showMarkdownImport() && state.currentStep() === 1) {
+            <div class="pimp-overlay">
+              <div class="pimp-modal">
+                <div class="import-header">
+                  <h3>Pimp my Slides</h3>
+                  <button class="btn-sm btn-cancel" (click)="showMarkdownImport.set(false)">Abbrechen</button>
+                </div>
+                <p class="import-hint">Vorhandenes Markdown einfügen — KI analysiert Storyline, ergänzt Kontext und optimiert Layouts.</p>
+                <textarea
+                  class="markdown-import-textarea"
+                  [(ngModel)]="markdownImportValue"
+                  placeholder="# Titel der Praesentation&#10;Untertitel hier&#10;&#10;---&#10;&#10;# Zweite Folie&#10;- Erster Punkt&#10;- Zweiter Punkt&#10;&#10;---&#10;&#10;# Dritte Folie&#10;Beliebiger Inhalt"
+                  rows="14"
+                  [disabled]="pimping()"
+                ></textarea>
+                <div class="import-actions">
+                  <button class="btn-secondary" (click)="importMarkdown()" [disabled]="!markdownImportValue().trim() || pimping()">
+                    Nur importieren
+                  </button>
+                  <button class="btn-pimp" (click)="importAndPimp()" [disabled]="!markdownImportValue().trim() || pimping()">
+                    @if (pimping()) {
+                      <span class="pimp-spinner"></span> KI analysiert...
+                    } @else {
+                      Importieren & Pimp
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
         </div>
 
         <!-- Template Sneak Preview -->
@@ -353,6 +389,18 @@
       </div>
       <div class="step-nav pad fixed-nav">
         <button class="btn-back" (click)="goToStep(2)">← Erstellen</button>
+        <div class="ai-actions">
+          <button class="btn-optimize" (click)="optimizeMarkdown()" [disabled]="optimizing() || pimping()">
+            {{ optimizing() ? 'Optimiere...' : 'Formatierung' }}
+          </button>
+          <button class="btn-pimp" (click)="pimpSlides()" [disabled]="pimping() || optimizing()">
+            @if (pimping()) {
+              <span class="pimp-spinner"></span> Analysiere...
+            } @else {
+              Pimp my Slides
+            }
+          </button>
+        </div>
         <button class="btn-next" (click)="goToStep(4)">Weiter: Exportieren →</button>
       </div>
     }

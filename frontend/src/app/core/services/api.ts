@@ -83,6 +83,42 @@ export class ApiService {
     return this.http.post<ChatResponse>(`${this.baseUrl}/chat`, formData);
   }
 
+  pimpSlides(
+    markdown: string,
+    templateId?: string,
+    audience?: string,
+    imageStyle?: string,
+    customColor?: string,
+    customFont?: string,
+  ): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>(`${this.baseUrl}/chat/pimp`, {
+      markdown,
+      templateId,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    });
+  }
+
+  optimizeMarkdown(
+    markdown: string,
+    templateId?: string,
+    audience?: string,
+    imageStyle?: string,
+    customColor?: string,
+    customFont?: string,
+  ): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>(`${this.baseUrl}/chat/optimize`, {
+      markdown,
+      templateId,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    });
+  }
+
   preview(markdown: string, templateId?: string, customColor?: string, customFont?: string): Observable<string> {
     return this.http.post(`${this.baseUrl}/preview`, { markdown, templateId, customColor, customFont }, { responseType: 'text' });
   }

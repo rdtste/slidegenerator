@@ -1132,6 +1132,176 @@ REGELN:
 7. Antworte NUR mit dem korrigierten Markdown.`;
   }
 
+  async pimpSlides(
+    markdown: string,
+    templateId?: string,
+    audience?: string,
+    imageStyle?: string,
+    customColor?: string,
+    customFont?: string,
+  ): Promise<ChatResponseDto> {
+    this.logger.log(`Pimp my Slides: analyzing ${markdown.length} chars`);
+
+    const existingSlides = this.parseMarkdown(markdown);
+    const slideAnalysis = existingSlides
+      .map((s, i) => {
+        let desc = `Folie ${i + 1} [${s.layout}]: "${s.title}"`;
+        if (s.subtitle) desc += ` — ${s.subtitle}`;
+        if (s.bullets.length) desc += `\n   Bullets: ${s.bullets.map(b => `"${b}"`).join(' | ')}`;
+        if (s.notes) desc += `\n   Notizen: ${s.notes.slice(0, 100)}`;
+        if (s.imageDescription) desc += `\n   Bild: ${s.imageDescription}`;
+        return desc;
+      })
+      .join('\n');
+
+    const audienceLabel = audience
+      ? { team: 'internes Team', management: 'Management/C-Level', customer: 'Kunden/Externe', workshop: 'Workshop-Teilnehmer' }[audience] ?? audience
+      : 'allgemeines Publikum';
+
+    const pimpPrompt = `Du bist ein **Senior Presentation Strategist & Storytelling-Experte** — \
+eine Kombination aus McKinsey-Berater, TED-Talk-Coach und Creative Director.
+
+Dein Auftrag: Verwandle eine durchschnittliche Präsentation in eine ÜBERZEUGENDE STORY, \
+die das Publikum fesselt und zum Handeln bewegt. Du konkurrierst mit Tools wie Gamma.app — \
+dein Output muss BESSER sein als das, was ein durchschnittlicher Mensch erstellen würde.
+
+ZIELGRUPPE: ${audienceLabel}
+
+═══ ANALYSE-FRAMEWORK ═══
+
+Prüfe die bestehende Präsentation gegen diese 7 Dimensionen:
+
+1. **NARRATIVE ARC** — Hat die Präsentation einen Spannungsbogen?
+   - Hook (Aufmerksamkeit gewinnen) → Problem/Kontext → Lösung/Kernbotschaft → Beweis → Call to Action
+   - Wenn der Bogen fehlt: Baue ihn ein. Jede gute Präsentation erzählt eine Geschichte.
+
+2. **SO-WHAT-TEST** — Hat jede Folie eine klare Aussage, die das Publikum interessiert?
+   - Ersetze beschreibende Titel ("Umsatz Q1") durch Aussage-Titel ("Umsatz Q1 übertrifft Prognose um 12%").
+   - Jede Folie muss die Frage "Na und?" beantworten.
+
+3. **INFORMATIONSLÜCKEN** — Fehlen wichtige Kontextinformationen?
+   - Ergänze fehlende Vergleiche (Vorjahr, Benchmark, Ziel vs. Ist).
+   - Füge Zwischenfolien ein, wenn logische Sprünge existieren.
+   - Ergänze eine Executive Summary nach dem Titel, wenn sie fehlt.
+
+4. **VISUELLES STORYTELLING** — Werden die richtigen Visualisierungen eingesetzt?
+   - Zahlen → KPI-Karten oder Diagramme, nicht Bullet Points.
+   - Vergleiche → Two-Column oder Gegenüberstellung, nicht Fließtext.
+   - Prozesse → Timeline oder Prozessdarstellung, nicht Aufzählung.
+   - Entscheidungen → Optionenvergleich, nicht Textliste.
+
+5. **RHYTHM & PACING** — Ist die Abfolge abwechslungsreich?
+   - Wechsle zwischen datengetriebenen und visuellen Folien.
+   - Setze Section-Divider als Atempausen zwischen Themenblöcken.
+   - Vermeide 3+ gleiche Layout-Typen hintereinander.
+
+6. **OPENING & CLOSING** — Sind Anfang und Ende stark?
+   - Opening: provokante Frage, überraschende Statistik oder starkes Bild.
+   - Closing: klarer Call to Action mit 3 konkreten nächsten Schritten.
+
+7. **SPEAKER NOTES** — Sind Sprechernotizen vorhanden und hilfreich?
+   - Jede Folie braucht Notizen mit: Überleitung, Kernargument, Beispiel/Anekdote.
+   - Notizen sind das, was den Vortrag gut macht — investiere hier.
+
+═══ TRANSFORMATIONS-REGELN ═══
+
+- Du darfst Folien HINZUFÜGEN (Section-Divider, Kontext-Folien, Zusammenfassungen).
+- Du darfst Folien UMSTRUKTURIEREN (Reihenfolge ändern für besseren Fluss).
+- Du darfst Inhalte ANREICHERN (Kontext, Vergleiche, Implikationen ergänzen).
+- Du darfst Layouts WECHSELN (content → two_column, bullets → chart, etc.).
+- Du MUSST alle Fakten und Zahlen aus dem Original beibehalten.
+- Du darfst KEINE Zahlen oder Fakten ERFINDEN, die nicht im Original stehen.
+- Wenn du Kontext ergänzt, markiere es in den Sprechernotizen: "[Ergänzt: ...]".
+
+═══ OUTPUT ═══
+
+Antworte NUR mit dem vollständigen, verbesserten Markdown.
+Keine Erklärungen, keine Kommentare — nur das fertige Markdown.`;
+
+    const designPrompt = await this.buildSystemPrompt(templateId, audience, imageStyle, customColor, customFont);
+
+    const client = await this.createClient();
+
+    try {
+      const response = await client.chat.completions.create({
+        model: this.settings.getModel(),
+        messages: [
+          { role: 'system', content: pimpPrompt },
+          {
+            role: 'user',
+            content: `BESTEHENDE PRÄSENTATION (${existingSlides.length} Folien):
+
+${slideAnalysis}
+
+VOLLSTÄNDIGES MARKDOWN:
+${markdown}
+
+DESIGN-REGELN FÜR DAS OUTPUT-FORMAT:
+${designPrompt}`,
+          },
+        ],
+        temperature: 0.6,
+        max_tokens: 32768,
+      });
+
+      let pimpedMarkdown = response.choices[0]?.message?.content?.trim() ?? '';
+      if (!pimpedMarkdown) {
+        return { markdown, slides: existingSlides };
+      }
+
+      let pimpedSlides = this.parseMarkdown(pimpedMarkdown);
+
+      // Reject if the model returned fewer slides (likely truncated)
+      if (pimpedSlides.length < existingSlides.length - 1) {
+        this.logger.warn(
+          `Pimp rejected: ${existingSlides.length} → ${pimpedSlides.length} slides (likely truncated)`,
+        );
+        return { markdown, slides: existingSlides };
+      }
+
+      // Run structural validation
+      const structResult = await this.validateStructure(client, pimpedMarkdown, pimpedSlides);
+      pimpedMarkdown = structResult.markdown;
+      pimpedSlides = structResult.slides;
+
+      this.logger.log(`Pimp complete: ${existingSlides.length} → ${pimpedSlides.length} slides`);
+      return { markdown: pimpedMarkdown, slides: pimpedSlides };
+    } catch (err) {
+      this.logger.warn(`Pimp failed: ${err}`);
+      return { markdown, slides: existingSlides };
+    }
+  }
+
+  async optimizeMarkdown(
+    markdown: string,
+    templateId?: string,
+    audience?: string,
+    imageStyle?: string,
+    customColor?: string,
+    customFont?: string,
+  ): Promise<ChatResponseDto> {
+    this.logger.log(`Optimizing imported markdown (${markdown.length} chars)`);
+
+    // Use the full generation pipeline: extract topic from markdown, then generate fresh
+    const existingSlides = this.parseMarkdown(markdown);
+    const slidesSummary = existingSlides
+      .map((s, i) => `Folie ${i + 1}: "${s.title}"${s.bullets.length ? ' — ' + s.bullets.join('; ') : ''}`)
+      .join('\n');
+
+    const prompt = `Optimiere und verbessere die folgende bestehende Präsentation.
+WICHTIG: Behalte das THEMA und die KERNAUSSAGEN bei. Ändere NICHT das Thema.
+Behalte die gleiche Folienanzahl (${existingSlides.length} Folien) bei.
+Verbessere Layout-Zuweisungen, Titel, Struktur und füge Sprechernotizen hinzu.
+
+BESTEHENDE FOLIEN:
+${slidesSummary}
+
+VOLLSTÄNDIGES MARKDOWN:
+${markdown}`;
+
+    return this.generate(prompt, [], templateId, audience, imageStyle, customColor, customFont);
+  }
+
   parseMarkdown(markdown: string): SlideDto[] {
     const rawSlides = markdown
       .split(/^\s*---\s*$/m)
