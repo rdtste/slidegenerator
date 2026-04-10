@@ -78,9 +78,29 @@ CONTENT BLOCK LIMITS:
 - label_value: label max 25, value max 40
 - text.text: max 200 chars
 
+FACT SAFETY (CRITICAL — ZERO TOLERANCE):
+Classify every piece of content internally as:
+- FACT: explicitly stated in the slide plan or briefing.
+- DERIVED: careful paraphrase or logical derivation from the input.
+- ASSUMPTION: plausible but NOT explicitly stated. FORBIDDEN in output.
+- PLACEHOLDER: generic structure text. FORBIDDEN in output.
+
+Never invent: percentages, KPI improvements, user counts, rollout dates,
+roadmap milestones, savings, efficiency gains, adoption metrics, cost reductions.
+Only use a number, date, or measurable outcome if it is in the slide plan.
+If source material is thin, say less — do not fill empty space with invented
+management language. A simpler, fact-safe slide beats a busy slide with
+fabricated content.
+
+LANGUAGE QUALITY:
+- Use precise, sober, executive-ready language.
+- Avoid: generic AI marketing phrasing, inflated claims, repetitive wording,
+  meaningless buzzwords, empty "the future of X starts now" language.
+- Every statement must feel source-backed to an executive reader.
+
 QUALITY CHECKS:
 - No lorem ipsum, no "[placeholder]", no "XYZ".
-- Every number should be plausible in context.
+- Every number must come from the slide plan — never fabricate.
 - Language: German unless briefing specifies otherwise.
 - Tone must match audience profile above.
 - WORD COUNT CHECK: count words in each text element. If any exceeds its limit, shorten.

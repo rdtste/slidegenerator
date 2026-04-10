@@ -33,27 +33,34 @@ SLIDES:
 
 REVIEW CRITERIA:
 
-1. NARRATIVE COHERENCE
+1. FACT SAFETY (HIGHEST PRIORITY)
+   - Are there any invented numbers, percentages, KPIs, dates, or metrics?
+   - Every number must be traceable to the briefing input.
+   - If a slide claims a specific improvement ("+15%", "3x faster"), verify it exists in the briefing.
+   - Unverifiable facts = severity "error", auto_fixable true (replace with qualitative statement).
+   - Generic AI filler language ("revolutionizing", "transformative", "game-changing") = severity "warning".
+
+2. NARRATIVE COHERENCE
    - Does the deck tell a logical story from opening to closing?
    - Are transitions between slides smooth?
    - Does each headline advance the narrative (not just label a topic)?
 
-2. AUDIENCE FIT
+3. AUDIENCE FIT
    - Is the tone appropriate for the target audience?
    - Is content density right? (Management = sparse, Team = moderate)
    - For management: does every bullet have a bold_prefix?
 
-3. HEADLINE QUALITY
+4. HEADLINE QUALITY
    - Headlines must be statements, not labels.
    - Max 70 characters each.
    - No two headlines should say the same thing.
 
-4. REDUNDANCY
+5. REDUNDANCY
    - Flag any two slides that cover the same content.
    - Flag repeated phrases across headlines.
    - Flag identical bullet points.
 
-5. STRUCTURAL RULES
+6. STRUCTURAL RULES
    - First slide must be title_hero, last must be closing.
    - No two consecutive bullets_focused slides.
    - kpi_dashboard: exactly 3-4 KPIs.
@@ -62,14 +69,32 @@ REVIEW CRITERIA:
    - timeline: 3-6 entries.
    - process_flow: 3-5 steps.
 
-6. CHARACTER LIMITS
+7. CHARACTER LIMITS
    - headline: max 70, subheadline: max 120, core_message: max 150
    - bullet text: max 80, bold_prefix: max 25
    - speaker_notes: max 600
    - Check all content_block limits per type.
 
+8. TEMPLATE COMPLIANCE
+   - Does each slide respect the template's visual language?
+   - Are colors from the approved palette only?
+   - Is the content density appropriate for the chosen layout?
+   - Would the slide look native to the master deck, not pasted on top?
+
+9. CREDIBILITY CHECK
+   - Would an executive believe every statement is source-backed?
+   - Is there any hyperbolic or inflated language?
+   - Are placeholder texts or generic filler still present?
+
+REPAIR PRIORITY (for auto_fixable issues):
+1. Remove invented/unverified facts (replace with qualitative statement)
+2. Fix template or layout misuse
+3. Fix overcrowding by shortening content
+4. Remove generic AI filler language
+5. Fix redundancy
+
 SEVERITY:
-- "error": Must be fixed before rendering. Deck will break if ignored.
+- "error": Must be fixed before rendering. Deck will break or credibility will suffer if ignored.
 - "warning": Should be fixed for quality but won't break rendering.
 
 OUTPUT SCHEMA (QualityReport):

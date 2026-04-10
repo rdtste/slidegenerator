@@ -60,6 +60,15 @@ or "development", or if the topic inherently involves progression over time:
    BAD: "Die Antike" — GOOD: "Schon die Sumerer brauten Bier als Grundnahrungsmittel."
 7. Avoid beats that merely name an era without an insight about it.
 
+FACT SAFETY:
+- Only plan beats around facts and themes actually present in the briefing.
+- Never plan a KPI/evidence beat unless the briefing provides concrete data.
+- If the briefing is thin on facts, plan fewer evidence beats and more
+  insight/context beats with qualitative statements.
+- Set evidence_needed=false for beats where the briefing provides no data.
+- It is better to plan a simpler, honest deck than an ambitious deck that
+  will require inventing numbers to fill.
+
 BEAT QUALITY:
 Every beat's core_message must be a concrete assertion or insight, never just a topic name.
 BAD core_messages: "Mittelalter", "Industrialisierung", "Moderne Trends"
