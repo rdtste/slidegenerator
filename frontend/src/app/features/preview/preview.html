@@ -4,18 +4,29 @@
       @for (slide of state.slides(); track $index) {
         <div
           class="slide-card"
+          role="button"
+          tabindex="0"
           [class.active]="state.selectedSlideIndex() === $index"
           [style.--accent]="accentColor()"
-          (click)="state.selectedSlideIndex.set($index)">
+          [attr.aria-label]="'Folie ' + ($index + 1) + ': ' + slide.title"
+          [attr.aria-pressed]="state.selectedSlideIndex() === $index"
+          (click)="state.selectedSlideIndex.set($index)"
+          (keydown.enter)="state.selectedSlideIndex.set($index)"
+          (keydown.space)="selectSlide($index, $event)">
 
           <div class="slide-number">{{ $index + 1 }}</div>
 
           <!-- Layout badge -->
           <span class="layout-badge">{{ slide.layout }}</span>
 
-          <!-- Title only -->
           @if (slide.title) {
             <h3 class="slide-title">{{ slide.title }}</h3>
+          }
+          @if (slide.subtitle) {
+            <p class="slide-subtitle">{{ slide.subtitle }}</p>
+          }
+          @if (slide.bullets.length) {
+            <p class="slide-body">{{ slide.bullets[0] }}{{ slide.bullets.length > 1 ? ' (+' + (slide.bullets.length - 1) + ')' : '' }}</p>
           }
         </div>
       }

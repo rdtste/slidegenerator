@@ -15,4 +15,9 @@ export class Preview {
   readonly accentColor = computed(() => {
     return this.state.customColor() || '#7BA7D9';
   });
+
+  selectSlide(index: number, event: Event): void {
+    event.preventDefault();
+    this.state.selectedSlideIndex.set(index);
+  }
 }
