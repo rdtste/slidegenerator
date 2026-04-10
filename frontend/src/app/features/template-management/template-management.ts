@@ -1,4 +1,5 @@
-import { Component, inject, signal, output, OnInit } from '@angular/core';
+import { Component, inject, signal, output, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
 
@@ -7,9 +8,12 @@ import { ChatState } from '../../core/services/chat';
   templateUrl: './template-management.html',
   styleUrl: './template-management.scss',
 })
-export class TemplateManagement implements OnInit {
+export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
   private readonly api = inject(ApiService);
   readonly state = inject(ChatState);
+
+  @ViewChild('tmPanel') private tmPanel!: ElementRef<HTMLElement>;
+  private uploadSub?: Subscription;
 
   readonly status = signal('');
   readonly learning = signal(false);
@@ -34,7 +38,7 @@ export class TemplateManagement implements OnInit {
 
     this.status.set('Template wird hochgeladen und analysiert…');
     this.learning.set(true);
-    this.api.uploadTemplate(file).subscribe({
+    this.uploadSub = this.api.uploadTemplate(file).subscribe({
       next: (result) => {
         this.learning.set(false);
         if (result.learned) {
@@ -81,8 +85,18 @@ export class TemplateManagement implements OnInit {
     });
   }
 
+  cancelUpload(): void {
+    this.uploadSub?.unsubscribe();
+    this.uploadSub = undefined;
+    this.learning.set(false);
+    this.status.set('Upload abgebrochen.');
+  }
+
   deleteTemplate(id: string, event: Event): void {
     event.stopPropagation();
+    const template = this.state.templates().find(t => t.id === id);
+    const name = template?.name ?? id;
+    if (!confirm(`Template "${name}" wirklich löschen?`)) return;
     this.api.deleteTemplate(id).subscribe({
       next: () => {
         if (this.state.selectedTemplateId() === id) {
@@ -122,5 +136,42 @@ export class TemplateManagement implements OnInit {
 
   close(): void {
     this.closed.emit();
+  }
+
+  ngAfterViewInit(): void {
+    const closeBtn = this.tmPanel?.nativeElement?.querySelector<HTMLElement>('.tm-close');
+    closeBtn?.focus();
+  }
+
+  ngOnDestroy(): void {
+    this.uploadSub?.unsubscribe();
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.close();
+      return;
+    }
+
+    if (event.key === 'Tab') {
+      const panel = this.tmPanel?.nativeElement;
+      if (!panel) return;
+
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
   }
 }

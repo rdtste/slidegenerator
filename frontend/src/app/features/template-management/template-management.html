@@ -1,5 +1,5 @@
-<div class="tm-overlay" (click)="close()">
-  <div class="tm-panel" (click)="$event.stopPropagation()">
+<div class="tm-overlay" (click)="close()" (keydown)="onKeydown($event)">
+  <div class="tm-panel" #tmPanel role="dialog" aria-modal="true" aria-label="Template Management" (click)="$event.stopPropagation()">
     <div class="tm-header">
       <h2>Template Management</h2>
       <button class="tm-close" (click)="close()">×</button>
@@ -14,6 +14,7 @@
           <div class="tm-learning-progress">
             <div class="tm-learning-spinner"></div>
             <span>Template wird analysiert — Farben, Layouts & Design werden gelernt…</span>
+            <button class="tm-cancel-btn" (click)="cancelUpload()">Abbrechen</button>
           </div>
         } @else {
           <label class="tm-upload-btn" for="tmUpload">+ Template hochladen</label>
