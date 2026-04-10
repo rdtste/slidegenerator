@@ -38,9 +38,6 @@
             <div class="template-row">
               <select [(ngModel)]="state.selectedTemplateId" class="template-select">
                 <option value="default">Kein Template (eigenes Design)</option>
-                @if (templatesLoading()) {
-                  <option disabled>Templates werden geladen...</option>
-                }
                 @for (t of state.templates(); track t.id) {
                   @if (t.id !== 'default') {
                     <option [value]="t.id">{{ t.name }}</option>

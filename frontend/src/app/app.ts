@@ -38,7 +38,6 @@ export class App implements OnInit, OnDestroy {
   readonly templatePreviewLoading = signal(false);
   readonly coverageOpen = signal(false);
   readonly errorStatus = signal('');
-  readonly templatesLoading = signal(false);
   private readonly profileCache = new Map<string, TemplateProfile>();
 
   readonly colorValid = computed(() => /^#[0-9A-Fa-f]{6}$/.test(this.state.customColor()));
@@ -132,14 +131,8 @@ export class App implements OnInit, OnDestroy {
   private templateRetryCount = 0;
 
   loadTemplates(): void {
-    // Only show loading indicator on initial load, not background retries
-    const isInitialLoad = this.templateRetryCount === 0;
-    if (isInitialLoad) {
-      this.templatesLoading.set(true);
-    }
     this.api.getTemplates().subscribe({
       next: (templates) => {
-        this.templatesLoading.set(false);
         const hasRealTemplates = templates.some((t) => t.id !== 'default');
         const currentHasReal = this.state.templates().some((t) => t.id !== 'default');
 
@@ -168,7 +161,6 @@ export class App implements OnInit, OnDestroy {
         }
       },
       error: () => {
-        this.templatesLoading.set(false);
         if (this.templateRetryCount < 5) {
           this.templateRetryCount++;
           setTimeout(() => this.loadTemplates(), 2000);
