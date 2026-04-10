@@ -26,6 +26,9 @@ export class App implements OnInit, OnDestroy {
   readonly showTemplateManager = signal(false);
   readonly showMarkdownImport = signal(false);
   readonly markdownImportValue = signal('');
+  readonly showNotesImport = signal(false);
+  readonly notesImportValue = signal('');
+  readonly generatingFromNotes = signal(false);
   readonly optimizing = signal(false);
   readonly pimping = signal(false);
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
@@ -264,6 +267,44 @@ export class App implements OnInit, OnDestroy {
       },
       error: () => {
         this.optimizing.set(false);
+      },
+    });
+  }
+
+  generateFromNotes(): void {
+    const notes = this.notesImportValue().trim();
+    if (!notes) return;
+    this.generatingFromNotes.set(true);
+
+    const templateId = this.state.selectedTemplateId();
+    const audience = this.state.audience();
+    const imageStyle = this.state.imageStyle();
+    const customColor = templateId === 'default' ? this.state.customColor() : undefined;
+    const customFont = templateId === 'default' ? this.state.customFont() : undefined;
+
+    const prompt = `Erstelle eine professionelle Präsentation aus den folgenden Notizen. Extrahiere die Kernaussagen, strukturiere sie logisch und wandle sie in visuell ansprechende Folien um.\n\n${notes}`;
+
+    this.api.chat(
+      prompt,
+      undefined,
+      templateId !== 'default' ? templateId : undefined,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    ).subscribe({
+      next: (result) => {
+        this.state.updateMarkdown(result.markdown);
+        this.state.slides.set(result.slides);
+        this.state.selectedSlideIndex.set(0);
+        this.state.briefing.set(prompt);
+        this.generatingFromNotes.set(false);
+        this.showNotesImport.set(false);
+        this.notesImportValue.set('');
+        this.state.currentStep.set(3);
+      },
+      error: () => {
+        this.generatingFromNotes.set(false);
       },
     });
   }

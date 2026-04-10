@@ -127,15 +127,47 @@
             </div>
           </section>
 
-          <div class="step-nav">
-            <button class="btn-pimp-start" (click)="showMarkdownImport.set(true); state.currentStep.set(1)" [disabled]="pimping()">
+          <div class="step-nav step-nav-start">
+            <button class="btn-notes-start" (click)="showNotesImport.set(true)">
+              Notizen → Slides
+            </button>
+            <button class="btn-pimp-start" (click)="showMarkdownImport.set(true)" [disabled]="pimping()">
               Pimp my Slides
             </button>
             <button class="btn-next" (click)="goToStep(2)">Weiter: Erstellen →</button>
           </div>
 
+          <!-- Notizen → Slides: Freitext-Import + KI-Generierung -->
+          @if (showNotesImport()) {
+            <div class="pimp-overlay">
+              <div class="pimp-modal">
+                <div class="import-header">
+                  <h3 class="notes-title">Notizen → Slides</h3>
+                  <button class="btn-sm btn-cancel" (click)="showNotesImport.set(false)" [disabled]="generatingFromNotes()">Abbrechen</button>
+                </div>
+                <p class="import-hint">Meeting-Notizen, Stichpunkte oder freien Text einfügen — KI erstellt daraus eine komplette Präsentation.</p>
+                <textarea
+                  class="markdown-import-textarea"
+                  [(ngModel)]="notesImportValue"
+                  placeholder="Quarterly Review Q1 2026&#10;&#10;Umsatz: 12.4 Mio (+15% YoY)&#10;Neue Kunden: 47 gewonnen&#10;Churn Rate: von 4.2% auf 3.1% gesenkt&#10;&#10;Highlights:&#10;- Product Launch erfolgreich (2300 Signups Tag 1)&#10;- Enterprise Deal mit ACME Corp (450k ARR)&#10;- Team gewachsen: 12 → 18 Mitarbeiter&#10;&#10;Challenges:&#10;- Hiring Pipeline zu langsam&#10;- Support-Tickets +30%&#10;&#10;Next Steps:&#10;- Q2 Fokus: Self-Service Portal&#10;- Ziel: 15 Mio Umsatz"
+                  rows="14"
+                  [disabled]="generatingFromNotes()"
+                ></textarea>
+                <div class="import-actions">
+                  <button class="btn-pimp" (click)="generateFromNotes()" [disabled]="!notesImportValue().trim() || generatingFromNotes()">
+                    @if (generatingFromNotes()) {
+                      <span class="pimp-spinner"></span> KI erstellt Slides...
+                    } @else {
+                      Slides generieren
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- Pimp my Slides: Markdown Import + Auto-Optimize overlay -->
-          @if (showMarkdownImport() && state.currentStep() === 1) {
+          @if (showMarkdownImport()) {
             <div class="pimp-overlay">
               <div class="pimp-modal">
                 <div class="import-header">
