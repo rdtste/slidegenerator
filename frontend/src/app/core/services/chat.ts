@@ -26,6 +26,7 @@ export class ChatState {
   readonly briefing = signal('');
   readonly slidesEdited = signal(false);
   readonly pregenKey = signal('');
+  readonly sourceNotes = signal('');
 
   readonly slideCount = computed(() => this.slides().length);
   readonly hasMarkdown = computed(() => this.markdown().trim().length > 0);
@@ -71,5 +72,6 @@ export class ChatState {
     this.briefing.set('');
     this.slidesEdited.set(false);
     this.pregenKey.set('');
+    this.sourceNotes.set('');
   }
 }

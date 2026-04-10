@@ -866,6 +866,177 @@
   font-style: italic;
 }
 
+// ── Steering bar ───────────────────────────────────────
+.steering-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.steering-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--primary);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.btn-steer {
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+  min-width: 90px;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.steer-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+// ── Notes Coverage Panel ───────────────────────────────
+.coverage-details {
+  margin: 12px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.coverage-summary {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: var(--surface-hover);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:hover { color: var(--text); }
+
+  .steer-spinner {
+    border-color: var(--border);
+    border-top-color: var(--primary);
+  }
+}
+
+.coverage-list {
+  padding: 8px 0;
+}
+
+.coverage-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 14px;
+  transition: background 0.1s;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &.covered .coverage-icon { color: #16a34a; }
+  &.partial .coverage-icon { color: #d97706; }
+  &.missing .coverage-icon { color: #dc2626; }
+}
+
+.coverage-icon {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-top: 1px;
+}
+
+.cov-check { color: #16a34a; }
+.cov-partial { color: #d97706; font-size: 1rem; }
+.cov-missing { color: #dc2626; }
+
+.coverage-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coverage-point {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.coverage-explanation {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.coverage-slide-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--primary-hover);
+  }
+}
+
 // Markdown editor (collapsible)
 .markdown-editor-details {
   margin: 16px 20px;
@@ -1180,25 +1351,6 @@
   display: flex;
   gap: 8px;
   align-items: center;
-}
-
-.btn-optimize {
-  padding: 6px 14px;
-  font-size: 0.82rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-secondary);
-  color: var(--text);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: var(--bg-tertiary, #e5e7eb);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 }
 
 .btn-pimp {

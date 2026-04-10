@@ -63,6 +63,19 @@ export interface SelectOption {
   name: string;
 }
 
+export interface KeyPoint {
+  point: string;
+  status: 'covered' | 'partial' | 'missing';
+  slideIndices: number[];
+  explanation: string;
+}
+
+export interface NotesCoverage {
+  keyPoints: KeyPoint[];
+  coveredCount: number;
+  totalCount: number;
+}
+
 export interface TemplateColorDna {
   primary: string;
   accent1: string;

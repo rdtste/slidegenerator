@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { SettingsService } from '../settings/settings.service';
 import { TemplatesService, LayoutConstraint, TemplateTheme } from '../templates/templates.service';
 import { TemplateAnalysisService, TemplateAnalysis, TemplateProfile } from '../templates/template-analysis.service';
-import { ChatResponseDto, SlideDto, ClarifyResponseDto } from './chat.dto';
+import { ChatResponseDto, SlideDto, ClarifyResponseDto, NotesCoverageDto } from './chat.dto';
 
 const BASE_SYSTEM_PROMPT = `Du bist ein professioneller Presentation Designer und kein reiner Folien-Generator.
 
@@ -1386,5 +1386,160 @@ ${markdown}`;
     const rightContent = text.slice(headings[1].index + headings[1].length);
 
     return [extractBullets(leftContent), extractBullets(rightContent)];
+  }
+
+  // ── Notes Coverage Analysis ──────────────────────────────────────────
+
+  async notesCoverage(notes: string, markdown: string): Promise<NotesCoverageDto> {
+    this.logger.log(`Notes coverage analysis: ${notes.length} chars notes, ${markdown.length} chars slides`);
+
+    const slides = this.parseMarkdown(markdown);
+    const slideSummary = slides
+      .map((s, i) => `Folie ${i + 1} [${s.layout}]: "${s.title}" — ${s.bullets.join('; ')}`)
+      .join('\n');
+
+    const prompt = `Analysiere die folgenden NOTIZEN und die daraus generierte PRÄSENTATION.
+Extrahiere die Kernpunkte aus den Notizen und prüfe, ob und wo sie in den Folien berücksichtigt wurden.
+
+NOTIZEN:
+${notes}
+
+GENERIERTE FOLIEN:
+${slideSummary}
+
+Antworte als JSON (NUR JSON, keine Erklärungen):
+{
+  "keyPoints": [
+    {
+      "point": "kurze Beschreibung des Kernpunkts",
+      "status": "covered" | "partial" | "missing",
+      "slideIndices": [1, 2],
+      "explanation": "wie/wo der Punkt berücksichtigt wurde"
+    }
+  ]
+}
+
+REGELN:
+- Extrahiere 5-15 Kernpunkte aus den Notizen (je nach Umfang).
+- "covered" = der Punkt ist vollständig in mindestens einer Folie enthalten.
+- "partial" = der Punkt ist erwähnt, aber nicht vollständig oder prominent dargestellt.
+- "missing" = der Punkt fehlt in der Präsentation komplett.
+- Jeder Kernpunkt soll eine eigenständige, verständliche Aussage sein.
+- slideIndices sind 1-basiert (Folie 1, Folie 2, ...).
+- Bei "missing" ist slideIndices ein leeres Array.
+- Antworte NUR mit dem JSON.`;
+
+    const client = await this.createClient();
+
+    try {
+      const response = await client.chat.completions.create({
+        model: this.settings.getModel(),
+        messages: [
+          { role: 'system', content: 'Du bist ein Analyst. Antworte ausschließlich mit validem JSON.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 4096,
+      });
+
+      const raw = response.choices[0]?.message?.content?.trim() ?? '{}';
+      // Strip markdown code fences if present
+      const jsonStr = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '');
+      const parsed = JSON.parse(jsonStr);
+      const keyPoints = Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [];
+
+      const coveredCount = keyPoints.filter(
+        (kp: { status: string }) => kp.status === 'covered',
+      ).length;
+      const partialCount = keyPoints.filter(
+        (kp: { status: string }) => kp.status === 'partial',
+      ).length;
+
+      return {
+        keyPoints,
+        coveredCount: coveredCount + partialCount,
+        totalCount: keyPoints.length,
+      };
+    } catch (err) {
+      this.logger.warn(`Notes coverage analysis failed: ${err}`);
+      return { keyPoints: [], coveredCount: 0, totalCount: 0 };
+    }
+  }
+
+  // ── Slide Refinement (Steering) ──────────────────────────────────────
+
+  async refineSlides(
+    markdown: string,
+    instruction: string,
+    templateId?: string,
+    audience?: string,
+    imageStyle?: string,
+    customColor?: string,
+    customFont?: string,
+  ): Promise<ChatResponseDto> {
+    this.logger.log(`Refine slides: "${instruction.slice(0, 80)}..."`);
+
+    const existingSlides = this.parseMarkdown(markdown);
+
+    const refinePrompt = `Du bist ein Präsentations-Editor. Du erhältst eine bestehende Markdown-Präsentation \
+und eine Anweisung vom Nutzer. Wende die Anweisung präzise an.
+
+REGELN:
+1. Ändere NUR das, was die Anweisung verlangt. Lasse alles andere unverändert.
+2. Behalte alle <!-- layout: TYPE --> und <!-- notes: --> Kommentare bei.
+3. Behalte das Markdown-Format exakt bei (---, #, ##, -, etc.).
+4. Bei "zusammenfassen/mergen": Kombiniere Inhalte intelligent — extrahiere die Kernaussagen \
+   beider Folien und erstelle eine neue Folie mit dem stärkeren Layout-Typ.
+5. Bei "kürzen/komprimieren": Priorisiere Kernaussagen, verschiebe Details in Sprechernotizen.
+6. Bei "Folienanzahl begrenzen": Wähle die wichtigsten Inhalte, verschmelze verwandte Folien.
+7. Bei "erweitern/Detail hinzufügen": Füge neue Folien ein oder erweitere bestehende.
+8. Bei Zeitangaben ("15 Minuten", "5 Minuten"): Rechne ca. 1-2 Minuten pro Folie und passe die Anzahl an.
+9. Behalte IMMER eine Titelfolie (erste) und eine Closing-Folie (letzte).
+10. Antworte NUR mit dem vollständigen modifizierten Markdown — keine Erklärungen.
+
+ERLAUBTE LAYOUT-TYPEN: title, section, content, two_column, image, chart, closing`;
+
+    const client = await this.createClient();
+
+    try {
+      const response = await client.chat.completions.create({
+        model: this.settings.getModel(),
+        messages: [
+          { role: 'system', content: refinePrompt },
+          {
+            role: 'user',
+            content: `AKTUELLE PRÄSENTATION (${existingSlides.length} Folien):\n\n${markdown}\n\n` +
+              `ANWEISUNG: ${instruction}`,
+          },
+        ],
+        temperature: 0.4,
+        max_tokens: 32768,
+      });
+
+      let refinedMarkdown = response.choices[0]?.message?.content?.trim() ?? '';
+      if (!refinedMarkdown) {
+        return { markdown, slides: existingSlides };
+      }
+
+      let refinedSlides = this.parseMarkdown(refinedMarkdown);
+
+      // Reject if it lost most slides unexpectedly (truncation guard)
+      // But allow intentional reduction (user asked for fewer slides)
+      if (refinedSlides.length === 0) {
+        this.logger.warn('Refine rejected: produced 0 slides');
+        return { markdown, slides: existingSlides };
+      }
+
+      // Run structural validation
+      const structResult = await this.validateStructure(client, refinedMarkdown, refinedSlides);
+      refinedMarkdown = structResult.markdown;
+      refinedSlides = structResult.slides;
+
+      this.logger.log(`Refine complete: ${existingSlides.length} → ${refinedSlides.length} slides`);
+      return { markdown: refinedMarkdown, slides: refinedSlides };
+    } catch (err) {
+      this.logger.warn(`Refine failed: ${err}`);
+      return { markdown, slides: existingSlides };
+    }
   }
 }

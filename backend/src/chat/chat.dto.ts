@@ -47,3 +47,16 @@ export class ClarifyResponseDto {
   conversation!: ConversationMessageDto[];
   briefing?: string;
 }
+
+export class KeyPointDto {
+  point!: string;
+  status!: 'covered' | 'partial' | 'missing';
+  slideIndices!: number[];
+  explanation!: string;
+}
+
+export class NotesCoverageDto {
+  keyPoints!: KeyPointDto[];
+  coveredCount!: number;
+  totalCount!: number;
+}

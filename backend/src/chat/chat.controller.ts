@@ -10,7 +10,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ChatService } from './chat.service';
 import { DocumentService } from './document.service';
-import { ChatResponseDto, ClarifyResponseDto } from './chat.dto';
+import { ChatResponseDto, ClarifyResponseDto, NotesCoverageDto } from './chat.dto';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.md'];
@@ -132,6 +132,73 @@ export class ChatController {
     try {
       return await this.chatService.optimizeMarkdown(
         markdown.trim(),
+        templateId,
+        audience,
+        imageStyle,
+        customColor,
+        customFont,
+      );
+    } catch (error: unknown) {
+      if (error instanceof HttpException) throw error;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new HttpException(
+        { detail: `LLM-Fehler: ${message}` },
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
+  @Post('notes-coverage')
+  async notesCoverage(
+    @Body('notes') notes: string,
+    @Body('markdown') markdown: string,
+  ): Promise<NotesCoverageDto> {
+    if (!notes?.trim() || !markdown?.trim()) {
+      throw new HttpException(
+        { detail: 'Notizen und Markdown dürfen nicht leer sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      return await this.chatService.notesCoverage(notes.trim(), markdown.trim());
+    } catch (error: unknown) {
+      if (error instanceof HttpException) throw error;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new HttpException(
+        { detail: `LLM-Fehler: ${message}` },
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
+  @Post('refine')
+  async refineSlides(
+    @Body('markdown') markdown: string,
+    @Body('instruction') instruction: string,
+    @Body('templateId') templateId?: string,
+    @Body('audience') audience?: string,
+    @Body('imageStyle') imageStyle?: string,
+    @Body('customColor') customColor?: string,
+    @Body('customFont') customFont?: string,
+  ): Promise<ChatResponseDto> {
+    if (!markdown?.trim()) {
+      throw new HttpException(
+        { detail: 'Markdown darf nicht leer sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (!instruction?.trim()) {
+      throw new HttpException(
+        { detail: 'Anweisung darf nicht leer sein' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      return await this.chatService.refineSlides(
+        markdown.trim(),
+        instruction.trim(),
         templateId,
         audience,
         imageStyle,

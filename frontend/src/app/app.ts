@@ -8,7 +8,7 @@ import { TemplateManagement } from './features/template-management/template-mana
 import { Settings } from './features/settings/settings';
 import { ChatState } from './core/services/chat';
 import { ApiService } from './core/services/api';
-import { Audience, ImageStyle, SlideContent, TemplateProfile } from './core/models';
+import { Audience, ImageStyle, NotesCoverage, SlideContent, TemplateProfile } from './core/models';
 
 @Component({
   selector: 'app-root',
@@ -29,8 +29,11 @@ export class App implements OnInit, OnDestroy {
   readonly showNotesImport = signal(false);
   readonly notesImportValue = signal('');
   readonly generatingFromNotes = signal(false);
-  readonly optimizing = signal(false);
   readonly pimping = signal(false);
+  readonly refining = signal(false);
+  readonly refineInstruction = signal('');
+  readonly notesCoverage = signal<NotesCoverage | undefined>(undefined);
+  readonly coverageLoading = signal(false);
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
 
@@ -192,6 +195,8 @@ export class App implements OnInit, OnDestroy {
     }
     this.state.reset();
     this.templateProfile.set(undefined);
+    this.notesCoverage.set(undefined);
+    this.refineInstruction.set('');
   }
 
   importMarkdown(): void {
@@ -238,39 +243,6 @@ export class App implements OnInit, OnDestroy {
     this.state.currentStep.set(3);
   }
 
-  optimizeMarkdown(): void {
-    const md = this.state.markdown();
-    if (!md) return;
-    this.optimizing.set(true);
-
-    const templateId = this.state.selectedTemplateId();
-    const audience = this.state.audience();
-    const imageStyle = this.state.imageStyle();
-    const customColor = templateId === 'default' ? this.state.customColor() : undefined;
-    const customFont = templateId === 'default' ? this.state.customFont() : undefined;
-
-    this.api.optimizeMarkdown(
-      md,
-      templateId !== 'default' ? templateId : undefined,
-      audience,
-      imageStyle,
-      customColor,
-      customFont,
-    ).subscribe({
-      next: (result) => {
-        this.state.updateMarkdown(result.markdown);
-        this.state.slides.set(result.slides);
-        // Extract topic from optimized slide titles for V2 export
-        const titles = result.slides.map((s: { title: string }) => s.title).filter((t: string) => t);
-        this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
-        this.optimizing.set(false);
-      },
-      error: () => {
-        this.optimizing.set(false);
-      },
-    });
-  }
-
   generateFromNotes(): void {
     const notes = this.notesImportValue().trim();
     if (!notes) return;
@@ -298,10 +270,12 @@ export class App implements OnInit, OnDestroy {
         this.state.slides.set(result.slides);
         this.state.selectedSlideIndex.set(0);
         this.state.briefing.set(prompt);
+        this.state.sourceNotes.set(notes);
         this.generatingFromNotes.set(false);
         this.showNotesImport.set(false);
         this.notesImportValue.set('');
         this.state.currentStep.set(3);
+        this.loadNotesCoverage(notes, result.markdown);
       },
       error: () => {
         this.generatingFromNotes.set(false);
@@ -401,6 +375,67 @@ export class App implements OnInit, OnDestroy {
         this.pimping.set(false);
       },
     });
+  }
+
+  loadNotesCoverage(notes: string, markdown: string): void {
+    this.coverageLoading.set(true);
+    this.notesCoverage.set(undefined);
+    this.api.notesCoverage(notes, markdown).subscribe({
+      next: (coverage) => {
+        this.notesCoverage.set(coverage);
+        this.coverageLoading.set(false);
+      },
+      error: () => {
+        this.coverageLoading.set(false);
+      },
+    });
+  }
+
+  refineSlides(): void {
+    const instruction = this.refineInstruction().trim();
+    const md = this.state.markdown();
+    if (!instruction || !md) return;
+    this.refining.set(true);
+
+    const templateId = this.state.selectedTemplateId();
+    const audience = this.state.audience();
+    const imageStyle = this.state.imageStyle();
+    const customColor = templateId === 'default' ? this.state.customColor() : undefined;
+    const customFont = templateId === 'default' ? this.state.customFont() : undefined;
+
+    this.api.refineSlides(
+      md,
+      instruction,
+      templateId !== 'default' ? templateId : undefined,
+      audience,
+      imageStyle,
+      customColor,
+      customFont,
+    ).subscribe({
+      next: (result) => {
+        this.state.updateMarkdown(result.markdown);
+        this.state.slides.set(result.slides);
+        this.state.selectedSlideIndex.set(0);
+        const titles = result.slides.map((s) => s.title).filter((t) => t);
+        this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
+        this.refining.set(false);
+        this.refineInstruction.set('');
+        // Re-run coverage if we have source notes
+        const notes = this.state.sourceNotes();
+        if (notes) {
+          this.loadNotesCoverage(notes, result.markdown);
+        }
+      },
+      error: () => {
+        this.refining.set(false);
+      },
+    });
+  }
+
+  goToSlideFromCoverage(slideIndex: number): void {
+    this.commitSlideEdit();
+    // Coverage uses 1-based indices, internal state is 0-based
+    this.state.selectedSlideIndex.set(slideIndex - 1);
   }
 
   openTemplateManager(): void {

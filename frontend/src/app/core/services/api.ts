@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ChatResponse, ClarifyResponse, TemplateInfo, TemplateProfile, LearnResult, LlmSettings } from '../models';
+import { ChatResponse, ClarifyResponse, NotesCoverage, TemplateInfo, TemplateProfile, LearnResult, LlmSettings } from '../models';
 import { ChatState } from './chat';
 
 @Injectable({ providedIn: 'root' })
@@ -101,16 +101,25 @@ export class ApiService {
     });
   }
 
-  optimizeMarkdown(
+  notesCoverage(notes: string, markdown: string): Observable<NotesCoverage> {
+    return this.http.post<NotesCoverage>(`${this.baseUrl}/chat/notes-coverage`, {
+      notes,
+      markdown,
+    });
+  }
+
+  refineSlides(
     markdown: string,
+    instruction: string,
     templateId?: string,
     audience?: string,
     imageStyle?: string,
     customColor?: string,
     customFont?: string,
   ): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(`${this.baseUrl}/chat/optimize`, {
+    return this.http.post<ChatResponse>(`${this.baseUrl}/chat/refine`, {
       markdown,
+      instruction,
       templateId,
       audience,
       imageStyle,

@@ -345,6 +345,28 @@
               <button class="btn-slide-nav" (click)="nextSlide()" [disabled]="state.selectedSlideIndex() >= state.slideCount() - 1" aria-label="Nächste Folie">→</button>
             </div>
 
+            <!-- Steering bar -->
+            <div class="steering-bar">
+              <input
+                class="steering-input"
+                type="text"
+                [(ngModel)]="refineInstruction"
+                placeholder="z.B. 'Fasse Folie 2 und 3 zusammen' oder 'Maximal 5 Folien'"
+                [disabled]="refining() || pimping()"
+                (keydown.enter)="refineSlides()"
+              />
+              <button
+                class="btn-steer"
+                (click)="refineSlides()"
+                [disabled]="!refineInstruction().trim() || refining() || pimping()">
+                @if (refining()) {
+                  <span class="steer-spinner"></span>
+                } @else {
+                  Anpassen
+                }
+              </button>
+            </div>
+
             @if (selectedSlide(); as slide) {
               <div class="detail-card">
                 <div class="detail-header">
@@ -399,6 +421,47 @@
               </div>
             }
 
+            <!-- Notes coverage panel (only when slides came from notes) -->
+            @if (state.sourceNotes()) {
+              <details class="coverage-details" [open]="!!notesCoverage()">
+                <summary class="coverage-summary">
+                  @if (coverageLoading()) {
+                    <span class="steer-spinner"></span> Notizen-Abgleich wird erstellt...
+                  } @else if (notesCoverage(); as cov) {
+                    Notizen-Abgleich ({{ cov.coveredCount }}/{{ cov.totalCount }} Punkte)
+                  } @else {
+                    Notizen-Abgleich
+                  }
+                </summary>
+                @if (notesCoverage(); as cov) {
+                  <div class="coverage-list">
+                    @for (kp of cov.keyPoints; track kp.point) {
+                      <div class="coverage-item" [class.covered]="kp.status === 'covered'" [class.partial]="kp.status === 'partial'" [class.missing]="kp.status === 'missing'">
+                        <span class="coverage-icon">
+                          @switch (kp.status) {
+                            @case ('covered') { <span class="cov-check">&#10003;</span> }
+                            @case ('partial') { <span class="cov-partial">~</span> }
+                            @case ('missing') { <span class="cov-missing">&#10007;</span> }
+                          }
+                        </span>
+                        <div class="coverage-content">
+                          <span class="coverage-point">{{ kp.point }}</span>
+                          <span class="coverage-explanation">
+                            {{ kp.explanation }}
+                            @if (kp.slideIndices.length) {
+                              @for (idx of kp.slideIndices; track idx) {
+                                <button class="coverage-slide-link" (click)="goToSlideFromCoverage(idx)">Folie {{ idx }}</button>
+                              }
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </details>
+            }
+
             <!-- Markdown editor (collapsible) -->
             <details class="markdown-editor-details">
               <summary>Markdown bearbeiten</summary>
@@ -422,10 +485,7 @@
       <div class="step-nav pad fixed-nav">
         <button class="btn-back" (click)="goToStep(2)">← Erstellen</button>
         <div class="ai-actions">
-          <button class="btn-optimize" (click)="optimizeMarkdown()" [disabled]="optimizing() || pimping()">
-            {{ optimizing() ? 'Optimiere...' : 'Formatierung' }}
-          </button>
-          <button class="btn-pimp" (click)="pimpSlides()" [disabled]="pimping() || optimizing()">
+          <button class="btn-pimp" (click)="pimpSlides()" [disabled]="pimping() || refining()">
             @if (pimping()) {
               <span class="pimp-spinner"></span> Analysiere...
             } @else {
