@@ -36,6 +36,12 @@ export class App implements OnInit, OnDestroy {
   readonly coverageLoading = signal(false);
   readonly templateProfile = signal<TemplateProfile | undefined>(undefined);
   readonly templatePreviewLoading = signal(false);
+  readonly coverageOpen = signal(false);
+  readonly errorStatus = signal('');
+  readonly templatesLoading = signal(false);
+  private readonly profileCache = new Map<string, TemplateProfile>();
+
+  readonly colorValid = computed(() => /^#[0-9A-Fa-f]{6}$/.test(this.state.customColor()));
 
   readonly selectedSlide = computed<SlideContent | undefined>(() => {
     const slides = this.state.slides();
@@ -85,21 +91,38 @@ export class App implements OnInit, OnDestroy {
         this.templateProfile.set(undefined);
         return;
       }
+      // Check cache first
+      const cached = this.profileCache.get(templateId);
+      if (cached) {
+        this.templateProfile.set(cached);
+        return;
+      }
       this.templatePreviewLoading.set(true);
       untracked(() => {
         this.api.getTemplateProfile(templateId).subscribe({
           next: (profile) => {
+            this.profileCache.set(templateId, profile);
             this.templateProfile.set(profile);
             this.templatePreviewLoading.set(false);
           },
           error: () => {
             this.templateProfile.set(undefined);
             this.templatePreviewLoading.set(false);
+            this.showError('Template-Vorschau konnte nicht geladen werden.');
           },
         });
       });
     });
 
+  }
+
+  private showError(message: string): void {
+    this.errorStatus.set(message);
+    setTimeout(() => {
+      if (this.errorStatus() === message) {
+        this.errorStatus.set('');
+      }
+    }, 6000);
   }
 
   ngOnInit(): void {
@@ -109,8 +132,10 @@ export class App implements OnInit, OnDestroy {
   private templateRetryCount = 0;
 
   loadTemplates(): void {
+    this.templatesLoading.set(true);
     this.api.getTemplates().subscribe({
       next: (templates) => {
+        this.templatesLoading.set(false);
         const hasRealTemplates = templates.some((t) => t.id !== 'default');
         const currentHasReal = this.state.templates().some((t) => t.id !== 'default');
 
@@ -127,6 +152,7 @@ export class App implements OnInit, OnDestroy {
         }
       },
       error: () => {
+        this.templatesLoading.set(false);
         if (this.templateRetryCount < 5) {
           this.templateRetryCount++;
           setTimeout(() => this.loadTemplates(), 2000);
@@ -186,6 +212,8 @@ export class App implements OnInit, OnDestroy {
     navigator.clipboard.writeText(this.state.markdown()).then(() => {
       this.copied.set(true);
       setTimeout(() => this.copied.set(false), 2000);
+    }).catch(() => {
+      this.showError('Kopieren fehlgeschlagen. Bitte manuell kopieren.');
     });
   }
 
@@ -279,6 +307,7 @@ export class App implements OnInit, OnDestroy {
       },
       error: () => {
         this.generatingFromNotes.set(false);
+        this.showError('Slides konnten nicht generiert werden. Bitte erneut versuchen.');
       },
     });
   }
@@ -340,6 +369,7 @@ export class App implements OnInit, OnDestroy {
         this.state.briefing.set(`Erstelle eine Präsentation mit ${slides.length} Folien zu: ${titles.join(', ')}`);
         this.showMarkdownImport.set(false);
         this.state.currentStep.set(3);
+        this.showError('KI-Optimierung fehlgeschlagen. Roher Import wurde übernommen.');
       },
     });
   }
@@ -373,6 +403,7 @@ export class App implements OnInit, OnDestroy {
       },
       error: () => {
         this.pimping.set(false);
+        this.showError('Folien-Optimierung fehlgeschlagen. Bitte erneut versuchen.');
       },
     });
   }
@@ -383,6 +414,7 @@ export class App implements OnInit, OnDestroy {
     this.api.notesCoverage(notes, markdown).subscribe({
       next: (coverage) => {
         this.notesCoverage.set(coverage);
+        this.coverageOpen.set(true);
         this.coverageLoading.set(false);
       },
       error: () => {
@@ -430,6 +462,12 @@ export class App implements OnInit, OnDestroy {
         this.refining.set(false);
       },
     });
+  }
+
+  prefillFromCoverage(point: string): void {
+    this.refineInstruction.set(`Füge einen Abschnitt über '${point}' hinzu`);
+    // Scroll steering bar into view
+    document.querySelector('.steering-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   suggestFromCoverage(kp: { point: string; status: string; slideIndices: number[] }): void {

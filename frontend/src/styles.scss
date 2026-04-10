@@ -4,7 +4,7 @@
   --surface-hover: #242836;
   --border: #2d3148;
   --text: #e4e4e7;
-  --text-muted: #8b8fa3;
+  --text-muted: #9EA2B8;
   --primary: #6366f1;
   --primary-hover: #818cf8;
   --accent: #22c55e;
@@ -27,4 +27,13 @@ body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
 }

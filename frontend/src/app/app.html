@@ -1,7 +1,8 @@
 <div class="app">
+  <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
   <header class="header">
     <h1>Slidegenerator</h1>
-    <span class="subtitle">Prompt → Markdown → PowerPoint</span>
+    <span class="subtitle header-subtitle">Prompt → Markdown → PowerPoint</span>
     <div class="header-spacer"></div>
     <button class="btn-new" (click)="startNew()">+ Neue Präsentation</button>
     <button class="btn-templates" (click)="openTemplateManager()">📁 Templates</button>
@@ -27,7 +28,7 @@
     }
   </nav>
 
-  <main class="main">
+  <main class="main" id="main-content">
     <!-- Step 1: Einrichten -->
     @if (state.currentStep() === 1) {
       <div class="step-content setup-step">
@@ -38,6 +39,9 @@
             <div class="template-row">
               <select [(ngModel)]="state.selectedTemplateId" class="template-select">
                 <option value="default">Kein Template (eigenes Design)</option>
+                @if (templatesLoading()) {
+                  <option disabled>Templates werden geladen...</option>
+                }
                 @for (t of state.templates(); track t.id) {
                   @if (t.id !== 'default') {
                     <option [value]="t.id">{{ t.name }}</option>
@@ -73,7 +77,7 @@
                   @if (showCustomColor()) {
                     <div class="color-custom-input">
                       <input type="color" [(ngModel)]="state.customColor" class="color-input" />
-                      <input type="text" [ngModel]="state.customColor()" (ngModelChange)="state.customColor.set($event)" class="color-hex-input" maxlength="7" placeholder="#RRGGBB" />
+                      <input type="text" [ngModel]="state.customColor()" (ngModelChange)="state.customColor.set($event)" class="color-hex-input" [class.invalid]="!colorValid()" maxlength="7" placeholder="#RRGGBB" />
                     </div>
                   }
                 </div>
@@ -127,20 +131,25 @@
             </div>
           </section>
 
+          <div class="schnellstart">
+            <span class="schnellstart-label">Oder starte direkt:</span>
+            <div class="schnellstart-actions">
+              <button class="btn-notes-start" (click)="showNotesImport.set(true)">
+                Notizen → Slides
+              </button>
+              <button class="btn-pimp-start" (click)="showMarkdownImport.set(true)" [disabled]="pimping()">
+                Pimp my Slides
+              </button>
+            </div>
+          </div>
           <div class="step-nav step-nav-start">
-            <button class="btn-notes-start" (click)="showNotesImport.set(true)">
-              Notizen → Slides
-            </button>
-            <button class="btn-pimp-start" (click)="showMarkdownImport.set(true)" [disabled]="pimping()">
-              Pimp my Slides
-            </button>
             <button class="btn-next" (click)="goToStep(2)">Weiter: Erstellen →</button>
           </div>
 
           <!-- Notizen → Slides: Freitext-Import + KI-Generierung -->
           @if (showNotesImport()) {
-            <div class="pimp-overlay">
-              <div class="pimp-modal">
+            <div class="pimp-overlay" (keydown.escape)="showNotesImport.set(false)">
+              <div class="pimp-modal" role="dialog" aria-modal="true">
                 <div class="import-header">
                   <h3 class="notes-title">Notizen → Slides</h3>
                   <button class="btn-sm btn-cancel" (click)="showNotesImport.set(false)" [disabled]="generatingFromNotes()">Abbrechen</button>
@@ -168,8 +177,8 @@
 
           <!-- Pimp my Slides: Markdown Import + Auto-Optimize overlay -->
           @if (showMarkdownImport()) {
-            <div class="pimp-overlay">
-              <div class="pimp-modal">
+            <div class="pimp-overlay" (keydown.escape)="showMarkdownImport.set(false)">
+              <div class="pimp-modal" role="dialog" aria-modal="true">
                 <div class="import-header">
                   <h3>Pimp my Slides</h3>
                   <button class="btn-sm btn-cancel" (click)="showMarkdownImport.set(false)">Abbrechen</button>
@@ -351,7 +360,7 @@
                 class="steering-input"
                 type="text"
                 [(ngModel)]="refineInstruction"
-                placeholder="z.B. 'Fasse Folie 2 und 3 zusammen' oder 'Maximal 5 Folien'"
+                placeholder="z.B. 'Folien zusammenfassen', 'Max. 5 Folien'"
                 [disabled]="refining() || pimping()"
                 (keydown.enter)="refineSlides()"
               />
@@ -423,7 +432,7 @@
 
             <!-- Notes coverage panel (only when slides came from notes) -->
             @if (state.sourceNotes()) {
-              <details class="coverage-details" [open]="!!notesCoverage()">
+              <details class="coverage-details" [open]="coverageOpen()" (toggle)="coverageOpen.set($any($event.target).open)">
                 <summary class="coverage-summary">
                   @if (coverageLoading()) {
                     <span class="steer-spinner"></span> Notizen-Abgleich wird erstellt...
@@ -457,6 +466,9 @@
                               <button class="coverage-fix-btn" (click)="suggestFromCoverage(kp)">Integrieren</button>
                             }
                           </span>
+                          @if (kp.status !== 'covered') {
+                            <button class="coverage-fix-btn" (click)="prefillFromCoverage(kp.point)">Folie ergänzen</button>
+                          }
                         </div>
                       </div>
                     }
@@ -477,7 +489,7 @@
                 }
               </div>
               @if (editingSlide()) {
-                <textarea class="slide-md-editor" [(ngModel)]="slideEditValue"></textarea>
+                <textarea class="slide-md-editor" [(ngModel)]="slideEditValue" (keydown.meta.enter)="saveSlideEdit()" (keydown.escape)="cancelSlideEdit()"></textarea>
               } @else {
                 <pre class="slide-md-view">{{ state.currentSlideMarkdown() }}</pre>
               }
@@ -488,11 +500,11 @@
       <div class="step-nav pad fixed-nav">
         <button class="btn-back" (click)="goToStep(2)">← Erstellen</button>
         <div class="ai-actions">
-          <button class="btn-pimp" (click)="pimpSlides()" [disabled]="pimping() || refining()">
+          <button class="btn-pimp" (click)="pimpSlides()" [disabled]="pimping() || refining()" title="KI analysiert und optimiert die aktuellen Folien">
             @if (pimping()) {
               <span class="pimp-spinner"></span> Analysiere...
             } @else {
-              Pimp my Slides
+              Folien optimieren
             }
           </button>
         </div>
@@ -522,6 +534,12 @@
       </div>
     }
   </main>
+  @if (errorStatus()) {
+    <div class="error-toast">
+      <span>{{ errorStatus() }}</span>
+      <button class="error-toast-close" (click)="errorStatus.set('')">×</button>
+    </div>
+  }
 </div>
 
 @if (showTemplateManager()) {
