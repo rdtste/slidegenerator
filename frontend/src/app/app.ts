@@ -132,7 +132,11 @@ export class App implements OnInit, OnDestroy {
   private templateRetryCount = 0;
 
   loadTemplates(): void {
-    this.templatesLoading.set(true);
+    // Only show loading indicator on initial load, not background retries
+    const isInitialLoad = this.templateRetryCount === 0;
+    if (isInitialLoad) {
+      this.templatesLoading.set(true);
+    }
     this.api.getTemplates().subscribe({
       next: (templates) => {
         this.templatesLoading.set(false);
@@ -142,6 +146,18 @@ export class App implements OnInit, OnDestroy {
         // Never overwrite a good template list with one that lost templates
         if (hasRealTemplates || !currentHasReal) {
           this.state.templates.set(templates);
+        }
+
+        // Preload profiles for all real templates so selection feels instant
+        if (hasRealTemplates) {
+          for (const t of templates) {
+            if (t.id !== 'default' && !this.profileCache.has(t.id)) {
+              this.api.getTemplateProfile(t.id).subscribe({
+                next: (profile) => this.profileCache.set(t.id, profile),
+                error: () => {},
+              });
+            }
+          }
         }
 
         // GCS FUSE may not be ready yet — retry up to 5 times with increasing delay
