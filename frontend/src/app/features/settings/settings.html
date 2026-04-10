@@ -31,8 +31,8 @@
       </select>
     </div>
 
-    <button class="btn-save" (click)="save()" [disabled]="saving()">
-      {{ saving() ? 'Speichern...' : 'Speichern' }}
+    <button class="btn-save" [class.saved]="saved()" (click)="save()" [disabled]="saving() || saved()">
+      {{ saved() ? 'Gespeichert' : (saving() ? 'Speichern...' : 'Speichern') }}
     </button>
 
     @if (status()) {

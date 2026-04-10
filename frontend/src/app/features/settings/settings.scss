@@ -126,3 +126,16 @@
   font-weight: 700;
   color: var(--primary);
 }
+
+@media (max-width: 640px) {
+  .settings-panel {
+    width: calc(100vw - 32px);
+    right: -8px;
+    max-width: none;
+  }
+}
+
+.btn-save.saved {
+  background: var(--accent, #22c55e);
+  transition: background 0.3s ease;
+}
