@@ -448,7 +448,9 @@
                               }
                             }
                             @if (kp.status !== 'covered') {
-                              <button class="coverage-fix-btn" (click)="prefillFromCoverage(kp.point)">Folie ergänzen</button>
+                              <button class="coverage-fix-btn" (click)="refineFromCoverage(kp)" [disabled]="refining()">
+                                {{ refining() ? 'Wird ergänzt…' : 'Folie ergänzen' }}
+                              </button>
                             }
                           </span>
                         </div>

@@ -8,7 +8,7 @@ import { TemplateManagement } from './features/template-management/template-mana
 import { Settings } from './features/settings/settings';
 import { ChatState } from './core/services/chat';
 import { ApiService } from './core/services/api';
-import { Audience, ImageStyle, NotesCoverage, SlideContent, TemplateProfile } from './core/models';
+import { Audience, ImageStyle, KeyPoint, NotesCoverage, SlideContent, TemplateProfile } from './core/models';
 
 @Component({
   selector: 'app-root',
@@ -481,17 +481,12 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  prefillFromCoverage(point: string): void {
-    this.refineInstruction.set(`Füge einen Abschnitt über '${point}' hinzu`);
-    // Scroll steering bar into view
-    document.querySelector('.steering-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
-  suggestFromCoverage(kp: { point: string; status: string; slideIndices: number[] }): void {
-    const prompt = kp.status === 'missing'
-      ? `Integriere den fehlenden Punkt "${kp.point}" in die Präsentation`
-      : `Stelle den Punkt "${kp.point}" prominenter und vollständiger dar (aktuell nur teilweise in Folie ${kp.slideIndices.join(', ')})`;
-    this.refineInstruction.set(prompt);
+  refineFromCoverage(kp: KeyPoint): void {
+    const instruction = kp.status === 'missing'
+      ? `Integriere den fehlenden Punkt "${kp.point}" als neue Folie an passender Stelle in die Präsentation.`
+      : `Stelle den Punkt "${kp.point}" prominenter und vollständiger dar (aktuell nur teilweise in Folie ${kp.slideIndices.join(', ')}).`;
+    this.refineInstruction.set(instruction);
+    this.refineSlides();
   }
 
   goToSlideFromCoverage(slideIndex: number): void {
