@@ -131,18 +131,18 @@
             </div>
           </section>
 
-          <div class="schnellstart">
-            <span class="schnellstart-label">Oder starte direkt:</span>
-            <div class="schnellstart-actions">
-              <button class="btn-notes-start" (click)="showNotesImport.set(true)">
-                Notizen → Slides
-              </button>
-              <button class="btn-pimp-start" (click)="showMarkdownImport.set(true)" [disabled]="pimping()">
-                Pimp my Slides
-              </button>
+          <div class="setup-footer">
+            <div class="schnellstart">
+              <span class="schnellstart-label">Oder starte direkt:</span>
+              <div class="schnellstart-actions">
+                <button class="btn-notes-start" (click)="showNotesImport.set(true)">
+                  Notizen → Slides
+                </button>
+                <button class="btn-pimp-start" (click)="showMarkdownImport.set(true)" [disabled]="pimping()">
+                  Pimp my Slides
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="step-nav step-nav-start">
             <button class="btn-next" (click)="goToStep(2)">Weiter: Erstellen →</button>
           </div>
 
