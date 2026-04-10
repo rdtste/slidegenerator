@@ -68,7 +68,7 @@ export class ExportPanel implements OnDestroy {
                 this.startFreshV2Export(briefing);
                 return;
               }
-              this.triggerDownload(blob, 'presentation_v2.pptx');
+              this.triggerDownload(blob, this.generateFilename('pptx'));
               this.exportProgress.set(100);
               this.exportStatus.set('PPTX heruntergeladen (vorberechnet).');
               this.exporting.set(false);
@@ -220,7 +220,7 @@ export class ExportPanel implements OnDestroy {
         next: (response) => {
           const blob = response.body;
           if (!blob) return;
-          this.triggerDownload(blob, data.filename || 'presentation.pptx');
+          this.triggerDownload(blob, this.generateFilename('pptx'));
           if (warningCount > 0) {
             this.exportStatus.set(`PPTX heruntergeladen (${warningCount} Warnung(en) bei Bild/Layout-Generierung).`);
           } else {
@@ -332,8 +332,8 @@ export class ExportPanel implements OnDestroy {
       next: (response) => {
         const blob = response.body;
         if (!blob) return;
-        const ext = format === 'pptx' ? '.pptx' : '.pdf';
-        this.triggerDownload(blob, `presentation${ext}`);
+        const fileExt = format === 'pptx' ? 'pptx' : 'pdf';
+        this.triggerDownload(blob, this.generateFilename(fileExt));
         this.exportProgress.set(100);
         this.finishAllEntries();
         this.exportStatus.set(`${format.toUpperCase()} heruntergeladen.`);
@@ -352,6 +352,28 @@ export class ExportPanel implements OnDestroy {
       this.eventSource.close();
       this.eventSource = null;
     }
+  }
+
+  private generateFilename(ext: string): string {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const datePrefix = `${yy}${mm}${dd}`;
+
+    // Extract title from first heading in markdown
+    const md = this.state.markdown();
+    const match = md.match(/^#\s+(.+)$/m);
+    let slug = 'Praesentation';
+    if (match) {
+      slug = match[1]
+        .replace(/[^\w\säöüÄÖÜß-]/g, '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .slice(0, 40)
+        .replace(/_+$/, '');
+    }
+    return `${datePrefix}_${slug}.${ext}`;
   }
 
   private triggerDownload(blob: Blob, filename: string): void {
