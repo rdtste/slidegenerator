@@ -453,6 +453,9 @@
                                 <button class="coverage-slide-link" (click)="goToSlideFromCoverage(idx)">Folie {{ idx }}</button>
                               }
                             }
+                            @if (kp.status !== 'covered') {
+                              <button class="coverage-fix-btn" (click)="suggestFromCoverage(kp)">Integrieren</button>
+                            }
                           </span>
                         </div>
                       </div>

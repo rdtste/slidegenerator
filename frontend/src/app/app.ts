@@ -432,6 +432,13 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
+  suggestFromCoverage(kp: { point: string; status: string; slideIndices: number[] }): void {
+    const prompt = kp.status === 'missing'
+      ? `Integriere den fehlenden Punkt "${kp.point}" in die Präsentation`
+      : `Stelle den Punkt "${kp.point}" prominenter und vollständiger dar (aktuell nur teilweise in Folie ${kp.slideIndices.join(', ')})`;
+    this.refineInstruction.set(prompt);
+  }
+
   goToSlideFromCoverage(slideIndex: number): void {
     this.commitSlideEdit();
     // Coverage uses 1-based indices, internal state is 0-based
