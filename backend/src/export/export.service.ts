@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { SettingsService } from '../settings/settings.service';
 
 interface ProgressEvent {
   step: string;
@@ -39,7 +40,10 @@ export class ExportService {
   private readonly jobs = new Map<string, ExportJob>();
   private readonly pregenCache = new Map<string, PregenEntry>();
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly settings: SettingsService,
+  ) {
     this.pptxServiceUrl = this.config.get<string>(
       'PPTX_SERVICE_URL',
       'http://localhost:8000',
@@ -281,6 +285,7 @@ export class ExportService {
           job.progress = 100;
           job.subject.next({ data: parsed, type: 'complete' } as MessageEvent);
           job.subject.complete();
+          this.settings.incrementPresentationCount();
           this.logger.log(`V2 Job ${jobId} complete: ${job.filename}`);
         } else if (eventType === 'fail') {
           job.status = 'error';

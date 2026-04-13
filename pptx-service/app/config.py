@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     imagen_model: str = "imagen-3.0-generate-002"
 
     # Gemini model for QA Vision analysis
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-2.5-pro"
     qa_max_iterations: int = 2
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
-_MODEL = "gemini-2.5-flash"
+_MODEL = "gemini-2.5-pro"
 
 # ── Cached credentials & client ──────────────────────────────────────────
 _credentials: google.auth.credentials.Credentials | None = None

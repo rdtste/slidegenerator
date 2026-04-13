@@ -72,22 +72,39 @@ export class SettingsService {
   incrementPresentationCount(): void {
     const stats = this.loadStats();
     stats.presentationCount++;
-    try {
-      fs.writeFileSync(this.statsPath, JSON.stringify(stats, null, 2));
-    } catch (err) {
-      this.logger.warn(`Could not write stats: ${err}`);
-    }
+    this.cachedCount = stats.presentationCount;
+    this.saveStats(stats);
   }
+
+  private cachedCount: number | null = null;
 
   private loadStats(): { presentationCount: number } {
     try {
       if (fs.existsSync(this.statsPath)) {
-        return JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
+        const data = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
+        this.cachedCount = data.presentationCount;
+        return data;
       }
     } catch {
-      this.logger.warn('Corrupt stats file, resetting');
+      this.logger.warn('Could not read stats file');
+    }
+    // Use in-memory count if file is unavailable (GCS FUSE not ready)
+    if (this.cachedCount != null) {
+      return { presentationCount: this.cachedCount };
     }
     return { presentationCount: 0 };
+  }
+
+  private saveStats(stats: { presentationCount: number }): void {
+    try {
+      const dir = path.dirname(this.statsPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(this.statsPath, JSON.stringify(stats, null, 2));
+    } catch (err) {
+      this.logger.warn(`Could not write stats: ${err}`);
+    }
   }
 
   updateSettings(partial: {
