@@ -45,7 +45,7 @@ export class SettingsService {
       'rd-cmpd-prod513-psl-mate-dev',
     );
     this.gcpRegion = this.config.get<string>('GCP_REGION', 'europe-west1');
-    this.model = this.config.get<string>('GCP_MODEL', 'google/gemini-2.5-pro');
+    this.model = this.config.get<string>('GCP_MODEL', 'google/gemini-2.5-flash');
 
     const templatesDir = this.config.get<string>(
       'TEMPLATES_DIR',
