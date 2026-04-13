@@ -70,41 +70,66 @@ export class SettingsService {
   }
 
   incrementPresentationCount(): void {
-    const stats = this.loadStats();
-    stats.presentationCount++;
-    this.cachedCount = stats.presentationCount;
-    this.saveStats(stats);
+    // Track increments that haven't been persisted yet
+    this.pendingIncrements++;
+    this.flushStats();
   }
 
-  private cachedCount: number | null = null;
+  private pendingIncrements = 0;
 
-  private loadStats(): { presentationCount: number } {
+  private flushStats(): void {
+    // Try to read the persisted count from disk
+    let diskCount: number | null = null;
     try {
       if (fs.existsSync(this.statsPath)) {
         const data = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
-        this.cachedCount = data.presentationCount;
-        return data;
+        diskCount = data.presentationCount ?? 0;
       }
     } catch {
       this.logger.warn('Could not read stats file');
     }
-    // Use in-memory count if file is unavailable (GCS FUSE not ready)
-    if (this.cachedCount != null) {
-      return { presentationCount: this.cachedCount };
-    }
-    return { presentationCount: 0 };
-  }
 
-  private saveStats(stats: { presentationCount: number }): void {
+    if (diskCount == null) {
+      // File not available (GCS FUSE not ready) — keep increments pending
+      this.logger.warn(
+        `Stats file unavailable, ${this.pendingIncrements} increment(s) pending`,
+      );
+      return;
+    }
+
+    // Merge pending increments with persisted count
+    const newCount = diskCount + this.pendingIncrements;
+    this.pendingIncrements = 0;
     try {
       const dir = path.dirname(this.statsPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(this.statsPath, JSON.stringify(stats, null, 2));
+      fs.writeFileSync(
+        this.statsPath,
+        JSON.stringify({ presentationCount: newCount }, null, 2),
+      );
     } catch (err) {
+      // Write failed — restore pending so next flush retries
+      this.pendingIncrements = newCount - diskCount;
       this.logger.warn(`Could not write stats: ${err}`);
     }
+  }
+
+  private loadStats(): { presentationCount: number } {
+    // Try flushing any pending increments first
+    if (this.pendingIncrements > 0) {
+      this.flushStats();
+    }
+    try {
+      if (fs.existsSync(this.statsPath)) {
+        const data = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
+        return { presentationCount: (data.presentationCount ?? 0) + this.pendingIncrements };
+      }
+    } catch {
+      this.logger.warn('Could not read stats file');
+    }
+    return { presentationCount: this.pendingIncrements };
   }
 
   updateSettings(partial: {
