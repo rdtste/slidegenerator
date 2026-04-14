@@ -1,15 +1,15 @@
 <div class="preview-panel">
   @if (hasContent()) {
-    <div class="slides-container">
+    <div class="slides-container" role="listbox" aria-label="Folienvorschau" (keydown)="onListKeydown($event)">
       @for (slide of state.slides(); track $index) {
         <div
           class="slide-card"
-          role="button"
-          tabindex="0"
+          role="option"
+          [tabindex]="state.selectedSlideIndex() === $index ? 0 : -1"
           [class.active]="state.selectedSlideIndex() === $index"
+          [attr.aria-selected]="state.selectedSlideIndex() === $index"
           [style.--accent]="accentColor()"
           [attr.aria-label]="'Folie ' + ($index + 1) + ': ' + slide.title"
-          [attr.aria-pressed]="state.selectedSlideIndex() === $index"
           (click)="state.selectedSlideIndex.set($index)"
           (keydown.enter)="state.selectedSlideIndex.set($index)"
           (keydown.space)="selectSlide($index, $event)">

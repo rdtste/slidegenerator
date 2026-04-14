@@ -21,7 +21,6 @@ export class ChatState {
   readonly selectedTemplateId = signal('default');
   readonly customColor = signal('#7BA7D9');
   readonly customFont = signal('Calibri');
-  readonly previewHtml = signal('');
   readonly selectedSlideIndex = signal(0);
   readonly briefing = signal('');
   readonly slidesEdited = signal(false);
@@ -67,7 +66,6 @@ export class ChatState {
     this.selectedTemplateId.set('default');
     this.customColor.set('#7BA7D9');
     this.customFont.set('Calibri');
-    this.previewHtml.set('');
     this.selectedSlideIndex.set(0);
     this.briefing.set('');
     this.slidesEdited.set(false);

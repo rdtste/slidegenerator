@@ -52,6 +52,7 @@
       <textarea
         [(ngModel)]="prompt"
         [placeholder]="conversing() ? 'Deine Antwort...' : 'Beschreibe deine Präsentation...'"
+        [attr.aria-label]="conversing() ? 'Deine Antwort eingeben' : 'Präsentationsbeschreibung eingeben'"
         rows="3"
         (keydown)="onKeydown($event)"
       ></textarea>

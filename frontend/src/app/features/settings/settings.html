@@ -1,11 +1,11 @@
 <div class="settings-toggle">
-  <button class="gear-btn" (click)="toggle()" [class.active]="open()" title="Einstellungen">
+  <button class="gear-btn" (click)="toggle()" [class.active]="open()" title="Einstellungen" [attr.aria-expanded]="open()" aria-haspopup="dialog">
     &#9881;
   </button>
 </div>
 
 @if (open()) {
-  <div class="settings-panel">
+  <div class="settings-panel" role="dialog" aria-label="Einstellungen">
     <h3>GCP Vertex AI Konfiguration</h3>
 
     <div class="field">

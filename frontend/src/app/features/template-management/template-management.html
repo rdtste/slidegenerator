@@ -1,8 +1,8 @@
 <div class="tm-overlay" (click)="close()" (keydown)="onKeydown($event)">
-  <div class="tm-panel" #tmPanel role="dialog" aria-modal="true" aria-label="Template Management" (click)="$event.stopPropagation()">
+  <div class="tm-panel" #tmPanel role="dialog" aria-modal="true" aria-label="Template Management" appFocusTrap (click)="$event.stopPropagation()">
     <div class="tm-header">
       <h2>Template Management</h2>
-      <button class="tm-close" (click)="close()">×</button>
+      <button class="tm-close" (click)="close()" aria-label="Template-Verwaltung schließen">×</button>
     </div>
 
     <div class="tm-body">
@@ -30,8 +30,9 @@
           <div class="tm-empty">Noch keine Templates hochgeladen.</div>
         }
 
+        <div role="listbox" aria-label="Template-Liste">
         @for (t of state.templates(); track t.id) {
-          <div class="tm-item" [class.active]="state.selectedTemplateId() === t.id" (click)="selectTemplate(t.id)">
+          <div class="tm-item" role="option" [attr.aria-selected]="state.selectedTemplateId() === t.id" tabindex="0" [class.active]="state.selectedTemplateId() === t.id" (click)="selectTemplate(t.id)" (keydown.enter)="selectTemplate(t.id)" (keydown.space)="$event.preventDefault(); selectTemplate(t.id)">
             <div class="tm-item-info">
               <div class="tm-item-row">
                 <span class="tm-item-name">{{ t.name }}</span>
@@ -66,6 +67,7 @@
             }
           </div>
         }
+        </div>
       </section>
 
       <!-- Status -->

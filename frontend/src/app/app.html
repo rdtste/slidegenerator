@@ -1,7 +1,7 @@
 <div class="app">
   <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
   <header class="header">
-    <h1 class="logo" (click)="startNew()" title="Zurück zum Start">Slidegenerator</h1>
+    <h1 class="logo"><button class="logo-btn" (click)="goToStep(1)" title="Zurück zum Start">Slidegenerator</button></h1>
     <span class="subtitle header-subtitle">Prompt → Markdown → PowerPoint</span>
     <div class="header-spacer"></div>
     <button class="btn-new" (click)="startNew()">+ Neue Präsentation</button>
@@ -28,15 +28,16 @@
     }
   </nav>
 
-  <main class="main" id="main-content">
+  <main class="main" id="main-content" tabindex="-1">
     <!-- Step 1: Einrichten -->
     @if (state.currentStep() === 1) {
       <div class="step-content setup-step">
+        <h2 class="sr-only">Schritt 1: Einrichten</h2>
           <div class="setup-inner">
           <section class="setup-section">
             <h3>Folienmaster wählen</h3>
             <div class="template-row">
-              <select [(ngModel)]="state.selectedTemplateId" class="template-select">
+              <select [(ngModel)]="state.selectedTemplateId" class="template-select" [disabled]="templatesLoading()">
                 <option value="default">Kein Template (eigenes Design)</option>
                 @for (t of state.templates(); track t.id) {
                   @if (t.id !== 'default') {
@@ -44,6 +45,9 @@
                   }
                 }
               </select>
+              @if (templatesLoading()) {
+                <span class="template-loading-hint">Lade Templates…</span>
+              }
               <button class="btn-upload" (click)="openTemplateManager()">Verwalten</button>
             </div>
 
@@ -180,6 +184,7 @@
                 <button
                   class="audience-card"
                   [class.active]="state.audience() === a.id"
+                  [attr.aria-pressed]="state.audience() === a.id"
                   (click)="state.audience.set(a.id)">
                   <span class="audience-icon">{{ a.icon }}</span>
                   <span class="audience-title">{{ a.title }}</span>
@@ -196,6 +201,7 @@
                 <button
                   class="image-style-card"
                   [class.active]="state.imageStyle() === s.id"
+                  [attr.aria-pressed]="state.imageStyle() === s.id"
                   (click)="state.imageStyle.set(s.id)">
                   <span class="image-style-icon">{{ s.icon }}</span>
                   <span class="image-style-title">{{ s.title }}</span>
@@ -222,16 +228,17 @@
 
           <!-- Notizen → Slides: Freitext-Import + KI-Generierung -->
           @if (showNotesImport()) {
-            <div class="pimp-overlay" (keydown.escape)="showNotesImport.set(false)">
-              <div class="pimp-modal" role="dialog" aria-modal="true">
+            <div class="pimp-overlay" (click)="showNotesImport.set(false)" (keydown.escape)="showNotesImport.set(false)">
+              <div class="pimp-modal" role="dialog" aria-modal="true" aria-labelledby="notesModalTitle" appFocusTrap (click)="$event.stopPropagation()">
                 <div class="import-header">
-                  <h3 class="notes-title">Notizen → Slides</h3>
+                  <h3 class="notes-title" id="notesModalTitle">Notizen → Slides</h3>
                   <button class="btn-sm btn-cancel" (click)="showNotesImport.set(false)" [disabled]="generatingFromNotes()">Abbrechen</button>
                 </div>
                 <p class="import-hint">Meeting-Notizen, Stichpunkte oder freien Text einfügen — KI erstellt daraus eine komplette Präsentation.</p>
                 <textarea
                   class="markdown-import-textarea"
                   [(ngModel)]="notesImportValue"
+                  aria-label="Notizen eingeben"
                   placeholder="Quarterly Review Q1 2026&#10;&#10;Umsatz: 12.4 Mio (+15% YoY)&#10;Neue Kunden: 47 gewonnen&#10;Churn Rate: von 4.2% auf 3.1% gesenkt&#10;&#10;Highlights:&#10;- Product Launch erfolgreich (2300 Signups Tag 1)&#10;- Enterprise Deal mit ACME Corp (450k ARR)&#10;- Team gewachsen: 12 → 18 Mitarbeiter&#10;&#10;Challenges:&#10;- Hiring Pipeline zu langsam&#10;- Support-Tickets +30%&#10;&#10;Next Steps:&#10;- Q2 Fokus: Self-Service Portal&#10;- Ziel: 15 Mio Umsatz"
                   rows="14"
                   [disabled]="generatingFromNotes()"
@@ -251,25 +258,26 @@
 
           <!-- Pimp my Slides: Markdown Import + Auto-Optimize overlay -->
           @if (showMarkdownImport()) {
-            <div class="pimp-overlay" (keydown.escape)="showMarkdownImport.set(false)">
-              <div class="pimp-modal" role="dialog" aria-modal="true">
+            <div class="pimp-overlay" (click)="showMarkdownImport.set(false)" (keydown.escape)="showMarkdownImport.set(false)">
+              <div class="pimp-modal" role="dialog" aria-modal="true" aria-labelledby="pimpModalTitle" appFocusTrap (click)="$event.stopPropagation()">
                 <div class="import-header">
-                  <h3>Pimp my Slides</h3>
+                  <h3 id="pimpModalTitle">Pimp my Slides</h3>
                   <button class="btn-sm btn-cancel" (click)="showMarkdownImport.set(false)">Abbrechen</button>
                 </div>
                 <p class="import-hint">Vorhandenes Markdown einfügen — KI analysiert Storyline, ergänzt Kontext und optimiert Layouts.</p>
                 <textarea
                   class="markdown-import-textarea"
-                  [(ngModel)]="markdownImportValue"
+                  [(ngModel)]="pimpImportValue"
+                  aria-label="Markdown zum Importieren eingeben"
                   placeholder="# Titel der Praesentation&#10;Untertitel hier&#10;&#10;---&#10;&#10;# Zweite Folie&#10;- Erster Punkt&#10;- Zweiter Punkt&#10;&#10;---&#10;&#10;# Dritte Folie&#10;Beliebiger Inhalt"
                   rows="14"
                   [disabled]="pimping()"
                 ></textarea>
                 <div class="import-actions">
-                  <button class="btn-secondary" (click)="importMarkdown()" [disabled]="!markdownImportValue().trim() || pimping()">
+                  <button class="btn-secondary" (click)="importPimpAsRaw()" [disabled]="!pimpImportValue().trim() || pimping()">
                     Nur importieren
                   </button>
-                  <button class="btn-pimp" (click)="importAndPimp()" [disabled]="!markdownImportValue().trim() || pimping()">
+                  <button class="btn-pimp" (click)="importAndPimp()" [disabled]="!pimpImportValue().trim() || pimping()">
                     @if (pimping()) {
                       <span class="pimp-spinner"></span> KI analysiert...
                     } @else {
@@ -287,6 +295,7 @@
     <!-- Step 2: Erstellen -->
     @if (state.currentStep() === 2) {
       <div class="step-content chat-step">
+        <h2 class="sr-only">Schritt 2: Erstellen</h2>
         @if (showMarkdownImport()) {
           <div class="markdown-import-panel">
             <div class="import-header">
@@ -297,6 +306,7 @@
             <textarea
               class="markdown-import-textarea"
               [(ngModel)]="markdownImportValue"
+              aria-label="Markdown importieren"
               placeholder="# Titel der Praesentation&#10;Untertitel hier&#10;&#10;---&#10;&#10;# Zweite Folie&#10;- Erster Punkt&#10;- Zweiter Punkt&#10;&#10;---&#10;&#10;# Dritte Folie&#10;Beliebiger Inhalt"
               rows="16"
             ></textarea>
@@ -314,7 +324,7 @@
           @if (!showMarkdownImport()) {
             <button class="btn-import" (click)="showMarkdownImport.set(true)">Markdown importieren</button>
           }
-          <button class="btn-next" (click)="goToStep(3)" [disabled]="!state.hasMarkdown()">Weiter: Pruefen →</button>
+          <button class="btn-next" (click)="goToStep(3)" [disabled]="!state.hasMarkdown()">Weiter: Prüfen →</button>
         </div>
       </div>
     }
@@ -322,6 +332,7 @@
     <!-- Step 3: Prüfen -->
     @if (state.currentStep() === 3) {
       <div class="step-content review-step">
+        <h2 class="sr-only">Schritt 3: Prüfen</h2>
         <div class="review-layout">
           <!-- Slide preview cards -->
           <div class="review-preview">
@@ -342,6 +353,7 @@
                 class="steering-input"
                 type="text"
                 [(ngModel)]="refineInstruction"
+                aria-label="Folien-Anpassung"
                 placeholder="z.B. 'Folien zusammenfassen', 'Max. 5 Folien'"
                 [disabled]="refining() || pimping()"
                 (keydown.enter)="refineSlides()"
@@ -361,7 +373,7 @@
             @if (selectedSlide(); as slide) {
               <div class="detail-card">
                 <div class="detail-header">
-                  <span class="detail-layout">{{ slide.layout }}</span>
+                  <span class="detail-layout">{{ layoutDisplayName(slide.layout) }}</span>
                 </div>
                 <h2 class="detail-title">{{ slide.title }}</h2>
                 @if (slide.subtitle) {
@@ -470,7 +482,7 @@
                 }
               </div>
               @if (editingSlide()) {
-                <textarea class="slide-md-editor" [(ngModel)]="slideEditValue" (keydown.meta.enter)="saveSlideEdit()" (keydown.escape)="cancelSlideEdit()"></textarea>
+                <textarea class="slide-md-editor" [(ngModel)]="slideEditValue" aria-label="Folien-Markdown bearbeiten" (keydown.meta.enter)="saveSlideEdit()" (keydown.control.enter)="saveSlideEdit()" (keydown.escape)="cancelSlideEdit()"></textarea>
               } @else {
                 <pre class="slide-md-view">{{ state.currentSlideMarkdown() }}</pre>
               }
@@ -496,6 +508,7 @@
     <!-- Step 4: Exportieren -->
     @if (state.currentStep() === 4) {
       <div class="step-content export-step-centered">
+        <h2 class="sr-only">Schritt 4: Exportieren</h2>
         <div class="export-dashboard">
           <app-export-panel />
           <details class="markdown-details">
@@ -515,14 +528,25 @@
       </div>
     }
   </main>
+  @if (successStatus()) {
+    <div class="success-toast" role="status">
+      <span>{{ successStatus() }}</span>
+      <button class="success-toast-close" (click)="successStatus.set('')" aria-label="Erfolgsmeldung schließen">×</button>
+    </div>
+  }
   @if (errorStatus()) {
-    <div class="error-toast">
+    <div class="error-toast" role="alert">
       <span>{{ errorStatus() }}</span>
-      <button class="error-toast-close" (click)="errorStatus.set('')">×</button>
+      <button class="error-toast-close" (click)="errorStatus.set('')" aria-label="Fehlermeldung schließen">×</button>
     </div>
   }
 </div>
 
 @if (showTemplateManager()) {
-  <app-template-management (closed)="closeTemplateManager()" />
+  @defer {
+    <app-template-management (closed)="closeTemplateManager()" />
+  } @loading {
+    <div class="tm-overlay"><div class="tm-panel" style="display:flex;align-items:center;justify-content:center;min-height:200px"><span>Lade Template-Verwaltung…</span></div></div>
+  }
 }
+<app-confirm-dialog />

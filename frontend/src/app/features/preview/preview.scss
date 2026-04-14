@@ -18,7 +18,7 @@
   position: relative;
   background: var(--surface, #1e2130);
   border: 1px solid var(--border, #2d3148);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 20px 20px 16px 44px;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -164,4 +164,32 @@
   font-size: 0.9rem;
   padding: 24px;
   text-align: center;
+}
+
+@media (max-width: 640px) {
+  .slides-container {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .slide-card {
+    padding: 14px 14px 12px 38px;
+    min-height: 64px;
+  }
+
+  .slide-number {
+    left: 8px;
+    top: 14px;
+    width: 22px;
+    height: 22px;
+    font-size: 0.68rem;
+  }
+
+  .slide-title {
+    font-size: 0.88rem;
+  }
+
+  .slide-columns {
+    grid-template-columns: 1fr;
+  }
 }

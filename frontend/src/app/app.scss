@@ -21,6 +21,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -37,14 +38,20 @@
     font-weight: 700;
     color: var(--primary);
     margin: 0;
+  }
 
-    &.logo {
-      cursor: pointer;
-      transition: opacity 0.15s;
+  .logo-btn {
+    background: none;
+    border: none;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: opacity 0.15s;
 
-      &:hover {
-        opacity: 0.8;
-      }
+    &:hover {
+      opacity: 0.8;
     }
   }
 
@@ -62,7 +69,7 @@
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 16px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -83,7 +90,7 @@
   background: var(--surface-hover);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 14px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -116,7 +123,7 @@
   border: none;
   cursor: pointer;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.15s, opacity 0.15s;
   color: var(--text-muted);
 
@@ -130,7 +137,7 @@
   }
 
   &.active {
-    background: rgba(99, 102, 241, 0.12);
+    background: rgba(129, 140, 248, 0.12);
     color: var(--primary);
 
     .step-num {
@@ -145,7 +152,7 @@
 
     .step-num {
       background: var(--accent);
-      color: white;
+      color: #111;
     }
   }
 }
@@ -230,7 +237,7 @@
   gap: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 
   .slide-mockup {
@@ -261,7 +268,7 @@
   padding: 16px 20px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--text-muted);
   font-size: 0.85rem;
 }
@@ -373,7 +380,7 @@
 .color-swatch {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: default;
   transition: transform 0.15s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
@@ -445,8 +452,8 @@
 }
 
 @keyframes stepPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(129, 140, 248, 0); }
 }
 
 
@@ -465,12 +472,18 @@
   align-items: center;
 }
 
+.template-loading-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .template-select {
   flex: 1;
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   font-size: 0.9rem;
   outline: none;
@@ -486,7 +499,7 @@
   color: var(--text-muted);
   cursor: pointer;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   white-space: nowrap;
   transition: border-color 0.15s, color 0.15s;
@@ -592,7 +605,7 @@
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 0.85rem;
   min-width: 160px;
@@ -636,7 +649,7 @@
   padding: 24px 16px;
   background: var(--bg);
   border: 2px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
   text-align: center;
@@ -649,7 +662,7 @@
 
   &.active {
     border-color: var(--primary);
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(129, 140, 248, 0.08);
     box-shadow: 0 0 0 1px var(--primary);
   }
 }
@@ -684,7 +697,7 @@
   padding: 24px 16px;
   background: var(--bg);
   border: 2px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
   text-align: center;
@@ -697,7 +710,7 @@
 
   &.active {
     border-color: var(--primary);
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(129, 140, 248, 0.08);
     box-shadow: 0 0 0 1px var(--primary);
   }
 }
@@ -771,9 +784,9 @@
   background: var(--surface-hover);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  border-radius: var(--radius-md);
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -908,7 +921,7 @@
   padding: 8px 12px;
   font-size: 0.85rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--bg);
   color: var(--text);
   outline: none;
@@ -933,7 +946,7 @@
   font-size: 0.82rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--primary);
   color: white;
   cursor: pointer;
@@ -969,7 +982,7 @@
 .coverage-details {
   margin: 12px 20px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -1009,7 +1022,7 @@
 
   &.covered .coverage-icon { color: #16a34a; }
   &.partial .coverage-icon { color: #d97706; }
-  &.missing .coverage-icon { color: #dc2626; }
+  &.missing .coverage-icon { color: #f87171; }
 }
 
 .coverage-icon {
@@ -1023,7 +1036,7 @@
 
 .cov-check { color: #16a34a; }
 .cov-partial { color: #d97706; font-size: 1rem; }
-.cov-missing { color: #dc2626; }
+.cov-missing { color: #f87171; }
 
 .coverage-content {
   display: flex;
@@ -1056,7 +1069,8 @@
   font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 4px 8px;
+  min-height: 32px;
   text-decoration: underline;
   text-underline-offset: 2px;
 
@@ -1072,7 +1086,8 @@
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 1px 8px;
+  padding: 6px 12px;
+  min-height: 32px;
   border-radius: 4px;
   margin-left: 2px;
   transition: background 0.15s, color 0.15s;
@@ -1087,7 +1102,7 @@
 .markdown-editor-details {
   margin: 16px 20px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 
   summary {
@@ -1172,7 +1187,7 @@
 .markdown-details {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -1198,7 +1213,7 @@
   background: var(--surface-hover);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 16px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -1217,7 +1232,7 @@
   overflow-y: auto;
   padding: 12px;
   background: var(--bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: var(--mono);
   font-size: 0.8rem;
   line-height: 1.6;
@@ -1249,7 +1264,7 @@
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 24px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -1270,7 +1285,7 @@
   background: var(--surface-hover);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 20px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -1282,13 +1297,47 @@
   }
 }
 
+// ── Success Toast ──────────────────────────────────────
+.success-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(22, 163, 74, 0.95);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: toastSlideUp 0.3s ease-out;
+}
+
+.success-toast-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 // ── Error Toast ─────────────────────────────────────────
 .error-toast {
   position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(239, 68, 68, 0.95);
+  background: rgba(220, 38, 38, 0.95);
   color: white;
   padding: 10px 20px;
   border-radius: 10px;
@@ -1376,7 +1425,7 @@
   }
 
   .review-preview {
-    max-height: 200px;
+    max-height: max(300px, 40vh);
     overflow-y: auto;
   }
 
@@ -1427,7 +1476,7 @@
     font-size: 0.88rem;
     line-height: 1.5;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--bg-secondary);
     color: var(--text);
     resize: none;
@@ -1469,7 +1518,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg, #7c3aed, #6d28d9, #5b21b6);
   color: white;
   cursor: pointer;
@@ -1539,8 +1588,8 @@
   font-size: 0.9rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #0284c7, #0369a1);
   color: white;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);
@@ -1558,7 +1607,7 @@
 }
 
 .notes-title {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  background: linear-gradient(135deg, #0284c7, #0369a1) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
@@ -1570,7 +1619,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
   color: white;
   cursor: pointer;
@@ -1601,7 +1650,7 @@
 
 .pimp-modal {
   background: var(--bg);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 28px 32px;
   width: 90%;
   max-width: 700px;
@@ -1637,7 +1686,7 @@
     font-size: 0.82rem;
     padding: 12px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--bg-secondary);
     color: var(--text);
     resize: vertical;
@@ -1662,7 +1711,7 @@
   padding: 8px 16px;
   font-size: 0.85rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   color: var(--text);
   cursor: pointer;

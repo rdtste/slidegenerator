@@ -1,24 +1,30 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed, effect, untracked } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
 import { Chat } from './features/chat/chat';
 import { Preview } from './features/preview/preview';
 import { ExportPanel } from './features/export-panel/export-panel';
 import { TemplateManagement } from './features/template-management/template-management';
 import { Settings } from './features/settings/settings';
+import { FocusTrap } from './core/directives/focus-trap';
+import { ConfirmDialog } from './core/components/confirm-dialog';
 import { ChatState } from './core/services/chat';
 import { ApiService } from './core/services/api';
+import { ConfirmService } from './core/services/confirm';
 import { Audience, ImageStyle, KeyPoint, NotesCoverage, SlideContent, TemplateProfile } from './core/models';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, Chat, Preview, ExportPanel, TemplateManagement, Settings],
+  imports: [FormsModule, Chat, Preview, ExportPanel, TemplateManagement, Settings, FocusTrap, ConfirmDialog],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App implements OnInit, OnDestroy {
+export class App implements OnInit {
   readonly state = inject(ChatState);
   private readonly api = inject(ApiService);
+  private readonly confirmService = inject(ConfirmService);
 
   readonly editingSlide = signal(false);
   readonly slideEditValue = signal('');
@@ -26,6 +32,7 @@ export class App implements OnInit, OnDestroy {
   readonly showTemplateManager = signal(false);
   readonly showMarkdownImport = signal(false);
   readonly markdownImportValue = signal('');
+  readonly pimpImportValue = signal('');
   readonly showNotesImport = signal(false);
   readonly notesImportValue = signal('');
   readonly generatingFromNotes = signal(false);
@@ -38,17 +45,41 @@ export class App implements OnInit, OnDestroy {
   readonly templatePreviewLoading = signal(false);
   readonly coverageOpen = signal(false);
   readonly errorStatus = signal('');
+  readonly successStatus = signal('');
+  readonly templatesLoading = signal(false);
   private readonly profileCache = new Map<string, TemplateProfile>();
+  private profileSub?: Subscription;
+  private readonly cancelOps$ = new Subject<void>();
 
   readonly colorValid = computed(() => /^#[0-9A-Fa-f]{6}$/.test(this.state.customColor()));
+
+  private readonly layoutNames: Record<string, string> = {
+    title_hero: 'Titelfolie',
+    section_divider: 'Abschnitt',
+    key_statement: 'Kernaussage',
+    bullets_focused: 'Aufzählung',
+    three_cards: 'Drei Karten',
+    kpi_dashboard: 'KPI-Dashboard',
+    image_text_split: 'Bild & Text',
+    comparison: 'Vergleich',
+    timeline: 'Zeitstrahl',
+    process_flow: 'Prozessfluss',
+    chart_insight: 'Diagramm',
+    image_fullbleed: 'Vollbild',
+    agenda: 'Agenda',
+    closing: 'Abschluss',
+    content: 'Inhalt',
+  };
+
+  layoutDisplayName(layout: string): string {
+    return this.layoutNames[layout] ?? layout;
+  }
 
   readonly selectedSlide = computed<SlideContent | undefined>(() => {
     const slides = this.state.slides();
     const idx = this.state.selectedSlideIndex();
     return slides[idx];
   });
-
-  private previewSub?: Subscription;
 
   readonly audienceOptions: Array<{ id: Audience; icon: string; title: string; desc: string }> = [
     { id: 'team', icon: '👥', title: 'Team', desc: 'Intern, klar, handlungsorientiert' },
@@ -98,7 +129,8 @@ export class App implements OnInit, OnDestroy {
       }
       this.templatePreviewLoading.set(true);
       untracked(() => {
-        this.api.getTemplateProfile(templateId).subscribe({
+        this.profileSub?.unsubscribe();
+        this.profileSub = this.api.getTemplateProfile(templateId).subscribe({
           next: (profile) => {
             this.profileCache.set(templateId, profile);
             this.templateProfile.set(profile);
@@ -124,6 +156,15 @@ export class App implements OnInit, OnDestroy {
     }, 6000);
   }
 
+  private showSuccess(message: string): void {
+    this.successStatus.set(message);
+    setTimeout(() => {
+      if (this.successStatus() === message) {
+        this.successStatus.set('');
+      }
+    }, 4000);
+  }
+
   ngOnInit(): void {
     this.loadTemplates();
   }
@@ -131,8 +172,10 @@ export class App implements OnInit, OnDestroy {
   private templateRetryCount = 0;
 
   loadTemplates(): void {
+    this.templatesLoading.set(true);
     this.api.getTemplates().subscribe({
       next: (templates) => {
+        this.templatesLoading.set(false);
         const hasRealTemplates = templates.some((t) => t.id !== 'default');
         const currentHasReal = this.state.templates().some((t) => t.id !== 'default');
 
@@ -161,6 +204,7 @@ export class App implements OnInit, OnDestroy {
         }
       },
       error: () => {
+        this.templatesLoading.set(false);
         if (this.templateRetryCount < 5) {
           this.templateRetryCount++;
           setTimeout(() => this.loadTemplates(), 2000);
@@ -175,6 +219,9 @@ export class App implements OnInit, OnDestroy {
     if (step === 3) {
       this.editingSlide.set(false);
     }
+    const main = document.getElementById('main-content');
+    main?.scrollTo(0, 0);
+    main?.focus();
   }
 
   prevSlide(): void {
@@ -225,10 +272,19 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  startNew(): void {
-    if (this.state.hasMarkdown() && !confirm('Aktuelle Präsentation verwerfen und neu starten?')) {
-      return;
+  async startNew(): Promise<void> {
+    if (this.state.hasMarkdown()) {
+      const ok = await this.confirmService.confirm({
+        message: 'Aktuelle Präsentation verwerfen und neu starten?',
+        confirmLabel: 'Neu starten',
+      });
+      if (!ok) return;
     }
+    // Cancel any in-flight LLM operations
+    this.cancelOps$.next();
+    this.pimping.set(false);
+    this.refining.set(false);
+    this.generatingFromNotes.set(false);
     this.state.reset();
     this.templateProfile.set(undefined);
     this.notesCoverage.set(undefined);
@@ -301,7 +357,7 @@ export class App implements OnInit, OnDestroy {
       imageStyle,
       customColor,
       customFont,
-    ).subscribe({
+    ).pipe(takeUntil(this.cancelOps$)).subscribe({
       next: (result) => {
         this.state.updateMarkdown(result.markdown);
         this.state.slides.set(result.slides);
@@ -312,7 +368,9 @@ export class App implements OnInit, OnDestroy {
         this.showNotesImport.set(false);
         this.notesImportValue.set('');
         this.state.currentStep.set(3);
+        this.state.slidesEdited.set(false);
         this.loadNotesCoverage(notes, result.markdown);
+        this.triggerPregeneration(prompt);
       },
       error: () => {
         this.generatingFromNotes.set(false);
@@ -321,8 +379,35 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
+  importPimpAsRaw(): void {
+    const md = this.pimpImportValue().trim();
+    if (!md) return;
+    this.state.updateMarkdown(md);
+    const withoutFrontmatter = md.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
+    const chunks = withoutFrontmatter.split(/^\s*---\s*$/m).filter((s: string) => s.trim());
+    const slides = chunks.map((chunk: string) => {
+      const lines = chunk.trim().split('\n');
+      const titleLine = lines.find((l: string) => l.startsWith('# '));
+      const title = titleLine ? titleLine.replace(/^#+\s*/, '') : 'Folie';
+      const bullets = lines
+        .filter((l: string) => l.startsWith('- '))
+        .map((l: string) => l.replace(/^-\s*/, ''));
+      const body = lines
+        .filter((l: string) => !l.startsWith('#') && !l.startsWith('-') && !l.startsWith('<!--') && l.trim())
+        .join(' ')
+        .trim();
+      return { layout: 'content', title, subtitle: '', body, bullets, notes: '', imageDescription: '', chartData: '', leftColumn: '', rightColumn: '' };
+    });
+    this.state.slides.set(slides);
+    const titles = slides.map((s) => s.title).filter((t) => t);
+    this.state.briefing.set(`Erstelle eine Präsentation mit ${slides.length} Folien zu: ${titles.join(', ')}`);
+    this.showMarkdownImport.set(false);
+    this.pimpImportValue.set('');
+    this.state.currentStep.set(3);
+  }
+
   importAndPimp(): void {
-    const md = this.markdownImportValue().trim();
+    const md = this.pimpImportValue().trim();
     if (!md) return;
 
     // First import the markdown
@@ -342,7 +427,7 @@ export class App implements OnInit, OnDestroy {
       };
     });
     this.state.slides.set(slides);
-    this.markdownImportValue.set('');
+    this.pimpImportValue.set('');
 
     // Then immediately pimp
     this.pimping.set(true);
@@ -360,7 +445,7 @@ export class App implements OnInit, OnDestroy {
       imageStyle,
       customColor,
       customFont,
-    ).subscribe({
+    ).pipe(takeUntil(this.cancelOps$)).subscribe({
       next: (result) => {
         this.state.updateMarkdown(result.markdown);
         this.state.slides.set(result.slides);
@@ -383,9 +468,14 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  pimpSlides(): void {
+  async pimpSlides(): Promise<void> {
     const md = this.state.markdown();
     if (!md) return;
+    const ok = await this.confirmService.confirm({
+      message: 'Folien mit KI optimieren? Die aktuellen Folien werden dabei ersetzt.',
+      confirmLabel: 'Optimieren',
+    });
+    if (!ok) return;
     this.pimping.set(true);
 
     const templateId = this.state.selectedTemplateId();
@@ -401,7 +491,7 @@ export class App implements OnInit, OnDestroy {
       imageStyle,
       customColor,
       customFont,
-    ).subscribe({
+    ).pipe(takeUntil(this.cancelOps$)).subscribe({
       next: (result) => {
         this.state.updateMarkdown(result.markdown);
         this.state.slides.set(result.slides);
@@ -409,6 +499,7 @@ export class App implements OnInit, OnDestroy {
         const titles = result.slides.map((s: { title: string }) => s.title).filter((t: string) => t);
         this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
         this.pimping.set(false);
+        this.showSuccess('Folien wurden erfolgreich optimiert.');
       },
       error: () => {
         this.pimping.set(false);
@@ -452,7 +543,7 @@ export class App implements OnInit, OnDestroy {
       imageStyle,
       customColor,
       customFont,
-    ).subscribe({
+    ).pipe(takeUntil(this.cancelOps$)).subscribe({
       next: (result) => {
         this.state.updateMarkdown(result.markdown);
         this.state.slides.set(result.slides);
@@ -461,6 +552,7 @@ export class App implements OnInit, OnDestroy {
         this.state.briefing.set(`Erstelle eine Präsentation mit ${result.slides.length} Folien zu: ${titles.join(', ')}`);
         this.refining.set(false);
         this.refineInstruction.set('');
+        this.showSuccess('Folien wurden angepasst.');
         // Re-run coverage if we have source notes
         const notes = this.state.sourceNotes();
         if (notes) {
@@ -469,6 +561,7 @@ export class App implements OnInit, OnDestroy {
       },
       error: () => {
         this.refining.set(false);
+        this.showError('Folien konnten nicht angepasst werden. Bitte erneut versuchen.');
       },
     });
   }
@@ -484,7 +577,8 @@ export class App implements OnInit, OnDestroy {
   goToSlideFromCoverage(slideIndex: number): void {
     this.commitSlideEdit();
     // Coverage uses 1-based indices, internal state is 0-based
-    this.state.selectedSlideIndex.set(slideIndex - 1);
+    const idx = Math.max(0, Math.min(slideIndex - 1, this.state.slideCount() - 1));
+    this.state.selectedSlideIndex.set(idx);
   }
 
   openTemplateManager(): void {
@@ -503,8 +597,20 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    this.previewSub?.unsubscribe();
+  private triggerPregeneration(briefing: string): void {
+    const templateId = this.state.selectedTemplateId();
+    const isDefault = templateId === 'default';
+    this.api.pregenerateV2(
+      briefing,
+      this.state.audience(),
+      this.state.imageStyle(),
+      isDefault ? this.state.customColor() : undefined,
+      isDefault ? this.state.customFont() : undefined,
+      isDefault ? undefined : templateId,
+    ).subscribe({
+      next: ({ key }) => this.state.pregenKey.set(key),
+      error: () => {},
+    });
   }
 
 }

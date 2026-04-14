@@ -1,18 +1,23 @@
-import { Component, inject, signal, output, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, signal, output, OnInit, OnDestroy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
+import { ConfirmService } from '../../core/services/confirm';
+import { FocusTrap } from '../../core/directives/focus-trap';
 
 @Component({
   selector: 'app-template-management',
+  imports: [FocusTrap],
   templateUrl: './template-management.html',
   styleUrl: './template-management.scss',
 })
-export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
+export class TemplateManagement implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmService = inject(ConfirmService);
   readonly state = inject(ChatState);
 
-  @ViewChild('tmPanel') private tmPanel!: ElementRef<HTMLElement>;
   private uploadSub?: Subscription;
 
   readonly status = signal('');
@@ -25,7 +30,7 @@ export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadTemplates(): void {
-    this.api.getTemplates().subscribe({
+    this.api.getTemplates().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (templates) => this.state.templates.set(templates),
       error: () => this.status.set('Templates konnten nicht geladen werden.'),
     });
@@ -69,7 +74,7 @@ export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
     this.learnResult.set('');
     this.status.set('Template wird gelernt...');
 
-    this.api.learnTemplate(id).subscribe({
+    this.api.learnTemplate(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (result) => {
         this.learning.set(false);
         this.learnResult.set(
@@ -92,12 +97,16 @@ export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
     this.status.set('Upload abgebrochen.');
   }
 
-  deleteTemplate(id: string, event: Event): void {
+  async deleteTemplate(id: string, event: Event): Promise<void> {
     event.stopPropagation();
     const template = this.state.templates().find(t => t.id === id);
     const name = template?.name ?? id;
-    if (!confirm(`Template "${name}" wirklich löschen?`)) return;
-    this.api.deleteTemplate(id).subscribe({
+    const ok = await this.confirmService.confirm({
+      message: `Template "${name}" wirklich löschen?`,
+      confirmLabel: 'Löschen',
+    });
+    if (!ok) return;
+    this.api.deleteTemplate(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         if (this.state.selectedTemplateId() === id) {
           this.state.selectedTemplateId.set('default');
@@ -114,7 +123,7 @@ export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
   toggleScope(id: string, currentScope: string, event: Event): void {
     event.stopPropagation();
     const newScope = currentScope === 'global' ? 'session' : 'global';
-    this.api.setTemplateScope(id, newScope).subscribe({
+    this.api.setTemplateScope(id, newScope).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loadTemplates();
         this.status.set(
@@ -138,11 +147,6 @@ export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
     this.closed.emit();
   }
 
-  ngAfterViewInit(): void {
-    const closeBtn = this.tmPanel?.nativeElement?.querySelector<HTMLElement>('.tm-close');
-    closeBtn?.focus();
-  }
-
   ngOnDestroy(): void {
     this.uploadSub?.unsubscribe();
   }
@@ -150,28 +154,6 @@ export class TemplateManagement implements OnInit, OnDestroy, AfterViewInit {
   onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       this.close();
-      return;
-    }
-
-    if (event.key === 'Tab') {
-      const panel = this.tmPanel?.nativeElement;
-      if (!panel) return;
-
-      const focusable = panel.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
     }
   }
 }

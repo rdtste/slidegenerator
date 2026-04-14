@@ -43,7 +43,7 @@
   font-size: 1.4rem;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.1s, color 0.1s;
 
   &:hover {
@@ -224,7 +224,7 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   background: var(--bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .tm-learn-result {

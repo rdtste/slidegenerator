@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, computed, OnDestroy } from '@angular/core';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
 
@@ -15,7 +15,6 @@ interface ProgressEntry {
 })
 export class ExportPanel implements OnDestroy {
   private readonly api = inject(ApiService);
-  private readonly cdr = inject(ChangeDetectorRef);
   readonly state = inject(ChatState);
   readonly exportStatus = signal('');
   readonly exporting = signal(false);
@@ -27,12 +26,15 @@ export class ExportPanel implements OnDestroy {
     return !this.exporting() && (status.startsWith('Fehler') || status.includes('verloren'));
   });
 
+  readonly lastExportType = signal<'pptx' | 'pdf'>('pptx');
+
   private eventSource: EventSource | null = null;
   private currentActiveKey = '';
   private reconnectAttempts = 0;
   private currentJobId = '';
 
   downloadV2(): void {
+    this.lastExportType.set('pptx');
     const briefing = this.state.briefing();
     if (!briefing) {
       this.exportStatus.set('Fehler: Kein Briefing vorhanden. Bitte zuerst eine Praesentation generieren.');
@@ -126,7 +128,16 @@ export class ExportPanel implements OnDestroy {
 
   download(format: string): void {
     if (format === 'pdf') {
+      this.lastExportType.set('pdf');
       this.downloadDirect(format);
+    }
+  }
+
+  retryLastExport(): void {
+    if (this.lastExportType() === 'pdf') {
+      this.download('pdf');
+    } else {
+      this.downloadV2();
     }
   }
 
@@ -178,7 +189,7 @@ export class ExportPanel implements OnDestroy {
       if (data.step === 'warning' && data.message) {
         this.exportStatus.set(`Warnung: ${data.message}`);
       }
-      this.cdr.markForCheck();
+
     });
 
     source.addEventListener('qa_result', (e: Event) => {
@@ -192,7 +203,7 @@ export class ExportPanel implements OnDestroy {
       entries.push({ icon, label, status: status === 'done' ? 'done' : 'active' });
       this.progressEntries.set(entries);
       this.exportMessage.set(label);
-      this.cdr.markForCheck();
+
     });
 
     source.addEventListener('generation_warnings', (e: Event) => {
@@ -203,7 +214,7 @@ export class ExportPanel implements OnDestroy {
       if (count > 0) {
         this.exportStatus.set(`Warnung: ${count} Problem(e) bei Bildgenerierung.`);
       }
-      this.cdr.markForCheck();
+
     });
 
     source.addEventListener('complete', (e: Event) => {
@@ -215,7 +226,7 @@ export class ExportPanel implements OnDestroy {
       source.close();
       this.eventSource = null;
 
-      this.cdr.markForCheck();
+
       this.api.downloadExport(jobId).subscribe({
         next: (response) => {
           const blob = response.body;
@@ -241,7 +252,7 @@ export class ExportPanel implements OnDestroy {
       this.exporting.set(false);
       source.close();
       this.eventSource = null;
-      this.cdr.markForCheck();
+
     });
 
     source.onerror = () => {
@@ -250,7 +261,7 @@ export class ExportPanel implements OnDestroy {
       if (this.exporting() && this.reconnectAttempts < 3) {
         this.reconnectAttempts++;
         this.exportMessage.set(`Verbindung unterbrochen — Wiederverbindung (${this.reconnectAttempts}/3)…`);
-        this.cdr.markForCheck();
+  
         setTimeout(() => {
           if (this.exporting()) {
             this.connectProgress(this.currentJobId);
@@ -259,7 +270,7 @@ export class ExportPanel implements OnDestroy {
       } else if (this.exporting()) {
         this.exportStatus.set('Verbindung zum Server verloren. Bitte erneut versuchen.');
         this.exporting.set(false);
-        this.cdr.markForCheck();
+  
       }
     };
   }

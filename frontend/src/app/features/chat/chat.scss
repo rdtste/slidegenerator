@@ -16,7 +16,7 @@
 
 .message {
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   line-height: 1.5;
   max-width: 90%;
@@ -79,7 +79,7 @@
     flex: 1;
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: var(--text);
     padding: 10px 12px;
     font-family: var(--font);
@@ -96,7 +96,7 @@
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 10px 20px;
     font-weight: 600;
     cursor: pointer;
@@ -126,7 +126,7 @@
   min-width: 40px;
   background: var(--surface-hover);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 1.1rem;
   transition: border-color 0.15s;
@@ -159,9 +159,14 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1;
-  padding: 0 2px;
+  padding: 4px 6px;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     color: var(--danger);
@@ -189,7 +194,6 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   padding: 0 4px;
-  opacity: 0.7;
 }
 
 .message.clarification {
@@ -207,7 +211,7 @@
 .example-prompt {
   background: var(--surface-hover);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -219,7 +223,7 @@
   &:hover {
     border-color: var(--primary);
     color: var(--text);
-    background: rgba(99, 102, 241, 0.06);
+    background: rgba(129, 140, 248, 0.06);
   }
 }
 
@@ -228,7 +232,6 @@
   color: var(--text-muted);
   text-align: right;
   padding: 0 4px;
-  opacity: 0.6;
 }
 
 .clarify-actions {
@@ -239,7 +242,7 @@
   .skip-btn {
     background: transparent;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     color: var(--text-muted);
     padding: 6px 16px;
     font-size: 0.8rem;
@@ -250,5 +253,40 @@
       border-color: var(--primary);
       color: var(--text);
     }
+  }
+}
+
+@media (max-width: 640px) {
+  .chat-messages {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .message {
+    max-width: 95%;
+    font-size: 0.85rem;
+  }
+
+  .chat-input {
+    padding: 8px 12px;
+
+    .input-row {
+      gap: 6px;
+    }
+
+    textarea {
+      font-size: 1rem; // Prevent iOS zoom on focus
+      padding: 8px 10px;
+    }
+
+    button {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+    }
+  }
+
+  .example-prompt {
+    padding: 12px;
+    font-size: 0.85rem;
   }
 }

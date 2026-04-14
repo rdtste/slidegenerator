@@ -1,5 +1,5 @@
 <div class="export-panel">
-  <h2>Export</h2>
+  <h2>Exportieren</h2>
 
   <div class="export-summary">
     <div class="summary-item">
@@ -21,9 +21,13 @@
     </button>
   </div>
 
+  @if (state.slidesEdited() && state.pregenKey()) {
+    <div class="export-hint" role="status">Folien wurden bearbeitet — PowerPoint wird neu generiert.</div>
+  }
+
   @if (exporting()) {
     <div class="export-progress">
-      <div class="progress-bar-track">
+      <div class="progress-bar-track" [class.indeterminate]="lastExportType() === 'pdf'">
         <div class="progress-bar-fill" [style.width.%]="exportProgress()"></div>
       </div>
       <div class="progress-message" aria-live="polite">{{ exportMessage() }}</div>
@@ -46,6 +50,6 @@
 
   <div class="status" role="status" [class.success]="isSuccess()" [class.warning]="isWarning()" [class.error]="isError()">{{ exportStatus() }}</div>
   @if (retryAvailable()) {
-    <button class="btn-retry" (click)="downloadV2()">Erneut versuchen</button>
+    <button class="btn-retry" (click)="retryLastExport()">Erneut versuchen</button>
   }
 </div>

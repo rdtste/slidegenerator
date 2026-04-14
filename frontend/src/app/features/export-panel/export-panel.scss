@@ -53,7 +53,7 @@
 .btn-secondary {
   width: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px;
   font-size: 0.9rem;
   font-weight: 700;
@@ -113,6 +113,16 @@
   border-radius: 3px;
   transition: width 0.4s ease;
   min-width: 2%;
+
+  .indeterminate & {
+    width: 40% !important;
+    animation: indeterminate 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
 }
 
 .progress-message {
@@ -184,13 +194,20 @@
   to { transform: rotate(360deg); }
 }
 
+.export-hint {
+  padding: 4px 16px 8px;
+  font-size: 0.78rem;
+  color: #eab308;
+  font-style: italic;
+}
+
 .btn-retry {
   margin: 8px 16px;
   padding: 8px 16px;
   font-size: 0.85rem;
   font-weight: 600;
   border: 1px solid var(--danger, #ef4444);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger, #ef4444);
   cursor: pointer;

@@ -1,4 +1,5 @@
-import { Component, inject, signal, OnDestroy, ElementRef, ViewChild, afterEveryRender } from '@angular/core';
+import { Component, inject, signal, OnDestroy, DestroyRef, ElementRef, ViewChild, afterEveryRender } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api';
 import { ChatState } from '../../core/services/chat';
@@ -19,6 +20,7 @@ const GENERATION_PHASES = [
 })
 export class Chat implements OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly state = inject(ChatState);
   readonly prompt = signal('');
   readonly attachedFiles = signal<File[]>([]);
@@ -81,6 +83,7 @@ export class Chat implements OnDestroy {
         isFirstMessage && files.length ? files : undefined,
         this.llmConversation.length ? this.llmConversation : undefined,
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.llmConversation = res.conversation;
@@ -153,6 +156,7 @@ export class Chat implements OnDestroy {
         isDefault ? this.state.customColor() : undefined,
         isDefault ? this.state.customFont() : undefined,
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.stopPhaseRotation();
@@ -209,7 +213,7 @@ export class Chat implements OnDestroy {
       isDefault ? this.state.customColor() : undefined,
       isDefault ? this.state.customFont() : undefined,
       isDefault ? undefined : templateId,
-    ).subscribe({
+    ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ({ key }) => this.state.pregenKey.set(key),
       error: () => { /* silent — export will just run fresh */ },
     });
